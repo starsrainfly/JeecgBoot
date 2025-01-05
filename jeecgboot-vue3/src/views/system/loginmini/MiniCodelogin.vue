@@ -4,7 +4,8 @@
       <div class="aui-form">
         <div class="aui-image">
           <div class="aui-image-text">
-            <img :src="adTextImg" alt="" />
+<!--            <img :src="adTextImg" alt="" />-->
+            <!--登录界面文字图片-->
           </div>
         </div>
         <div class="aui-formBox aui-formEwm">

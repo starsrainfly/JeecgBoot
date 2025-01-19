@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <#assign pidFieldName = "">
 <#assign hasChildrenField = "">
 <#list originalColumns as po>

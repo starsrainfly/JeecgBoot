@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <template>
   <div>
     <BasicForm @register="registerForm" ref="formRef"/>
@@ -41,10 +41,10 @@
 
   import {BasicForm, useForm} from '/@/components/Form/index';
   import { computed, defineComponent, reactive, ref, unref } from 'vue';
-  import {defHttp} from '/@/utils/http/axios';
-  import { propTypes } from '/@/utils/propTypes';
+  import {defHttp} from '/@/org.jeecg.modules.mis.utils/http/axios';
+  import { propTypes } from '/@/org.jeecg.modules.mis.utils/propTypes';
   import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods';
-  import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils';
+  import { VALIDATE_FAILED } from '/@/org.jeecg.modules.mis.utils/common/vxeUtils';
   <#list subTables as sub>
   <#if sub.foreignRelationType =='1'>
   import ${sub.entityName}Form from './${sub.entityName}Form.vue'

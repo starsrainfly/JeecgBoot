@@ -50,7 +50,7 @@
 
 <script>
 
-    import { FormTypes } from '@/utils/JEditableTableUtil'
+    import { FormTypes } from '@/org.jeecg.modules.mis.utils/JEditableTableUtil'
     import { JEditableTableModelMixin } from '@/mixins/JEditableTableModelMixin'
 
     export default {

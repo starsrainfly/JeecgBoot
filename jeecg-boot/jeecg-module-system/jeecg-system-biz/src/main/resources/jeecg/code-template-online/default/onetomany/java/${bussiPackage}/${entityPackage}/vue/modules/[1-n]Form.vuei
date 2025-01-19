@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <#list subTables as sub>
 <#if sub.foreignRelationType=='1'>
 #segment#${sub.entityName}Form.vue
@@ -92,8 +92,8 @@
 </template>
 <script>
   import { getAction } from '@/api/manage'
-  import { validateDuplicateValue } from '@/utils/util'
- import { VALIDATE_NO_PASSED } from '@/utils/JEditableTableUtil'
+  import { validateDuplicateValue } from '@/org.jeecg.modules.mis.utils/util'
+ import { VALIDATE_NO_PASSED } from '@/org.jeecg.modules.mis.utils/JEditableTableUtil'
   export default {
     name: '${sub.entityName}Form',
     components: {

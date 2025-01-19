@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <#assign need_category = false>
 <#assign bpm_flag=false>
 <#assign need_pca = false>
@@ -89,7 +89,7 @@
 
 <script lang="ts">
   import { defineComponent, ref, reactive, computed, toRaw, onMounted } from 'vue';
-  import { defHttp } from '/@/utils/http/axios';
+  import { defHttp } from '/@/org.jeecg.modules.mis.utils/http/axios';
   import { useValidateAntFormAndTable } from '/@/hooks/system/useJvxeMethods';
   import { <#list subTables as sub><#if sub.foreignRelationType =='0'>query${sub.entityName}ListByMainId, </#if></#list>queryDataById, saveOrUpdate } from '../${entityName}.api';
   <#list subTables as sub>
@@ -111,7 +111,7 @@
   </#if>
   <#include "/common/form/native/vue3NativeImport.ftl">
   <#if hasOnlyValidate == true>
-  import { duplicateValidate } from '/@/utils/helper/validator'
+  import { duplicateValidate } from '/@/org.jeecg.modules.mis.utils/helper/validator'
   </#if>
   import JFormContainer from '/@/components/Form/src/container/JFormContainer.vue';
   import { Form } from 'ant-design-vue';

@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <template>
   <div class="p-2 erpNativeList">
     <#assign query_field_no=0>
@@ -174,14 +174,14 @@
   import ${entityName}Modal from './components/${entityName}Modal.vue'
   import { columns, superQuerySchema } from './${entityName}.data';
   import { list, deleteOne, batchDelete, getImportUrl,getExportUrl } from './${entityName}.api';
-  import { downloadFile } from '/@/utils/common/renderUtils';
+  import { downloadFile } from '/@/org.jeecg.modules.mis.utils/common/renderUtils';
   <#include "/common/form/native/vue3NativeImport.ftl">
 <#if need_pca>
-  import { getAreaTextByCode } from '/@/components/Form/src/utils/Area';
+  import { getAreaTextByCode } from '/@/components/Form/src/org.jeecg.modules.mis.utils/Area';
 </#if>
   <#if need_category>
   import { loadCategoryData } from '/@/api/common/api'
-  import { getAuthCache, setAuthCache } from '/@/utils/auth';
+  import { getAuthCache, setAuthCache } from '/@/org.jeecg.modules.mis.utils/auth';
   import { DB_DICT_DATA_KEY } from '/@/enums/cacheEnum';
   </#if>
   <#if bpm_flag==true>

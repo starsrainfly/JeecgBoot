@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <template>
 <a-spin :spinning="confirmLoading">
 <#assign form_popup = false>
@@ -130,10 +130,10 @@
 
 <script>
 
-import { FormTypes,getRefPromise } from '@/utils/JEditableTableUtil'
+import { FormTypes,getRefPromise } from '@/org.jeecg.modules.mis.utils/JEditableTableUtil'
 import { JEditableTableModelMixin } from '@/mixins/JEditableTableModelMixin'
-import { validateDuplicateValue } from '@/utils/util'
-import { VALIDATE_NO_PASSED, validateFormModelAndTables } from '@/utils/JEditableTableUtil'
+import { validateDuplicateValue } from '@/org.jeecg.modules.mis.utils/util'
+import { VALIDATE_NO_PASSED, validateFormModelAndTables } from '@/org.jeecg.modules.mis.utils/JEditableTableUtil'
 <#list subTables as sub>
 <#if sub.foreignRelationType =='1'>
 import ${sub.entityName}Form from './${sub.entityName}Form.vue'

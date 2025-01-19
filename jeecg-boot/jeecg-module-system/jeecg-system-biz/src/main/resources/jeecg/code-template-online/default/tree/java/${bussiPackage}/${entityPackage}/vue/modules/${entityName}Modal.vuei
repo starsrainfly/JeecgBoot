@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <template>
   <j-modal
     :title="title"
@@ -117,7 +117,7 @@
 <script>
 
   import { httpAction } from '@/api/manage'
-  import { validateDuplicateValue } from '@/utils/util'
+  import { validateDuplicateValue } from '@/org.jeecg.modules.mis.utils/util'
   export default {
     name: "${entityName}Modal",
     components: { 

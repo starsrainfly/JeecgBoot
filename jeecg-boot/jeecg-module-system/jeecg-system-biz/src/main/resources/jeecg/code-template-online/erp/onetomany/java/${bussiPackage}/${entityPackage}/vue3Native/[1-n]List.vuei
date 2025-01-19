@@ -65,11 +65,11 @@
   import ${sub.entityName}Modal from './components/${sub.entityName}Modal.vue'
   import { ${sub.entityName?uncap_first}Columns } from './${entityName}.data';
   import { ${sub.entityName?uncap_first}List, ${sub.entityName?uncap_first}Delete, ${sub.entityName?uncap_first}DeleteBatch, ${sub.entityName?uncap_first}ExportXlsUrl, ${sub.entityName?uncap_first}ImportUrl } from './${entityName}.api';
-  import { isEmpty } from "/@/utils/is";
+  import { isEmpty } from "/@/org.jeecg.modules.mis.utils/is";
   import { useMessage } from '/@/hooks/web/useMessage';
-  import { downloadFile } from '/@/utils/common/renderUtils';
+  import { downloadFile } from '/@/org.jeecg.modules.mis.utils/common/renderUtils';
 <#if need_pca>
-  import { getAreaTextByCode } from '/@/components/Form/src/utils/Area';
+  import { getAreaTextByCode } from '/@/components/Form/src/org.jeecg.modules.mis.utils/Area';
 </#if>
   
   const toggleSearchStatus = ref<boolean>(false);

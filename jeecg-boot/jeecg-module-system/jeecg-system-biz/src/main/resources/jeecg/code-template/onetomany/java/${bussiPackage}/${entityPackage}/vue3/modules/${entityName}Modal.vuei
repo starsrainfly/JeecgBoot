@@ -31,7 +31,7 @@
     import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods.ts'
     import {formSchema<#list subTables as sub>,${sub.entityName?uncap_first}Columns</#list>} from '../${entityName}.data';
     import {saveOrUpdate<#list subTables as sub>,${sub.entityName?uncap_first}List</#list>} from '../${entityName}.api';
-    import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
+    import { VALIDATE_FAILED } from '/@/org.jeecg.modules.mis.utils/common/vxeUtils'
     // Emits声明
     const emit = defineEmits(['register','success']);
     const isUpdate = ref(true);

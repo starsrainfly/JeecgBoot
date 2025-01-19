@@ -1,9 +1,9 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 import {BasicColumn} from '/@/components/Table';
 import {FormSchema} from '/@/components/Table';
-import { rules} from '/@/utils/helper/validator';
-import { render } from '/@/utils/common/renderUtils';
-import { getWeekMonthQuarterYear } from '/@/utils';
+import { rules} from '/@/org.jeecg.modules.mis.utils/helper/validator';
+import { render } from '/@/org.jeecg.modules.mis.utils/common/renderUtils';
+import { getWeekMonthQuarterYear } from '/@/org.jeecg.modules.mis.utils';
 //列表数据
 export const columns: BasicColumn[] = [
  <#list columns as po>
@@ -440,7 +440,7 @@ export const formSchema: FormSchema[] = [
    <#else>
     component: 'Input',
     </#if>
-     <#include "/common/utils.ftl">
+     <#include "/common/org.jeecg.modules.mis.utils.ftl">
     <#if po.isShow == 'Y' && poHasCheck(po)>
     dynamicRules: ({model,schema}) => {
     <#if po.fieldName != 'id'>

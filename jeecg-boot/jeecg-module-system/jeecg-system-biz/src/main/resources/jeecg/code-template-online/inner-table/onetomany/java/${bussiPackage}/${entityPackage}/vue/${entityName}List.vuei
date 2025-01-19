@@ -1,7 +1,7 @@
 <#-- noinspection JSDuplicatedDeclaration,RequiredAttributes,NpmUsedModulesInstalled -->
 <#-- ** 引入全局工具方法 ** -->
-<#--<#include "/common/utils.ftl">-->
-<#include "../../../../../../common/utils.ftl">
+<#--<#include "/common/org.jeecg.modules.mis.utils.ftl">-->
+<#include "../../../../../../common/org.jeecg.modules.mis.utils.ftl">
 <#-- ** 定义全局使用的变量 ** -->
 <#-- 是否有查询条件 -->
 <#assign query_flag=false>
@@ -495,7 +495,7 @@
         }
       },
       getSuperFieldList(){
-        <#include "/common/utils.ftl">
+        <#include "/common/org.jeecg.modules.mis.utils.ftl">
         let fieldList=[];
          <#list columns as po>
         fieldList.push(${superQueryFieldList(po)})

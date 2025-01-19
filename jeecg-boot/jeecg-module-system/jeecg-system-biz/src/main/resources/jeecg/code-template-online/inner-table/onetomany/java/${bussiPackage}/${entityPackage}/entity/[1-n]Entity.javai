@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <#list subTables as subTab>
 #segment#${subTab.entityName}.java
 package ${bussiPackage}.${entityPackage}.entity;

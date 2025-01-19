@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <template>
   <a-card :bordered="false">
     <!-- 查询区域 -->
@@ -221,7 +221,7 @@
 <script>
 
   import '@/assets/less/TableExpand.less'
-  import { mixinDevice } from '@/utils/mixin'
+  import { mixinDevice } from '@/org.jeecg.modules.mis.utils/mixin'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
   import ${entityName}Modal from './modules/${entityName}Modal'
   <#if bpm_flag>

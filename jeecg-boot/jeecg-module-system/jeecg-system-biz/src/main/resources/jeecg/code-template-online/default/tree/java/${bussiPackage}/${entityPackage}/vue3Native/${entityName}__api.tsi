@@ -1,4 +1,4 @@
-import { defHttp } from "/@/utils/http/axios";
+import { defHttp } from "/@/org.jeecg.modules.mis.utils/http/axios";
 import { useMessage } from "/@/hooks/web/useMessage";
 
 const { createConfirm } = useMessage();

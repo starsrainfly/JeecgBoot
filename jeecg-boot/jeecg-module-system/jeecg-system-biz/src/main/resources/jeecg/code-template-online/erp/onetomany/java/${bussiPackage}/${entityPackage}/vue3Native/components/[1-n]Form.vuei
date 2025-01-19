@@ -1,6 +1,6 @@
 <#list subTables as sub>
 #segment#${sub.entityName}Form.vue
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <#assign need_category = false>
 <#assign bpm_flag=false>
 <#assign need_pca = false>
@@ -54,15 +54,15 @@
 
 <script lang="ts" setup>
   import { ref, reactive, defineExpose, nextTick, onMounted, inject, defineProps, unref } from 'vue';
-  import { defHttp } from '/@/utils/http/axios';
+  import { defHttp } from '/@/org.jeecg.modules.mis.utils/http/axios';
   import { useMessage } from '/@/hooks/web/useMessage';
   <#include "/common/form/native/vue3NativeImport.ftl">
-  import { getValueType } from '/@/utils';
+  import { getValueType } from '/@/org.jeecg.modules.mis.utils';
   import { ${sub.entityName?uncap_first}SaveOrUpdate } from '../${entityName}.api';
   import { Form } from 'ant-design-vue';
   import JFormContainer from '/@/components/Form/src/container/JFormContainer.vue';
   <#if hasOnlyValidate == true>
-  import { duplicateValidate } from '/@/utils/helper/validator'
+  import { duplicateValidate } from '/@/org.jeecg.modules.mis.utils/helper/validator'
   </#if>
 
   //接收主表id

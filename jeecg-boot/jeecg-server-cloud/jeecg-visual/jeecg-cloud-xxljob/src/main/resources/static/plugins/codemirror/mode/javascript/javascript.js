@@ -248,7 +248,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     }
   }
 
-  // Combinator utils
+  // Combinator org.jeecg.modules.mis.utils
 
   var cx = {state: null, column: null, marked: null, cc: null};
   function pass() {

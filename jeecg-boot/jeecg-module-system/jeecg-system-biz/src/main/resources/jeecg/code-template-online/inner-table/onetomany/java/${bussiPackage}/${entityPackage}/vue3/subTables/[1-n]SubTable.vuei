@@ -49,7 +49,7 @@
   import {BasicTable} from '/@/components/Table';
   import {${sub.entityName?uncap_first}Columns} from '../${entityName}.data';
   import {${sub.entityName?uncap_first}List} from '../${entityName}.api';
-  import { downloadFile } from '/@/utils/common/renderUtils';
+  import { downloadFile } from '/@/org.jeecg.modules.mis.utils/common/renderUtils';
 
   const props = defineProps({
     id: {

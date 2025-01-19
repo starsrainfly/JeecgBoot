@@ -1,4 +1,4 @@
-<#include "../utils.ftl">
+<#include "../org.jeecg.modules.mis.utils.ftl">
     <#if col.isShow == 'Y' && poHasCheck(col)>
         validateRules: [
         <#if col.fieldName != 'id'>

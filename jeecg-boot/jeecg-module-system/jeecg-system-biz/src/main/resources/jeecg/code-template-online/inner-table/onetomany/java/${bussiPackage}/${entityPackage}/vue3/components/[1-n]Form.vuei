@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <#list subTables as sub>
 <#if sub.foreignRelationType=='1'>
 #segment#${sub.entityName}Form.vue
@@ -9,8 +9,8 @@
     import {defineComponent} from 'vue';
     import {BasicForm, useForm} from '/@/components/Form/index';
     import {${sub.entityName?uncap_first}FormSchema} from '../${entityName}.data';
-    import {defHttp} from '/@/utils/http/axios';
-    import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
+    import {defHttp} from '/@/org.jeecg.modules.mis.utils/http/axios';
+    import { VALIDATE_FAILED } from '/@/org.jeecg.modules.mis.utils/common/vxeUtils'
 
     export default defineComponent({
         name:"${sub.entityName}Form",

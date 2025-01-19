@@ -39,7 +39,7 @@
   import {BasicTable, useTable, TableAction} from '/@/components/Table';
   import { useListPage } from '/@/hooks/system/useListPage'
   import {useModal} from '/@/components/Modal';
-  import {isEmpty} from "/@/utils/is";
+  import {isEmpty} from "/@/org.jeecg.modules.mis.utils/is";
   import {useMessage} from '/@/hooks/web/useMessage';
   import {${subTab.entityName?uncap_first}Columns} from './${entityName}.data';
   import {${subTab.entityName?uncap_first}List, ${subTab.entityName?uncap_first}Delete, ${subTab.entityName?uncap_first}DeleteBatch} from './${entityName}.api';

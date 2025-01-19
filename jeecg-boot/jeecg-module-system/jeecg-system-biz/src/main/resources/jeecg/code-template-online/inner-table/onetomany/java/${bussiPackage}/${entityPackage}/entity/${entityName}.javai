@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 package ${bussiPackage}.${entityPackage}.entity;
 
 import java.io.Serializable;

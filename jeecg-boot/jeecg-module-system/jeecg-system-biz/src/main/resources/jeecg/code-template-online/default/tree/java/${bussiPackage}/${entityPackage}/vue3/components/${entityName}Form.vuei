@@ -1,4 +1,4 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <template>
     <div style="min-height: 400px">
         <BasicForm @register="registerForm"></BasicForm>
@@ -11,8 +11,8 @@
 <script lang="ts">
     import {BasicForm, useForm} from '/@/components/Form/index';
     import {computed, defineComponent} from 'vue';
-    import {defHttp} from '/@/utils/http/axios';
-    import { propTypes } from '/@/utils/propTypes';
+    import {defHttp} from '/@/org.jeecg.modules.mis.utils/http/axios';
+    import { propTypes } from '/@/org.jeecg.modules.mis.utils/propTypes';
     import {getBpmFormSchema} from '../${entityName}.data';
     import {saveOrUpdateDict} from '../${entityName}.api';
     

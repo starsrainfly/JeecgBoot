@@ -1,8 +1,8 @@
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <#list subTables as sub>
 <#if sub.foreignRelationType=='1'>
 #segment#${sub.entityName}Form.vue
-<#include "/common/utils.ftl">
+<#include "/common/org.jeecg.modules.mis.utils.ftl">
 <#assign need_category = false>
 <#assign bpm_flag=false>
 <#assign need_pca = false>
@@ -59,7 +59,7 @@
   import { query${sub.entityName}ListByMainId } from '../${entityName}.api';
 <#include "/common/form/native/vue3NativeImport.ftl">
 <#if hasOnlyValidate == true>
-  import { duplicateValidate } from '/@/utils/helper/validator'
+  import { duplicateValidate } from '/@/org.jeecg.modules.mis.utils/helper/validator'
 </#if>
   import { useMessage } from '/@/hooks/web/useMessage';
   import JFormContainer from '/@/components/Form/src/container/JFormContainer.vue';  

@@ -80,7 +80,7 @@ JeecgBoot 是一款基于代码生成器的`低代码开发平台`！前后端�
 #### 前端
 
 - 前端IDE建议：WebStorm、Vscode
-- 采用 Vue3.0+TypeScript+Vite+Ant-Design-Vue等新技术方案，包括二次封装组件、utils、hooks、动态菜单、权限校验、按钮级别权限控制等功能
+- 采用 Vue3.0+TypeScript+Vite+Ant-Design-Vue等新技术方案，包括二次封装组件、org.jeecg.modules.mis.utils、hooks、动态菜单、权限校验、按钮级别权限控制等功能
 - 最新技术栈：Vue3.0 + TypeScript + Vite5 + ant-design-vue4 + pinia + echarts + unocss + vxe-table + qiankun + es6
 - 依赖管理：node、npm、pnpm
 

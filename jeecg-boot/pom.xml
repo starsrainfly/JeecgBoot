@@ -87,7 +87,6 @@
         <module>jeecg-module-demo</module>
         <module>jeecg-module-system</module>
 		<module>jeecg-module-mis</module>
-		<module>jeecg-module-mis</module>
 	</modules>
 
 	<repositories>

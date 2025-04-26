@@ -50,12 +50,12 @@ public class ExchangeRate implements Serializable {
 	@Excel(name = "是否删除", width = 15)
     @ApiModelProperty(value = "是否删除")
     @TableLogic
-    private Integer delFlag;
+    private String delFlag;
 	/**状态*/
 	@Excel(name = "状态", width = 15)
     @Dict(dicCode = "status")
     @ApiModelProperty(value = "状态")
-    private Integer status;
+    private String status;
 	/**创建人*/
     @ApiModelProperty(value = "创建人")
     private String createBy;

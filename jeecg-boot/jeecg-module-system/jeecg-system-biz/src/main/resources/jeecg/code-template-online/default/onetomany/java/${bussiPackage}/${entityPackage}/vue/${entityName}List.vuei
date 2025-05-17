@@ -382,7 +382,7 @@
       },
       </#if>
       getSuperFieldList(){
-        <#include "/common/org.jeecg.modules.mis.utils.ftl">
+        <#include "/common/utils.ftl">
         let fieldList=[];
          <#list columns as po>
          fieldList.push(${superQueryFieldList(po)})

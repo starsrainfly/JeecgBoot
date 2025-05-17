@@ -1,4 +1,4 @@
-<#include "/common/org.jeecg.modules.mis.utils.ftl">
+<#include "/common/utils.ftl">
 <template>
   <j-modal
     :title="title"

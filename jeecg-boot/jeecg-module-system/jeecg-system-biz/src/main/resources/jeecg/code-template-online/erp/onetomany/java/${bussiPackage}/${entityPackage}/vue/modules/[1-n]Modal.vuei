@@ -1,4 +1,4 @@
-<#include "/common/org.jeecg.modules.mis.utils.ftl">
+<#include "/common/utils.ftl">
 <#list subTables as sub>
 #segment#${sub.entityName}Modal.vue
 <template>
@@ -97,7 +97,7 @@
 <script>
 
   import { httpAction } from '@/api/manage'
-  import { validateDuplicateValue } from '@/org.jeecg.modules.mis.utils/util'
+  import { validateDuplicateValue } from '@/utils/util'
 
   export default {
     name: "${sub.entityName}Modal",

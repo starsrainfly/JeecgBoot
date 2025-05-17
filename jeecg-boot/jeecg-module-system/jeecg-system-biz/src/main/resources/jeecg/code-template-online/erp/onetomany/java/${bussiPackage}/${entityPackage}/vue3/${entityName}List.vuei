@@ -101,9 +101,9 @@
 </#list>
   import {columns, searchFormSchema, superQuerySchema} from './${entityName}.data';
   import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './${entityName}.api';
-  import {downloadFile} from '/@/org.jeecg.modules.mis.utils/common/renderUtils';
+  import {downloadFile} from '/@/utils/common/renderUtils';
  <#if list_need_pca>
-  import { getAreaTextByCode } from '/@/components/Form/src/org.jeecg.modules.mis.utils/Area';
+  import { getAreaTextByCode } from '/@/components/Form/src/mis.utils/Area';
   </#if>
   <#if list_need_category>
 <#if list_has_popup_dict>
@@ -111,7 +111,7 @@
   import {filterMultiDictText} from "@/utils/dict/JDictSelectUtil";
 </#if>
   import { loadCategoryData } from '/@/api/common/api'
-  import { getAuthCache, setAuthCache } from '/@/org.jeecg.modules.mis.utils/auth';
+  import { getAuthCache, setAuthCache } from '/@/mis.utils/auth';
   import { DB_DICT_DATA_KEY } from '/@/enums/cacheEnum';
   </#if>
   <#if bpm_flag==true>

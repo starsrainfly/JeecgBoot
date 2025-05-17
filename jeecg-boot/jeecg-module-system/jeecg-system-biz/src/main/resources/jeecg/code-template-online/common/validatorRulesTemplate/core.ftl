@@ -1,4 +1,4 @@
-<#include "../org.jeecg.modules.mis.utils.ftl">
+<#include "../utils.ftl">
 <#if po.isShow == 'Y' && poHasCheck(po)>
     <#if po.fieldName != 'id'>
            ${po.fieldName}: [

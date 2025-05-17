@@ -1,4 +1,4 @@
-<#include "/common/org.jeecg.modules.mis.utils.ftl">
+<#include "/common/utils.ftl">
 <#assign pidFieldName = "">
 <#assign hasChildrenField = "">
 <#assign bpm_flag=false>
@@ -92,10 +92,10 @@
   import { useListPage } from '/@/hooks/system/useListPage'
   import ${entityName}Modal from './components/${entityName}Modal.vue';
   import {columns, searchFormSchema, superQuerySchema} from './${entityName}.data';
-  import { downloadFile } from '/@/org.jeecg.modules.mis.utils/common/renderUtils';
+  import { downloadFile } from '/@/utils/common/renderUtils';
   import {list, delete${entityName}, batchDelete${entityName}, getExportUrl,getImportUrl, getChildList,getChildListBatch} from './${entityName}.api';
   <#if list_need_pca>
-  import { getAreaTextByCode } from '/@/components/Form/src/org.jeecg.modules.mis.utils/Area';
+  import { getAreaTextByCode } from '/@/components/Form/src/utils/Area';
   </#if>
   <#if list_has_popup_dict>
    import {getPopDictByCode} from "@/utils/dict";

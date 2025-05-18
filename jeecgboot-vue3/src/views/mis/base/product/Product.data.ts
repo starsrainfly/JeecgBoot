@@ -8,11 +8,13 @@ export const columns: BasicColumn[] = [
    {
     title: '产品编码',
     align: 'center',
+    sorter: true,
     dataIndex: 'productCode'
    },
    {
     title: '产品名称',
     align: 'left',
+    sorter: true,
     dataIndex: 'productName'
    },
    {
@@ -38,6 +40,7 @@ export const columns: BasicColumn[] = [
    {
     title: '颜色',
     align: 'center',
+    sorter: true,
     dataIndex: 'color'
    },
    {
@@ -48,36 +51,43 @@ export const columns: BasicColumn[] = [
    {
     title: '粘度',
     align: 'center',
+    sorter: true,
     dataIndex: 'viscosity'
    },
    {
     title: '触变',
     align: 'center',
+    sorter: true,
     dataIndex: 'thixotropy'
    },
    {
     title: '密度比重',
     align: 'center',
+    sorter: true,
     dataIndex: 'density'
    },
    {
     title: '保存期',
     align: 'center',
+    sorter: true,
     dataIndex: 'shelfLife'
    },
    {
     title: '硬度',
     align: 'center',
+    sorter: true,
     dataIndex: 'hardness'
    },
    {
     title: '拉力',
     align: 'center',
+    sorter: true,
     dataIndex: 'pull'
    },
    {
     title: '配比',
     align: 'center',
+    sorter: true,
     dataIndex: 'proportion'
    },
    {
@@ -91,12 +101,12 @@ export const columns: BasicColumn[] = [
     dataIndex: 'cureCondition'
    },
    {
-    title: '耐温',
+    title: '耐温(℃)',
     align: 'center',
     dataIndex: 'temperature'
    },
    {
-    title: '胶化时间',
+    title: '胶化时间(min)',
     align: 'center',
     dataIndex: 'gelTime'
    },
@@ -118,11 +128,54 @@ export const columns: BasicColumn[] = [
    {
     title: '状态',
     align: 'center',
-    dataIndex: 'status'
+    dataIndex: 'status_dictText'
    },
 ];
 //查询数据
 export const searchFormSchema: FormSchema[] = [
+  {
+    label: "产品编码",
+    field: "productCode",
+    component: 'JInput',
+  },
+  {
+    label: "产品名称",
+    field: "productName",
+    component: 'JInput',
+  },
+  {
+    label: "型号规格",
+    field: "productSpec",
+    component: 'JInput',
+  },
+	{
+      label: "配方编码",
+      field: "recipeCode",
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"mis_recipe_select",
+            fieldConfig: [
+                { source: 'id', target: 'recipeId' },
+                { source: 'recipe_code', target: 'recipeCode' },
+            ],
+            multi:true
+        }
+    },
+
+      //colProps: {span: 6},
+     },
+	{
+      label: "状态",
+      field: "status",
+      component: 'JSelectMultiple',
+      componentProps:{
+          dictCode:"status"
+      },
+      //colProps: {span: 6},
+     },
 ];
 //表单数据
 export const formSchema: FormSchema[] = [
@@ -173,11 +226,6 @@ export const formSchema: FormSchema[] = [
         }
     },
 
-    dynamicRules: ({model,schema}) => {
-          return [
-                 { required: true, message: '请输入配方编码!'},
-          ];
-     },
   },
   {
     label: '产品描述',
@@ -245,12 +293,12 @@ export const formSchema: FormSchema[] = [
     component: 'Input',
   },
   {
-    label: '耐温',
+    label: '耐温(℃)',
     field: 'temperature',
     component: 'Input',
   },
   {
-    label: '胶化时间',
+    label: '胶化时间(min)',
     field: 'gelTime',
     component: 'Input',
   },
@@ -272,7 +320,11 @@ export const formSchema: FormSchema[] = [
   {
     label: '状态',
     field: 'status',
-    component: 'Input',
+    defaultValue: "1",
+    component: 'JDictSelectTag',
+    componentProps:{
+        dictCode:"status"
+     },
   },
   {
     label: '父级节点',
@@ -313,12 +365,12 @@ export const superQuerySchema = {
   proportion: {title: '配比',order: 14,view: 'text', type: 'string',},
   gloss: {title: '光泽度',order: 15,view: 'text', type: 'string',},
   cureCondition: {title: '固化条件',order: 16,view: 'text', type: 'string',},
-  temperature: {title: '耐温',order: 17,view: 'text', type: 'string',},
-  gelTime: {title: '胶化时间',order: 18,view: 'text', type: 'string',},
+  temperature: {title: '耐温(℃)',order: 17,view: 'text', type: 'string',},
+  gelTime: {title: '胶化时间(min)',order: 18,view: 'text', type: 'string',},
   bending: {title: '抗弯强度',order: 19,view: 'text', type: 'string',},
   compression: {title: '抗压强度',order: 20,view: 'text', type: 'string',},
-  remark: {title: '备注',order: 22,view: 'text', type: 'string',},
-  status: {title: '状态',order: 23,view: 'text', type: 'string',},
+  remark: {title: '备注',order: 21,view: 'text', type: 'string',},
+  status: {title: '状态',order: 22,view: 'list', type: 'string',dictCode: 'status',},
 };
 
 

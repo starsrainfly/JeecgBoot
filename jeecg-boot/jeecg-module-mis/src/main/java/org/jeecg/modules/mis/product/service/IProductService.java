@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @Description: 产品信息
  * @Author: jeecg-boot
- * @Date:   2025-05-17
+ * @Date:   2025-05-18
  * @Version: V1.0
  */
 public interface IProductService extends IService<Product> {

@@ -21,7 +21,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * @Description: 产品信息
  * @Author: jeecg-boot
- * @Date:   2025-05-17
+ * @Date:   2025-05-18
  * @Version: V1.0
  */
 @Data
@@ -106,13 +106,13 @@ public class Product implements Serializable {
 	@Excel(name = "固化条件", width = 15)
     @Schema(description = "固化条件")
     private String cureCondition;
-	/**耐温*/
-	@Excel(name = "耐温", width = 15)
-    @Schema(description = "耐温")
+	/**耐温(℃)*/
+	@Excel(name = "耐温(℃)", width = 15)
+    @Schema(description = "耐温(℃)")
     private String temperature;
-	/**胶化时间*/
-	@Excel(name = "胶化时间", width = 15)
-    @Schema(description = "胶化时间")
+	/**胶化时间(min)*/
+	@Excel(name = "胶化时间(min)", width = 15)
+    @Schema(description = "胶化时间(min)")
     private String gelTime;
 	/**抗弯强度*/
 	@Excel(name = "抗弯强度", width = 15)
@@ -132,7 +132,8 @@ public class Product implements Serializable {
     @Schema(description = "备注")
     private String remark;
 	/**状态*/
-	@Excel(name = "状态", width = 15)
+	@Excel(name = "状态", width = 15, dicCode = "status")
+	@Dict(dicCode = "status")
     @Schema(description = "状态")
     private String status;
 	/**创建人*/

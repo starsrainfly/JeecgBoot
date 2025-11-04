@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Data
 @TableName("${tableName}")
-@Tag(description="${tableVo.ftlDescription}")
+@Schema(description="${tableVo.ftlDescription}")
 public class ${entityName} implements Serializable {
     private static final long serialVersionUID = 1L;
     

@@ -99,6 +99,12 @@ const transform: AxiosTransform = {
     if(requestUrl!=null && (requestUrl.startsWith("http:") || requestUrl.startsWith("https:"))){
       isStartWithHttp = true;
     }
+    // update-begin--author:sunjianlei---date:20250411---for：【QQYUN-9685】构建 electron 桌面应用
+    if (!isStartWithHttp && requestUrl != null) {
+      // 由于electron的url是file://开头的，所以需要判断一下
+      isStartWithHttp = requestUrl.startsWith('file://');
+    }
+    // update-end----author:sunjianlei---date:20250411---for：【QQYUN-9685】构建 electron 桌面应用
     if (!isStartWithHttp && joinPrefix) {
       config.url = `${urlPrefix}${config.url}`;
     }
@@ -140,6 +146,15 @@ const transform: AxiosTransform = {
         config.params = undefined;
       }
     }
+
+    // update-begin--author:sunjianlei---date:220241019---for：【JEECG作为乾坤子应用】作为乾坤子应用启动时，拼接请求路径
+    if (globSetting.isQiankunMicro) {
+      if (config.url && config.url.startsWith('/')) {
+        config.url = globSetting.qiankunMicroAppEntry + config.url
+      }
+    }
+    // update-end--author:sunjianlei---date:220241019---for：【JEECG作为乾坤子应用】作为乾坤子应用启动时，拼接请求路径
+
     return config;
   },
 

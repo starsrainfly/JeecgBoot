@@ -2,10 +2,6 @@ package org.jeecg.modules.system.controller;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -32,6 +28,8 @@ import org.jeecg.common.system.base.controller.JeecgController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
  /**
  * @Description: 部门角色
@@ -94,12 +92,15 @@ public class SysDepartRoleController extends JeecgController<SysDepartRole, ISys
 //		queryWrapper.in("depart_id",deptIds);
 
 		//我的部门，选中部门只能看当前部门下的角色
+		//update-begin---author:chenrui ---date:20250107  for：[QQYUN-10775]验证码可以复用 #7674------------
 		if(oConvertUtils.isNotEmpty(deptId)){
 			queryWrapper.eq("depart_id",deptId);
+			IPage<SysDepartRole> pageList = sysDepartRoleService.page(page, queryWrapper);
+			return Result.ok(pageList);
+		}else{
+			return Result.ok(null);
 		}
-		
-		IPage<SysDepartRole> pageList = sysDepartRoleService.page(page, queryWrapper);
-		return Result.ok(pageList);
+		//update-end---author:chenrui ---date:20250107  for：[QQYUN-10775]验证码可以复用 #7674------------
 	}
 	
 	/**

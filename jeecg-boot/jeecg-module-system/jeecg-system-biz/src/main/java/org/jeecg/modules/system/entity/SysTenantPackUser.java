@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,7 +24,7 @@ import java.io.Serializable;
 @TableName("sys_tenant_pack_user")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-@Schema(description="sys_tenant_pack_user对象")
+@Schema(description="租户产品包用户关系表")
 public class SysTenantPackUser implements Serializable {
     private static final long serialVersionUID = 1L;
 

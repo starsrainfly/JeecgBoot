@@ -20,7 +20,9 @@ import org.jeecg.common.util.SpringContextUtils;
 import org.jeecg.common.util.TokenUtils;
 import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.config.mybatis.MybatisPlusSaasConfig;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Role;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Resource;
@@ -35,6 +37,7 @@ import java.util.Set;
  */
 @Component
 @Slf4j
+@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class ShiroRealm extends AuthorizingRealm {
 	@Lazy
     @Resource
@@ -106,8 +109,8 @@ public class ShiroRealm extends AuthorizingRealm {
         try {
             loginUser = this.checkUserTokenIsEffect(token);
         } catch (AuthenticationException e) {
+            log.error("—————校验 check token 失败——————————"+ e.getMessage(), e);
             JwtUtil.responseError(SpringContextUtils.getHttpServletResponse(),401,e.getMessage());
-            e.printStackTrace();
             return null;
         }
         return new SimpleAuthenticationInfo(loginUser, token, getName());
@@ -122,7 +125,7 @@ public class ShiroRealm extends AuthorizingRealm {
         // 解密获得username，用于和数据库进行对比
         String username = JwtUtil.getUsername(token);
         if (username == null) {
-            throw new AuthenticationException("token非法无效!");
+            throw new AuthenticationException("Token非法无效!");
         }
 
         // 查询用户信息
@@ -168,8 +171,8 @@ public class ShiroRealm extends AuthorizingRealm {
 
                     //*********************************************
                     if(!isAuthorization){
-                        log.warn("租户异常——当前登录的租户是：" + contextTenantId);
-                        log.warn("租户异常——用户拥有的租户是：" + userTenantIds);
+                        log.info("租户异常——登录租户：" + contextTenantId);
+                        log.info("租户异常——用户拥有租户组：" + userTenantIds);
                         throw new AuthenticationException("登录租户授权变更，请重新登陆!");
                     }
                     //*********************************************

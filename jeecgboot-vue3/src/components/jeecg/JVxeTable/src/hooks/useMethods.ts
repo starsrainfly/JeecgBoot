@@ -424,12 +424,13 @@ export function useMethods(props: JVxeTableProps, { emit }, data: JVxeDataProps,
     let xTable = getXTable();
     let { setActive, index } = options;
     index = index === -1 ? index : xTable.internalData.tableFullData[index];
+    index = index == null ? -1 : index;
     // 插入行
     let result = await xTable.insertAt(rows, index);
     if (setActive) {
       // -update-begin--author:liaozhiyang---date:20240619---for：【TV360X-1404】vxetable警告
       // 激活最后一行的编辑模式
-      xTable.setEditRow(result.rows[result.rows.length - 1]);
+      xTable.setEditRow(result.rows[result.rows.length - 1], true);
       // -update-end--author:liaozhiyang---date:20240619---for：【TV360X-1404】vxetable警告
     }
     await recalcSortNumber();
@@ -455,7 +456,9 @@ export function useMethods(props: JVxeTableProps, { emit }, data: JVxeDataProps,
   /** 获取表格表单里的值 */
   function getValues(callback, rowIds) {
     let tableData = getTableData({ rowIds: rowIds });
-    callback('', tableData);
+    // update-begin--author:liaozhiyang---date:20241227---for：【issues/7631】JVxeTable组件的getValues回调函数参数修正
+    callback(tableData, tableData);
+    // update-end--author:liaozhiyang---date:20241227---for：【issues/7631】JVxeTable组件的getValues回调函数参数修正
   }
 
   type getTableDataOptions = {
@@ -638,7 +641,7 @@ export function useMethods(props: JVxeTableProps, { emit }, data: JVxeDataProps,
   async function clearSelection() {
     const xTable = getXTable();
     let event = { $table: xTable, target: instanceRef.value };
-    if (props.rowSelectionType === JVxeTypes.rowRadio) {
+    if (['radio', JVxeTypes.rowRadio].includes(props.rowSelectionType ?? '')) {
       await xTable.clearRadioRow();
       handleVxeRadioChange(event);
     } else {
@@ -653,7 +656,7 @@ export function useMethods(props: JVxeTableProps, { emit }, data: JVxeDataProps,
    */
   function getSelectionData(isFull?: boolean) {
     const xTable = getXTable();
-    if (props.rowSelectionType === JVxeTypes.rowRadio) {
+    if (['radio', JVxeTypes.rowRadio].includes(props.rowSelectionType ?? '')) {
       let row = xTable.getRadioRecord(isFull);
       if (isNull(row)) {
         return [];
@@ -740,7 +743,7 @@ export function useMethods(props: JVxeTableProps, { emit }, data: JVxeDataProps,
   async function removeSelection() {
     let xTable = getXTable();
     let res;
-    if (props.rowSelectionType === JVxeTypes.rowRadio) {
+    if (['radio', JVxeTypes.rowRadio].includes(props.rowSelectionType ?? '')) {
       res = await xTable.removeRadioRow();
     } else {
       res = await xTable.removeCheckboxRow();
@@ -761,7 +764,7 @@ export function useMethods(props: JVxeTableProps, { emit }, data: JVxeDataProps,
       // 4.1.0
       //await xTable.updateCache();
       // 4.1.1
-      await xTable.cacheRowMap()
+      await xTable.cacheRowMap(true)
       // update-end--author:liaozhiyang---date:20231011---for：【QQYUN-5133】JVxeTable 行编辑升级
       return await xTable.updateData();
     }
@@ -857,7 +860,7 @@ export function useMethods(props: JVxeTableProps, { emit }, data: JVxeDataProps,
   function getSelectedData(isFull?: boolean) {
     const xTable = getXTable();
     let rows:any[] = []
-    if (props.rowSelectionType === JVxeTypes.rowRadio) {
+    if (['radio', JVxeTypes.rowRadio].includes(props.rowSelectionType ?? '')) {
       let row = xTable.getRadioRecord(isFull);
       if (isNull(row)) {
         return [];

@@ -2,16 +2,12 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<parent>
-		<groupId>org.jeecgframework.boot</groupId>
+		<groupId>org.jeecgframework.boot3</groupId>
 		<artifactId>jeecg-boot-parent</artifactId>
-		<version>3.7.1</version>
+		<version>3.8.3</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>jeecg-boot-base-core</artifactId>
-
-	<properties>
-		<spring-boot.version>3.1.5</spring-boot.version>
-	</properties>
 
 	<repositories>
 		<repository>
@@ -46,23 +42,13 @@
 	<dependencies>
 		<!--jeecg-tools-->
 		<dependency>
-			<groupId>org.jeecgframework.boot</groupId>
-			<artifactId>jeecg-boot-common3</artifactId>
+			<groupId>org.jeecgframework.boot3</groupId>
+			<artifactId>jeecg-boot-common</artifactId>
 		</dependency>
 		<!--集成springmvc框架并实现自动配置 -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-tomcat</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-undertow</artifactId>
 		</dependency>
 		<!-- websocket -->
 		<dependency>
@@ -112,9 +98,19 @@
 		<!-- mybatis-plus -->
 		<dependency>
 			<groupId>com.baomidou</groupId>
-			<artifactId>mybatis-plus-boot-starter</artifactId>
+			<artifactId>mybatis-plus-spring-boot3-starter</artifactId>
 			<version>${mybatis-plus.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.baomidou</groupId>
+			<artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
+			<version>${mybatis-plus.version}</version>
+		</dependency>
+		<!-- minidao -->
+        <dependency>
+            <groupId>org.jeecgframework.boot3</groupId>
+            <artifactId>minidao-spring-boot-starter-jsqlparser-4.9</artifactId>
+        </dependency>
 
 		<!-- druid -->
 		<dependency>
@@ -141,7 +137,7 @@
 		<!--  sqlserver-->
 		<dependency>
 			<groupId>com.microsoft.sqlserver</groupId>
-			<artifactId>sqljdbc4</artifactId>
+			<artifactId>mssql-jdbc</artifactId>
 			<version>${sqljdbc4.version}</version>
 			<scope>runtime</scope>
 		</dependency>
@@ -163,13 +159,13 @@
 		<dependency>
 			<groupId>org.jeecgframework</groupId>
 			<artifactId>kingbase8</artifactId>
-			<version>9.0.0</version>
+			<version>${kingbase8.version}</version>
 			<scope>runtime</scope>
 		</dependency>
 		<!--达梦数据库驱动 版本号1-3-26-2023.07.26-197096-20046-ENT -->
 		<dependency>
 			<groupId>com.dameng</groupId>
-			<artifactId>Dm8JdbcDriver18</artifactId>
+			<artifactId>DmJdbcDriver18</artifactId>
 			<version>${dm8.version}</version>
 		</dependency>
 		<dependency>
@@ -177,7 +173,6 @@
 			<artifactId>DmDialect-for-hibernate5.0</artifactId>
 			<version>${dm8.version}</version>
 		</dependency>
-      
 
 		<!-- Quartz定时任务 -->
 		<dependency>
@@ -196,6 +191,7 @@
 		<dependency>
 			<groupId>org.apache.shiro</groupId>
 			<artifactId>shiro-spring-boot-starter</artifactId>
+			<classifier>jakarta</classifier>
 			<version>${shiro.version}</version>
 			<exclusions>
 				<exclusion>
@@ -204,34 +200,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<!-- shiro-redis -->
-		<dependency>
-			<groupId>org.crazycake</groupId>
-			<artifactId>shiro-redis</artifactId>
-			<version>${shiro-redis.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.shiro</groupId>
-					<artifactId>shiro-core</artifactId>
-				</exclusion>
-				<exclusion>
-					<artifactId>checkstyle</artifactId>
-					<groupId>com.puppycrawl.tools</groupId>
-				</exclusion>
-				<!-- TODO shiro 无法使用 spring boot 3.X 自带的jedis，降版本处理 -->
-				<exclusion>
-					<artifactId>jedis</artifactId>
-					<groupId>redis.clients</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<!-- TODO shiro 无法使用 spring boot 3.X 自带的jedis，降版本处理 -->
-		<dependency>
-			<groupId>redis.clients</groupId>
-			<artifactId>jedis</artifactId>
-			<version>${jedis.version}</version>
-		</dependency>
-
 		<dependency>
 			<groupId>org.apache.shiro</groupId>
 			<artifactId>shiro-spring</artifactId>
@@ -268,12 +236,39 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
-		<!-- knife4j -->
+		<!-- shiro-redis -->
 		<dependency>
+			<groupId>org.crazycake</groupId>
+			<artifactId>shiro-redis</artifactId>
+			<version>${shiro-redis.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.shiro</groupId>
+					<artifactId>shiro-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<artifactId>checkstyle</artifactId>
+					<groupId>com.puppycrawl.tools</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+
+		<!--	<dependency>
 			<groupId>com.github.xiaoymin</groupId>
 			<artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
 			<version>${knife4j-spring-boot-starter.version}</version>
+		</dependency>-->
+		<!-- knife4j 升级springboot3.4.5报错 -->
+		<dependency>
+			<groupId>com.github.xiaoymin</groupId>
+			<artifactId>knife4j-openapi3-ui</artifactId>
+			<version>${knife4j-spring-boot-starter.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.7.0</version>
 		</dependency>
 
 		<!-- 代码生成器 -->
@@ -282,23 +277,22 @@
 			<groupId>org.jeecgframework.boot</groupId>
 			<artifactId>codegenerate</artifactId>
 			<version>${codegenerate.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-io</artifactId>
+					<groupId>commons-io</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>mysql-connector-java</artifactId>
+					<groupId>mysql</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- AutoPoi Excel工具类-->
 		<dependency>
 			<groupId>org.jeecgframework.boot3</groupId>
 			<artifactId>autopoi-web</artifactId>
-			<version>${autopoi-web.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>commons-codec</groupId>
-					<artifactId>commons-codec</artifactId>
-				</exclusion>
-				<exclusion>
-					<artifactId>xercesImpl</artifactId>
-					<groupId>xerces</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>xerces</groupId>
@@ -311,6 +305,12 @@
 		<dependency>
 			<groupId>io.minio</groupId>
 			<artifactId>minio</artifactId>
+			<exclusions>
+				<exclusion>
+					<artifactId>checker-qual</artifactId>
+					<groupId>org.checkerframework</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- 阿里云短信 -->
@@ -362,11 +362,10 @@
 			<groupId>cn.hutool</groupId>
 			<artifactId>hutool-crypto</artifactId>
 		</dependency>
-
 		<!-- chatgpt -->
 		<dependency>
-			<groupId>org.jeecgframework.boot</groupId>
-			<artifactId>jeecg-boot-starter3-chatgpt</artifactId>
+			<groupId>org.jeecgframework.boot3</groupId>
+			<artifactId>jeecg-boot-starter-chatgpt</artifactId>
 		</dependency>
 	</dependencies>
 </project>

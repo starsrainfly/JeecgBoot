@@ -1,16 +1,20 @@
 package org.jeecg.modules.system.entity;
 
+import java.io.Serializable;
+import java.util.Date;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.baomidou.mybatisplus.annotation.TableField;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import org.jeecgframework.poi.excel.annotation.Excel;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import org.jeecg.common.aspect.annotation.Dict;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.jeecgframework.poi.excel.annotation.Excel;
 
 /**
  * @Description: 角色首页配置
@@ -22,7 +26,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 @TableName("sys_role_index")
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-@Schema(description="sys_role_index对象")
+@Schema(description="角色首页配置")
 public class SysRoleIndex {
     
 	/**id*/
@@ -47,7 +51,7 @@ public class SysRoleIndex {
 	@Excel(name = "是否路由菜单", width = 15)
 	@Schema(description = "是否路由菜单")
 	@TableField(value="is_route")
-	private boolean route;
+	private Boolean route;
 	/**优先级*/
 	@Excel(name = "优先级", width = 15)
     @Schema(description = "优先级")
@@ -80,6 +84,12 @@ public class SysRoleIndex {
 	@Excel(name = "所属部门", width = 15)
     @Schema(description = "所属部门")
 	private java.lang.String sysOrgCode;
+
+	/**关联类型(ROLE:角色 USER:表示用户)*/
+    @Schema(description = "关联类型")
+	@Excel(name = "关联类型", width = 15, dicCode = "relation_type")
+	@Dict(dicCode = "relation_type")
+	private java.lang.String relationType;
 
 
 	public SysRoleIndex() {

@@ -31,8 +31,23 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
 
   const isBuild = command === 'build';
 
+  const serverOptions: Recordable = {}
+
+  // ----- [begin] 【JEECG作为乾坤子应用】 -----
+  const {VITE_GLOB_QIANKUN_MICRO_APP_NAME, VITE_GLOB_QIANKUN_MICRO_APP_ENTRY} = viteEnv;
+  const isQiankunMicro = VITE_GLOB_QIANKUN_MICRO_APP_NAME != null && VITE_GLOB_QIANKUN_MICRO_APP_NAME !== '';
+  if (isQiankunMicro && !isBuild) {
+    serverOptions.cors = true;
+    serverOptions.origin = VITE_GLOB_QIANKUN_MICRO_APP_ENTRY!.split('/').slice(0, 3).join('/');
+  }
+  // ----- [end] 【JEECG作为乾坤子应用】 -----
+  
+  console.log('[init] Start Port: ', VITE_PORT);
+  console.debug('[init] Vite Proxy Config: ', VITE_PROXY);
+  
+  
   return {
-    base: VITE_PUBLIC_PATH,
+    base: isQiankunMicro ? VITE_GLOB_QIANKUN_MICRO_APP_ENTRY : VITE_PUBLIC_PATH,
     root,
     resolve: {
       alias: [
@@ -64,10 +79,13 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     server: {
       // Listening on all local IPs
       host: true,
+      // @ts-ignore
       https: false,
       port: VITE_PORT,
       // Load proxy configuration from .env
       proxy: createProxy(VITE_PROXY),
+      // 合并 server 配置
+      ...serverOptions,
     },
     build: {
       minify: 'esbuild',
@@ -116,8 +134,8 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     },
 
     // The vite plugin used by the project. The quantity is large, so it is separately extracted and managed
-    plugins: createVitePlugins(viteEnv, isBuild),
     // 预加载构建配置（首屏性能)
+    plugins: createVitePlugins(viteEnv, isBuild, isQiankunMicro),
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2020',
@@ -125,6 +143,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       exclude: [
         //升级vite4后，需要排除online依赖
         '@jeecg/online',
+        '@jeecg/aiflow',
       ],
     },
   };

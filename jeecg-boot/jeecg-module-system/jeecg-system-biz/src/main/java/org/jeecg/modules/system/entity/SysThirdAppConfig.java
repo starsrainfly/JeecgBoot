@@ -4,13 +4,13 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.jeecgframework.poi.excel.annotation.Excel;
 import org.springframework.format.annotation.DateTimeFormat;
-
 import java.util.Date;
 
 /**
@@ -23,7 +23,7 @@ import java.util.Date;
 @TableName("sys_third_app_config")
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-@Schema(description="sys_third_app_config对象")
+@Schema(description="第三方配置表")
 public class SysThirdAppConfig {
 
     /**编号*/
@@ -51,10 +51,10 @@ public class SysThirdAppConfig {
     @Schema(description = "钉钉/企业微信应用id对应的秘钥")
     private String clientSecret;
 
-    /**企业微信自建应用Secret*/
-    @Excel(name = "企业微信自建应用Secret", width = 15)
-    @Schema(description = "企业微信自建应用Secret")
-    private String agentAppSecret;
+    /**钉钉企业id*/
+    @Excel(name = "钉钉企业id", width = 15)
+    @Schema(description = "钉钉企业id")
+    private String corpId;
 
     /**第三方类别(dingtalk 钉钉 wechat_enterprise 企业微信)*/
     @Excel(name = "第三方类别(dingtalk 钉钉 wechat_enterprise 企业微信)", width = 15)

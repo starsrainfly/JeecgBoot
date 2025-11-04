@@ -4,6 +4,7 @@
       :class="{ 'table-search-area-hidden': !getBindValues.formConfig?.schemas?.length }"
       submitOnReset
       v-bind="getFormProps"
+      source="table-query"
       v-if="getBindValues.useSearchForm"
       :tableAction="tableAction"
       @register="registerForm"
@@ -214,7 +215,7 @@
         onChange && isFunction(onChange) && onChange.call(undefined, ...args);
       }
 
-      const { getViewColumns, getColumns, setCacheColumnsByField, setColumns, getColumnsRef, getCacheColumns } = useColumns(
+      const { getViewColumns, getColumns, getRefColumns, setCacheColumnsByField, setColumns, getColumnsRef, getCacheColumns } = useColumns(
         getProps,
         getPaginationInfo,
         // update-begin--author:sunjianlei---date:220230630---for：【QQYUN-5571】自封装选择列，解决数据行选择卡顿问题
@@ -222,7 +223,7 @@
         // update-end--author:sunjianlei---date:220230630---for：【QQYUN-5571】自封装选择列，解决数据行选择卡顿问题
       );
 
-      const { getScrollRef, redoHeight } = useTableScroll(getProps, tableElRef, getColumnsRef, getRowSelectionRef, getDataSourceRef);
+      const { getScrollRef, redoHeight } = useTableScroll(getProps, tableElRef, getColumnsRef, getRowSelectionRef, getDataSourceRef, slots, getPaginationInfo);
 
       const { customRow } = useCustomRow(getProps, {
         setSelectedRowKeys,
@@ -247,7 +248,11 @@
       const { getHeaderProps } = useTableHeader(getProps, slots, handlers);
       // update-begin--author:liaozhiyang---date:20240425---for：【pull/1201】添加antd的TableSummary功能兼容老的summary（表尾合计）
       const getSummaryProps = computed(() => {
-        return pick(unref(getProps), ['summaryFunc', 'summaryData', 'hasExpandedRow', 'rowKey']);
+        // update-begin--author:liaozhiyang---date:20250318---for：【issues/7956】修复showSummary: false时且有内嵌子表时合计栏错位
+        const result = pick(unref(getProps), ['summaryFunc', 'summaryData', 'hasExpandedRow', 'rowKey']);
+        result['hasExpandedRow'] = Object.keys(slots).includes('expandedRowRender');
+        // update-end--author:liaozhiyang---date:20250318---for：【issues/7956】修复showSummary: false时且有内嵌子表时合计栏错位
+        return result;
       });
       const getIsEmptyData = computed(() => {
         return (unref(getDataSourceRef) || []).length === 0;
@@ -265,6 +270,9 @@
       const getBindValues = computed(() => {
         const dataSource = unref(getDataSourceRef);
         let propsData: Recordable = {
+          // date-begin--author:liaozhiyang---date:20250716---for：【issues/8564】basicTale的TableLayout换成auto不生效
+          tableLayout: 'fixed',
+          // date-begin--author:liaozhiyang---date:20250716---for：【issues/8564】basicTale的TableLayout换成auto不生效
           // ...(dataSource.length === 0 ? { getPopupContainer: () => document.body } : {}),
           ...attrs,
           customRow,
@@ -274,7 +282,6 @@
           ...unref(getHeaderProps),
           scroll: unref(getScrollRef),
           loading: unref(getLoading),
-          tableLayout: 'fixed',
           rowSelection: unref(getRowSelectionRef),
           rowKey: unref(getRowKey),
           columns: toRaw(unref(getViewColumns)),
@@ -361,6 +368,9 @@
         getRowSelection,
         getPaginationRef: getPagination,
         getColumns,
+        // update-begin--author:liaozhiyang---date:20250722---for：【issues/8529】setColumns后列配置没联动更新
+        getColumnsRef: () => getColumnsRef,
+        // update-end--author:liaozhiyang---date:20250722---for：【issues/8529】setColumns后列配置没联动更新
         getCacheColumns,
         emit,
         updateTableData,
@@ -372,6 +382,9 @@
         getSize: () => {
           return unref(getBindValues).size as SizeType;
         },
+        // update-begin--author:liaozhiyang---date:20250904---for：【QQYUN-13558】erp风格主表在5条数据时也有滚动条
+        getBindValuesRef: () => getBindValues,
+        // update-end--author:liaozhiyang---date:20250904---for：【QQYUN-13558】erp风格主表在5条数据时也有滚动条
       };
       createTableContext({ ...tableAction, wrapRef, getBindValues });
 
@@ -406,7 +419,9 @@
         getProps.value.defaultExpandAllRows && expandAll();
       })
       // update-end--author:sunjianlei---date:20231226---for：【issues/945】BasicTable组件设置默认展开不生效
-      expose(tableAction);
+      // update-begin--author:liaozhiyang---date:20241225---for：【issues/7588】选择后自动刷新表格
+      expose({ ...tableAction, handleSearchInfoChange });
+      // update-end--author:liaozhiyang---date:20241225---for：【issues/7588】选择后自动刷新表格
 
       emit('register', tableAction, formActions);
 
@@ -605,7 +620,12 @@
       .ant-table > .ant-table-footer {
         padding: 12px 0 0;
       }
-
+      .ant-table > .ant-table-footer {
+        // update-begin--author:liaozhiyang---date:20241111---for：【issues/7413】合计行有点对不齐
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        // update-end--author:liaozhiyang---date:20241111---for：【issues/7413】合计行有点对不齐
+      }
       .ant-table.ant-table-bordered > .ant-table-footer {
         border: 0;
       }

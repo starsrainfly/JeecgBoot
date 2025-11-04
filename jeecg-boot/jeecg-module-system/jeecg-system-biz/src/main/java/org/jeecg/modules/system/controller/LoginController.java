@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
 import org.jeecg.common.api.vo.Result;
@@ -25,6 +26,7 @@ import org.jeecg.config.security.utils.SecureUtil;
 import org.jeecg.modules.base.service.BaseCommonService;
 import org.jeecg.modules.system.entity.SysDepart;
 import org.jeecg.modules.system.entity.SysRoleIndex;
+import org.jeecg.modules.system.entity.SysTenant;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.model.SysLoginModel;
 import org.jeecg.modules.system.service.*;
@@ -49,6 +51,10 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @Author scott
@@ -83,13 +89,18 @@ public class LoginController {
 	private CacheManager cacheManager;
 
 	private final String BASE_CHECK_CODES = "qwertyuiplkjhgfdsazxcvbnmQWERTYUPLKJHGFDSAZXCVBNM1234567890";
+	/**
+	 * 线程池用于异步发送纪要
+	 */
+	public static ExecutorService cachedThreadPool = new ShiroThreadPoolExecutor(0, 1024, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
+	
 
 	/**
 	 * 使用spring authorization server提供的各类登录接口
 	 * @param sysLoginModel
 	 * @return
 	 */
-	@Operation(summary = "登录接口")
+	@Operation(summary="登录接口")
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
 	public Result<JSONObject> login(@RequestBody SysLoginModel sysLoginModel, HttpServletRequest request){
 		Result<JSONObject> result = new Result<JSONObject>();
@@ -107,8 +118,10 @@ public class LoginController {
         }
         String lowerCaseCaptcha = captcha.toLowerCase();
 		// 加入密钥作为混淆，避免简单的拼接，被外部利用，用户自定义该密钥即可
-        String origin = lowerCaseCaptcha+sysLoginModel.getCheckKey()+jeecgBaseConfig.getSignatureSecret();
-		String realKey = Md5Util.md5Encode(origin, "utf-8");
+		//update-begin---author:chenrui ---date:20250107  for：[QQYUN-10775]验证码可以复用 #7674------------
+		String keyPrefix = Md5Util.md5Encode(sysLoginModel.getCheckKey()+jeecgBaseConfig.getSignatureSecret(), "utf-8");
+		String realKey = keyPrefix + lowerCaseCaptcha;
+		//update-end---author:chenrui ---date:20250107  for：[QQYUN-10775]验证码可以复用 #7674------------
 		Object checkCode = redisUtil.get(realKey);
 		//当进入登录页时，有一定几率出现验证码错误 #1714
 		if(checkCode==null || !checkCode.toString().equals(lowerCaseCaptcha)) {
@@ -207,31 +220,37 @@ public class LoginController {
 	    String username = JwtUtil.getUsername(token);
 		LoginUser sysUser = sysBaseApi.getUserByName(username);
 	    if(sysUser!=null) {
-			//update-begin--Author:wangshuai  Date:20200714  for：登出日志没有记录人员
-			baseCommonService.addLog("用户名: "+sysUser.getRealname()+",退出成功！", CommonConstant.LOG_TYPE_1, null,sysUser);
-			//update-end--Author:wangshuai  Date:20200714  for：登出日志没有记录人员
-	    	log.info(" 用户名:  "+sysUser.getRealname()+",退出成功！ ");
-	    	//清空用户登录Token缓存
-	    	redisUtil.del(CommonConstant.PREFIX_USER_TOKEN + token);
-	    	//清空用户登录Shiro权限缓存
-			redisUtil.del(CommonConstant.PREFIX_USER_SHIRO_CACHE + sysUser.getId());
-			//清空用户的缓存信息（包括部门信息），例如sys:cache:user::<username>
-			redisUtil.del(String.format("%s::%s", CacheConstant.SYS_USERS_CACHE, sysUser.getUsername()));
-			//调用shiro的logout
-//			SecurityUtils.getSubject().logout();
-
-			OAuth2Authorization authorization = authorizationService.findByToken(token, OAuth2TokenType.ACCESS_TOKEN);
-
-			// 清空用户信息
-			cacheManager.getCache("user_details").evict(authorization.getPrincipalName());
-			// 清空access token
-			authorizationService.remove(authorization);
-
-	    	return Result.ok("退出登录成功！");
+			asyncClearLogoutCache(token, sysUser); // 异步清理
+            OAuth2Authorization authorization = authorizationService.findByToken(token, OAuth2TokenType.ACCESS_TOKEN);
+            // 清空用户信息
+            cacheManager.getCache("user_details").evict(authorization.getPrincipalName());
+            // 清空access token
+            authorizationService.remove(authorization);
+            return Result.ok("退出登录成功！");
 	    }else {
 	    	return Result.error("Token无效!");
 	    }
 	}
+
+	/**
+	 * 清理用户缓存
+	 *
+	 * @param token
+	 * @param sysUser
+	 */
+	private void asyncClearLogoutCache(String token, LoginUser sysUser) {
+		cachedThreadPool.execute(()->{
+             //清空用户登录Token缓存
+			redisUtil.del(CommonConstant.PREFIX_USER_TOKEN + token);
+			//清空用户登录Shiro权限缓存
+			redisUtil.del(CommonConstant.PREFIX_USER_SHIRO_CACHE + sysUser.getId());
+			//清空用户的缓存信息（包括部门信息），例如sys:cache:user::<username>
+			redisUtil.del(String.format("%s::%s", CacheConstant.SYS_USERS_CACHE, sysUser.getUsername()));
+			baseCommonService.addLog("用户名: "+sysUser.getRealname()+",退出成功！", CommonConstant.LOG_TYPE_1, null, sysUser);
+			log.info("【退出成功操作】异步处理，退出后，清理用户缓存： "+sysUser.getRealname());
+		});
+	}
+	
 	
 	/**
 	 * 获取访问量
@@ -393,7 +412,16 @@ public class LoginController {
 				} else if(CommonConstant.SMS_TPL_TYPE_2.equals(smsmode)) {
 					//忘记密码模板
 					b = DySmsHelper.sendSms(mobile, obj, DySmsEnum.FORGET_PASSWORD_TEMPLATE_CODE);
-				}
+                    //update-begin---author:wangshuai---date:2025-07-15---for:【issues/8567】严重：修改密码存在水平越权问题。---
+                    if(b){
+                        String username = sysUser.getUsername();
+                        obj.put("username",username);
+                        redisUtil.set(redisKey, obj.toJSONString(), 600);
+                        result.setSuccess(true);
+                        return result;
+                    }
+                    //update-end---author:wangshuai---date:2025-07-15---for:【issues/8567】严重：修改密码存在水平越权问题。---
+                }
 			}
 
 			if (b == false) {
@@ -427,7 +455,7 @@ public class LoginController {
 	 * @param jsonObject
 	 * @return
 	 */
-	@Operation(summary ="手机号登录接口")
+	@Operation(summary="手机号登录接口")
 	@PostMapping("/phoneLogin")
 	public Result<JSONObject> phoneLogin(@RequestBody JSONObject jsonObject, HttpServletRequest request) {
 		Result<JSONObject> result = new Result<JSONObject>();
@@ -461,7 +489,7 @@ public class LoginController {
 		userInfo(sysUser, result, request);
 		//添加日志
 		baseCommonService.addLog("用户名: " + sysUser.getUsername() + ",登录成功！", CommonConstant.LOG_TYPE_1, null);
-
+        redisUtil.removeAll(redisKey);
 		return result;
 	}
 
@@ -546,7 +574,7 @@ public class LoginController {
 	 * @param response
 	 * @param key
 	 */
-	@Operation(summary ="获取验证码")
+	@Operation(summary="获取验证码")
 	@GetMapping(value = "/randomImage/{key}")
 	public Result<String> randomImage(HttpServletResponse response,@PathVariable("key") String key){
 		Result<String> res = new Result<String>();
@@ -558,10 +586,12 @@ public class LoginController {
 			
 			//update-begin-author:taoyan date:2022-9-13 for: VUEN-2245 【漏洞】发现新漏洞待处理20220906
 			// 加入密钥作为混淆，避免简单的拼接，被外部利用，用户自定义该密钥即可
-			String origin = lowerCaseCode+key+jeecgBaseConfig.getSignatureSecret();
-			String realKey = Md5Util.md5Encode(origin, "utf-8");
+			//update-begin---author:chenrui ---date:20250107  for：[QQYUN-10775]验证码可以复用 #7674------------
+			String keyPrefix = Md5Util.md5Encode(key+jeecgBaseConfig.getSignatureSecret(), "utf-8");
+			String realKey = keyPrefix + lowerCaseCode;
 			//update-end-author:taoyan date:2022-9-13 for: VUEN-2245 【漏洞】发现新漏洞待处理20220906
-            
+			redisUtil.removeAll(keyPrefix);
+			//update-end---author:chenrui ---date:20250107  for：[QQYUN-10775]验证码可以复用 #7674------------
 			redisUtil.set(realKey, lowerCaseCode, 60);
 			log.info("获取验证码，Redis key = {}，checkCode = {}", realKey, code);
 			//返回前端
@@ -814,7 +844,10 @@ public class LoginController {
 				return result;
 			}
 			//验证码5分钟内有效
-			redisUtil.set(redisKey, captcha, 300);
+            //update-begin---author:wangshuai---date:2025-07-15---for:【issues/8567】严重：修改密码存在水平越权问题。---
+            obj.put("username",username);
+            redisUtil.set(redisKey, obj.toJSONString(), 300);
+            //update-end---author:wangshuai---date:2025-07-15---for:【issues/8567】严重：修改密码存在水平越权问题。---
 			result.setSuccess(true);
 		} catch (ClientException e) {
 			e.printStackTrace();

@@ -15,6 +15,7 @@
     @change="onChange"
     @search="onSearch"
     :tree-checkable="treeCheckAble"
+    :tagRender="tagRender"
   >
     <template #[name]="data" v-for="name in slotNamesGroup" :key="name">
       <slot :name="name" v-bind="data"></slot>
@@ -32,7 +33,7 @@
   import { useAttrs } from '/@/hooks/core/useAttrs';
   import { TreeSelect } from 'ant-design-vue';
   import { useMessage } from '/@/hooks/web/useMessage';
-  import { isObject } from '/@/utils/is';
+  import { isObject, isArray } from '/@/utils/is';
   import { useI18n } from '/@/hooks/web/useI18n';
   enum Api {
     url = '/sys/dict/loadTreeData',
@@ -63,6 +64,10 @@
     treeCheckAble: propTypes.bool.def(false),
     //update-end---author:wangshuai date: 20230202 for: 新增是否有复选框
     hiddenNodeKey: propTypes.string.def(''),
+    //update-begin---author:wangshuai---date:2025-09-06---for: 多选时渲染tag文本，为空不渲染，不支持单选---
+    //多选时渲染tag文本
+    tagRender: propTypes.func,
+    //update-end---author:wangshuai---date:2025-09-06---for:多选时渲染tag文本，为空不渲染，不支持单选---
   });
   const attrs = useAttrs();
   const { t } = useI18n();
@@ -143,6 +148,23 @@
       if(props.url){
         getItemFromTreeData();
       }else{
+        // update-begin--author:liaozhiyang---date:20250423---for：【issues/8093】选择节点后会先变成编码再显示label文字
+        if (props.value) {
+          if (isArray(treeValue.value)) {
+            let isNotRequestTransform = false;
+            const value = isArray(props.value) ? props.value : props.value.split(',');
+            isNotRequestTransform = value.every((value) => !!treeValue.value.find((item) => item.value === value));
+            if (isNotRequestTransform) {
+              return;
+            }
+          } else if (isObject(treeValue.value) && unref(treeValue).label != null) {
+            if (props.value == unref(treeValue).value) {
+              // 不需要再去请求翻译
+              return;
+            }
+          }
+        }
+        // update-end--author:liaozhiyang---date:20250423---for：【issues/8093】选择节点后会先变成编码再显示label文字
         let params = { key: props.value };
         let result = await defHttp.get({ url: `${Api.view}${props.dict}`, params }, { isTransformResponse: false });
         if (result.success) {
@@ -291,7 +313,22 @@
     } else {
       emitValue(value.value);
     }
-    treeValue.value = value;
+    // update-begin--author:liaozhiyang---date:20250423---for：【issues/8093】删除后会先变成编码再显示label文字
+    if (isArray(value)) {
+      // 编辑删除时有选中的值是异步（第二级以上的）会不显示label
+      value.forEach((item) => {
+        if (item.label === undefined && item.value != null) {
+          const findItem = treeValue.value.find((o) => o.value === item.value);
+          if (findItem) {
+            item.label = findItem.label;
+          }
+        }
+      });
+      treeValue.value = value;
+    } else {
+      treeValue.value = value;
+    }
+    // update-end--author:liaozhiyang---date:20250423---for：【issues/8093】删除后会先变成编码再显示label文字
   }
 
   function emitValue(value) {

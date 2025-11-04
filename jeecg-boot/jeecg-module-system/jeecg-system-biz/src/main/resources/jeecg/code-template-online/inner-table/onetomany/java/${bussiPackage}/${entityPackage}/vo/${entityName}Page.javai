@@ -13,9 +13,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.util.Date;
 import org.jeecg.common.aspect.annotation.Dict;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.jeecg.common.constant.ProvinceCityArea;
 import org.jeecg.common.util.SpringContextUtils;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * @Description: ${tableVo.ftlDescription}
@@ -109,7 +110,7 @@ public class ${entityName}Page {
 	
 	<#list subTables as sub>
 	@ExcelCollection(name="${sub.ftlDescription}")
-	@ApiModelProperty(value = "${sub.ftlDescription}")
+	@Schema(description = "${sub.ftlDescription}")
 	private List<${sub.entityName}> ${sub.entityName?uncap_first}List;
 	</#list>
 	

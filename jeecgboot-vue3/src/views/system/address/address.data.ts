@@ -14,7 +14,12 @@ export const columns: BasicColumn[] = [
   },
   {
     title: '部门',
-    dataIndex: 'departName',
+    dataIndex: 'orgCodeTxt',
+    width: 200,
+  },
+  {
+    title: '主岗位',
+    dataIndex: 'mainDepPostId_dictText',
     width: 200,
   },
   {
@@ -26,7 +31,7 @@ export const columns: BasicColumn[] = [
   {
     title: '手机',
     width: 150,
-    dataIndex: 'telephone',
+    dataIndex: 'phone',
   },
   {
     title: '邮箱',

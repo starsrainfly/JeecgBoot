@@ -1,7 +1,11 @@
 package org.jeecg.config.firewall.interceptor;
 
 import com.alibaba.fastjson.JSON;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.SecurityUtils;
 import org.jeecg.common.api.CommonAPI;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.constant.CommonConstant;
@@ -10,13 +14,9 @@ import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.util.CommonUtils;
 import org.jeecg.common.util.SpringContextUtils;
 import org.jeecg.config.JeecgBaseConfig;
-import org.jeecg.config.security.utils.SecureUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Set;
@@ -38,6 +38,7 @@ import java.util.Set;
  * @date 20230904
  */
 @Slf4j
+@Component
 public class LowCodeModeInterceptor implements HandlerInterceptor {
     /**
      * 低代码开发模式
@@ -47,26 +48,33 @@ public class LowCodeModeInterceptor implements HandlerInterceptor {
 
     @Resource
     private JeecgBaseConfig jeecgBaseConfig;
-    @Autowired
-    private CommonAPI commonAPI;
-
+    
     /**
      * 在请求处理之前进行调用
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        CommonAPI commonAPI = null;
+        log.info("低代码模式，拦截请求路径：" + request.getRequestURI());
+        
         //1、验证是否开启低代码开发模式控制
         if (jeecgBaseConfig == null) {
             jeecgBaseConfig = SpringContextUtils.getBean(JeecgBaseConfig.class);
+        }
+        if (commonAPI == null) {
+            commonAPI = SpringContextUtils.getBean(CommonAPI.class);
         }
 
         if (jeecgBaseConfig.getFirewall()!=null && LowCodeModeInterceptor.LOW_CODE_MODE_PROD.equals(jeecgBaseConfig.getFirewall().getLowCodeMode())) {
             String requestURI = request.getRequestURI().substring(request.getContextPath().length());
             log.info("低代码模式，拦截请求路径：" + requestURI);
-            LoginUser loginUser = SecureUtil.currentUser();
+            LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
             Set<String> hasRoles = null;
             if (loginUser == null) {
                 loginUser = commonAPI.getUserByName(JwtUtil.getUserNameByToken(SpringContextUtils.getHttpServletRequest()));
+            }
+
+            if (loginUser != null) {
                 //当前登录人拥有的角色
                 hasRoles = commonAPI.queryUserRolesById(loginUser.getId());
             }

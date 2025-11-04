@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
@@ -56,12 +56,22 @@ public class RestUtil {
     private final static RestTemplate RT;
 
     static {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(3000);
-        requestFactory.setReadTimeout(3000);
+        //update-begin---author:chenrui ---date:20251011  for：[issues/8859]online表单java增强失效------------
+        // 使用 Apache HttpClient 避免 JDK HttpURLConnection 的 too many bytes written 问题
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
+        //update-end---author:chenrui ---date:20251011  for：[issues/8859]online表单java增强失效------------
+        requestFactory.setConnectTimeout(30000);
+        requestFactory.setReadTimeout(30000);
         RT = new RestTemplate(requestFactory);
-        // 解决乱码问题
-        RT.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+        //update-begin---author:chenrui ---date:20251011  for：[issues/8859]online表单java增强失效------------
+        // 解决乱码问题（替换 StringHttpMessageConverter 为 UTF-8）
+        for (int i = 0; i < RT.getMessageConverters().size(); i++) {
+            if (RT.getMessageConverters().get(i) instanceof StringHttpMessageConverter) {
+                RT.getMessageConverters().set(i, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+                break;
+            }
+        }
+        //update-end---author:chenrui ---date:20251011  for：[issues/8859]online表单java增强失效------------
     }
 
     public static RestTemplate getRestTemplate() {
@@ -221,6 +231,72 @@ public class RestUtil {
         return RT.exchange(url, method, request, responseType);
     }
 
+    /**
+     * 发送请求（支持自定义超时时间）
+     *
+     * @param url          请求地址
+     * @param method       请求方式
+     * @param headers      请求头  可空
+     * @param variables    请求url参数 可空
+     * @param params       请求body参数 可空
+     * @param responseType 返回类型
+     * @param timeout      超时时间（毫秒），如果为0或负数则使用默认超时
+     * @return ResponseEntity<responseType>
+     */
+    public static <T> ResponseEntity<T> request(String url, HttpMethod method, HttpHeaders headers,
+                                                JSONObject variables, Object params, Class<T> responseType, int timeout) {
+        log.info(" RestUtil  --- request ---  url = "+ url + ", timeout = " + timeout);
+
+        if (StringUtils.isEmpty(url)) {
+            throw new RuntimeException("url 不能为空");
+        }
+        if (method == null) {
+            throw new RuntimeException("method 不能为空");
+        }
+        if (headers == null) {
+            headers = new HttpHeaders();
+        }
+
+        // 创建自定义RestTemplate（如果需要设置超时）
+        RestTemplate restTemplate = RT;
+        if (timeout > 0) {
+            //update-begin---author:chenrui ---date:20251011  for：[issues/8859]online表单java增强失效------------
+            HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
+            //update-end---author:chenrui ---date:20251011  for：[issues/8859]online表单java增强失效------------
+            requestFactory.setConnectTimeout(timeout);
+            requestFactory.setReadTimeout(timeout);
+            restTemplate = new RestTemplate(requestFactory);
+            //update-begin---author:chenrui ---date:20251011  for：[issues/8859]online表单java增强失效------------
+            // 解决乱码问题（替换 StringHttpMessageConverter 为 UTF-8）
+            for (int i = 0; i < restTemplate.getMessageConverters().size(); i++) {
+                if (restTemplate.getMessageConverters().get(i) instanceof StringHttpMessageConverter) {
+                    restTemplate.getMessageConverters().set(i, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+                    break;
+                }
+            }
+            //update-end---author:chenrui ---date:20251011  for：[issues/8859]online表单java增强失效------------
+        }
+
+        // 请求体
+        String body = "";
+        if (params != null) {
+            if (params instanceof JSONObject) {
+                body = ((JSONObject) params).toJSONString();
+            } else {
+                body = params.toString();
+            }
+        }
+
+        // 拼接 url 参数
+        if (variables != null && !variables.isEmpty()) {
+            url += ("?" + asUrlVariables(variables));
+        }
+
+        // 发送请求
+        HttpEntity<String> request = new HttpEntity<>(body, headers);
+        return restTemplate.exchange(url, method, request, responseType);
+    }
+    
     /**
      * 获取JSON请求头
      */

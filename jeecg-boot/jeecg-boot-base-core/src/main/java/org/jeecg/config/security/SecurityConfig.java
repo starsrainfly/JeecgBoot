@@ -8,6 +8,8 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.jeecg.common.system.util.JwtUtil;
 import org.jeecg.config.security.app.AppGrantAuthenticationConvert;
 import org.jeecg.config.security.app.AppGrantAuthenticationProvider;
 import org.jeecg.config.security.password.PasswordGrantAuthenticationConvert;
@@ -64,6 +66,7 @@ import java.util.stream.Collectors;
 @EnableWebSecurity
 @EnableMethodSecurity
 @AllArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private JdbcTemplate jdbcTemplate;
@@ -74,27 +77,47 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
             throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-        // 注册自定义登录类型
-        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-                .tokenEndpoint(tokenEndpoint -> tokenEndpoint.accessTokenRequestConverter(new PasswordGrantAuthenticationConvert())
-                        .authenticationProvider(new PasswordGrantAuthenticationProvider(authorizationService, tokenGenerator())))
-                .tokenEndpoint(tokenEndpoint -> tokenEndpoint.accessTokenRequestConverter(new PhoneGrantAuthenticationConvert())
-                        .authenticationProvider(new PhoneGrantAuthenticationProvider(authorizationService, tokenGenerator())))
-                .tokenEndpoint(tokenEndpoint -> tokenEndpoint.accessTokenRequestConverter(new AppGrantAuthenticationConvert())
-                        .authenticationProvider(new AppGrantAuthenticationProvider(authorizationService, tokenGenerator())))
-                .tokenEndpoint(tokenEndpoint -> tokenEndpoint.accessTokenRequestConverter(new SocialGrantAuthenticationConvert())
-                        .authenticationProvider(new SocialGrantAuthenticationProvider(authorizationService, tokenGenerator())))
-                //开启OpenID Connect 1.0（其中oidc为OpenID Connect的缩写）。 访问 /.well-known/openid-configuration即可获取认证信息
-                .oidc(Customizer.withDefaults());
-        http
-                //将需要认证的请求，重定向到login页面行登录认证。
-                .exceptionHandling((exceptions) -> exceptions
-                        .defaultAuthenticationEntryPointFor(
-                                new LoginUrlAuthenticationEntryPoint("/sys/login"),
-                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-                        )
-                );
+        // 使用新的配置方式替代弃用的applyDefaultSecurity
+        http.securityMatcher(new AntPathRequestMatcher("/oauth2/**"))
+                .authorizeHttpRequests(authorize ->
+                        authorize.anyRequest().authenticated()
+                )
+                .csrf(csrf -> csrf.disable())
+                .with(new OAuth2AuthorizationServerConfigurer(), oauth2 -> {
+                    oauth2
+                            .tokenEndpoint(tokenEndpoint -> tokenEndpoint
+                                    .accessTokenRequestConverter(new PasswordGrantAuthenticationConvert())
+                                    .authenticationProvider(new PasswordGrantAuthenticationProvider(authorizationService, tokenGenerator()))
+                            )
+                            .tokenEndpoint(tokenEndpoint -> tokenEndpoint
+                                    .accessTokenRequestConverter(new PhoneGrantAuthenticationConvert())
+                                    .authenticationProvider(new PhoneGrantAuthenticationProvider(authorizationService, tokenGenerator()))
+                            )
+                            .tokenEndpoint(tokenEndpoint -> tokenEndpoint
+                                    .accessTokenRequestConverter(new AppGrantAuthenticationConvert())
+                                    .authenticationProvider(new AppGrantAuthenticationProvider(authorizationService, tokenGenerator()))
+                            )
+                            .tokenEndpoint(tokenEndpoint -> tokenEndpoint
+                                    .accessTokenRequestConverter(new SocialGrantAuthenticationConvert())
+                                    .authenticationProvider(new SocialGrantAuthenticationProvider(authorizationService, tokenGenerator()))
+                            )
+                            //开启OpenID Connect 1.0（其中oidc为OpenID Connect的缩写）。 访问 /.well-known/openid-configuration即可获取认证信息
+                            .oidc(Customizer.withDefaults());
+                });
+
+        //请求接口异常处理：无Token和Token无效的情况
+        http.exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) -> {
+                    // 记录详细的异常信息 - 未认证
+                    log.error("接口访问失败(未认证)，请求路径：{}，错误信息：{}", request.getRequestURI(), authException.getMessage(), authException);
+                    JwtUtil.responseError(response, 401, "Token格式错误或已过期");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    // 记录详细的异常信息 - token无效或权限不足
+                    log.error("接口访问失败(token无效或权限不足)，请求路径：{}，错误信息：{}", request.getRequestURI(), accessDeniedException.getMessage(), accessDeniedException);
+                    JwtUtil.responseError(response, 403, "权限不足");
+                })
+        );
 
         return http.build();
     }
@@ -149,16 +172,30 @@ public class SecurityConfig {
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/v3/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/WW_verify*")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/sys/annountCement/show/**")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/api/getUserInfo")).permitAll()
+
+                        //积木报表排除
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/jmreport/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/**/*.js.map")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/**/*.css.map")).permitAll()
-                        .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/list")).permitAll()
+                        //积木BI大屏和仪表盘排除
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/view")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/onlDragDatasetHead/getLoginUser")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/page/queryById")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/page/addVisitsNumber")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/page/queryTemplateList")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/share/view/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/onlDragDatasetHead/getAllChartData")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/onlDragDatasetHead/getTotalData")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/mock/json/**")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/jimubi/view")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/jimubi/share/view/**")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/onlDragDatasetHead/getMapDataByCode")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/onlDragDatasetHead/getTotalDataByCompId")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/onlDragDatasetHead/queryAllById")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/drag/onlDragDatasetHead/getDictByCodes")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/dragChannelSocket/**")).permitAll()
+                        //大屏模板例子
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/test/bigScreen/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/bigscreen/template1/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/bigscreen/template1/**")).permitAll()
@@ -167,6 +204,9 @@ public class SecurityConfig {
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/vxeSocket/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/test/seata/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/error")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/openapi/call/**")).permitAll()
+                        // APP版本信息
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/sys/version/app3version")).permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
@@ -178,7 +218,33 @@ public class SecurityConfig {
                             return config;
                         }))
                 .csrf(AbstractHttpConfigurer::disable)
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jeecgAuthenticationConvert)));
+                // 配置OAuth2资源服务器，并添加JWT异常处理
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jeecgAuthenticationConvert))
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // 处理JWT解析失败的情况
+                            log.error("JWT验证失败，请求路径：{}，错误信息：{}", request.getRequestURI(), authException.getMessage(), authException);
+                            JwtUtil.responseError(response, 401, "Token格式错误或已过期");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            // 处理权限不足的情况
+                            log.error("权限验证失败，请求路径：{}，错误信息：{}", request.getRequestURI(), accessDeniedException.getMessage(), accessDeniedException);
+                            JwtUtil.responseError(response, 403, "权限不足");
+                        })
+                )
+                // 全局异常处理
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // 记录详细的异常信息 - 未认证
+                            log.error("接口访问失败(未认证)，请求路径：{}，错误信息：{}", request.getRequestURI(), authException.getMessage(), authException);
+                            JwtUtil.responseError(response, 401, "Token格式错误或已过期");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            // 记录详细的异常信息 - token无效或权限不足
+                            log.error("接口访问失败(token无效或权限不足)，请求路径：{}，错误信息：{}", request.getRequestURI(), accessDeniedException.getMessage(), accessDeniedException);
+                            JwtUtil.responseError(response, 403, "权限不足");
+                        })
+                );
         return http.build();
     }
 
@@ -241,5 +307,4 @@ public class SecurityConfig {
                 new OAuth2RefreshTokenGenerator()
         );
     }
-
 }

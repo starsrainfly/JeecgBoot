@@ -3,9 +3,10 @@ import { merge, random } from 'lodash-es';
 import { isArray } from '/@/utils/is';
 import { FormSchema } from '/@/components/Form';
 import { reactive } from "vue";
-import { getTenantId, getToken } from "/@/utils/auth";
+import { getTenantId, getToken, getAuthCache, setAuthCache } from "/@/utils/auth";
 import { useUserStoreWithOut } from "/@/store/modules/user";
 import dayjs from 'dayjs';
+import Big from 'big.js';
 
 import { Modal } from "ant-design-vue";
 import { defHttp } from "@/utils/http/axios";
@@ -148,11 +149,16 @@ export function mapTableTotalSummary(tableData: Recordable[], fieldKeys: string[
       // update-begin--author:liaozhiyang---date:20240118---for：【QQYUN-7891】PR 合计工具方法，转换为Nuber类型再计算
       const value = Number(next[key]);
       if (!Number.isNaN(value)) {
-        prev += value;
+        // update-begin--author:liaozhiyang---date:20250224---for：【issues/7830】合计小数计算精度
+        prev = Big(prev).plus(value).toString();
+        // update-end--author:liaozhiyang---date:20250224---for：【issues/7830】合计小数计算精度
       }
-      // update-end--author:liaozhiyang---date:20240118---for：【QQYUN-7891】PR 合计工具方法，转换为Nuber类型再计算
+      // update-end--author:liaozhiyang---date:20240118---for：【issues/7830】PR 合计工具方法，转换为Nuber类型再计算
       return prev;
     }, 0);
+    // update-begin--author:liaozhiyang---date:20250224---for：【issues/7830】合计小数计算精度
+    totals[key] = +totals[key];
+    // update-end--author:liaozhiyang---date:20250224---for：【issues/7830】合计小数计算精度
   });
   return totals;
 }
@@ -602,4 +608,29 @@ export function freezeDeep(obj: Recordable | Recordable[]) {
     Object.freeze(obj)
   }
   return obj
+}
+
+/**
+ * 获取父级名称
+ * 
+ * @param orgCode 当前部门的code
+ * @param label 当前默认显示的值
+ * @param depId depId
+ * @return 部门名称
+ */
+export async function getDepartPathNameByOrgCode(orgCode, label, depId){
+  let key:any = "DEPARTNAME" + depId + orgCode;
+  let authCache = getAuthCache(key);
+  if (authCache) {
+    return authCache;
+  }
+  if (orgCode) {
+    depId = "";
+  }
+  let result = await defHttp.get({ url: "/sys/sysDepart/getDepartPathNameByOrgCode", params:{ orgCode: orgCode, depId: depId } }, { isTransformResponse: false });
+  if (result.success) {
+    setAuthCache(key,result.result);
+    return result.result;
+  }
+  return label;
 }

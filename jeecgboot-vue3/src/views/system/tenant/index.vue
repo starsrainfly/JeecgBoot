@@ -26,12 +26,12 @@
           >邀请用户加入</a-button
         >
         <a-button
-          preIcon="ant-design:plus-outlined"
+          preIcon="ant-design:sliders-outlined"
           type="primary"
           @click="handlePack"
           style="margin-right: 5px"
           :disabled="selectedRowKeys.length === 0"
-          >套餐</a-button
+          >套餐管理</a-button
         >
         <a-button type="primary" @click="recycleBinClick" preIcon="ant-design:hdd-outlined">回收站</a-button>
       </template>
@@ -156,12 +156,16 @@
   /**
    * 用户选择回调事件
    * @param options
-   * @param value
+   * @param phone
+   * @param userSelectId
    */
-  async function handleInviteUserOk(value) {
+  async function handleInviteUserOk(phone, username) {
     //update-begin---author:wangshuai ---date:20230314  for：【QQYUN-4605】后台的邀请谁加入租户，没办法选不是租户下的用户------------
-    if (value) {
-      await invitationUserJoin({ ids: selectedRowKeys.value.join(','), phone: value });
+    if (phone) {
+      await invitationUserJoin({ ids: selectedRowKeys.value.join(','), phone: phone });
+    }
+    if (username) {
+      await invitationUserJoin({ ids: selectedRowKeys.value.join(','), username: username });
     }
     //update-end---author:wangshuai ---date:20230314  for：【QQYUN-4605】后台的邀请谁加入租户，没办法选不是租户下的用户------------
   }

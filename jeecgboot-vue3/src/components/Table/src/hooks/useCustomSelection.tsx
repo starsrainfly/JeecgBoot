@@ -140,7 +140,12 @@ export function useCustomSelection(
       // 解决selectedRowKeys在页面调用处使用ref失效
       const value = unref(val);
       if (Array.isArray(value) && !sameArray(value, selectedKeys.value)) {
-        setSelectedRowKeys(value);
+        // update-begin--author:liaozhiyang---date:20250429---for：【issues/8163】关联记录夸页数据丢失
+        // 延迟是为了等watch selectedRows
+        setTimeout(() => {
+          setSelectedRowKeys(value);
+        }, 0);
+        // update-end--author:liaozhiyang---date:20250429---for：【issues/8163】关联记录夸页数据丢失
       }
     },
     {
@@ -149,7 +154,22 @@ export function useCustomSelection(
     }
   );
   // update-end--author:liaozhiyang---date:20240306---for：【QQYUN-8390】部门人员组件点击重置未清空（selectedRowKeys.value=[]，watch没监听到加deep）
-
+  // update-begin--author:liaozhiyang---date:20250429---for：【issues/8163】关联记录夸页数据丢失
+  // 编辑时selectedRows可能会回填
+  watch(
+    () => unref(propsRef)?.rowSelection?.selectedRows,
+    (val: string[]) => {
+      const value: any = unref(val);
+      if (Array.isArray(value) && !sameArray(value, selectedRows.value)) {
+        selectedRows.value = value;
+      }
+    },
+    {
+      immediate: true,
+      deep: true,
+    }
+  );
+  // update-end--author:liaozhiyang---date:20250429---for：【issues/8163】关联记录夸页数据丢失
   /**
   * 2024-03-06
   * liaozhiyang
@@ -185,6 +205,10 @@ export function useCustomSelection(
   let bodyResizeObserver: Nullable<ResizeObserver> = null;
   // 获取首行行高
   watchEffect(() => {
+    // update-begin--author:liaozhiyang---date:20241111---for：【issues/7442】basicTable从默认切换到宽松紧凑时多选框显示异常
+    // 这种写法是为了监听到 size 的变化
+    propsRef.value.size && void 0;
+    // update-end--author:liaozhiyang---date:20241111---for：【issues/7442】basicTable从默认切换到宽松紧凑时多选框显示异常
     if (bodyEl.value) {
       // 监听div高度变化
       bodyResizeObserver = new ResizeObserver((entries) => {
@@ -194,17 +218,11 @@ export function useCustomSelection(
             bodyHeight.value = Math.ceil(height);
           }
         }
+        updateRowHeight();
       });
       bodyResizeObserver.observe(bodyEl.value);
-      const el = bodyEl.value?.querySelector('tbody.ant-table-tbody tr.ant-table-row') as HTMLDivElement;
-      if (el) {
-        rowHeight.value = el.offsetHeight;
-        return;
-      }
     }
     rowHeight.value = 50;
-    // 这种写法是为了监听到 size 的变化
-    propsRef.value.size && void 0;
   });
 
   onMountedOrActivated(async () => {
@@ -219,6 +237,16 @@ export function useCustomSelection(
       bodyResizeObserver.disconnect();
     }
   });
+
+  // 更新首行行高
+  function updateRowHeight() {
+    const el = bodyEl.value?.querySelector('tbody.ant-table-tbody tr.ant-table-row') as HTMLDivElement;
+    if (el) {
+      // update-begin--author:liaozhiyang---date:20241111---for：【issues/7442】basicTable从默认切换到宽松紧凑时多选框显示异常
+      nextTick(() => rowHeight.value = el.offsetHeight);
+      // update-end--author:liaozhiyang---date:20241111---for：【issues/7442】basicTable从默认切换到宽松紧凑时多选框显示异常
+    }
+  }
 
   // 选择全部
   function onSelectAll(checked: boolean, flag = 'currentPage') {
@@ -320,6 +348,9 @@ export function useCustomSelection(
     onSelectChild(record, checked);
     updateSelected(record, checked);
     onSelectParent(record, checked);
+    // update-begin--author:liaozhiyang---date:20250813---for：【issues/8690】BasicTable的rowSelection新增onSelect方法
+    propsRef.value.rowSelection?.onSelect?.(toRaw(record), checked, toRaw(selectedRows.value));
+    // update-end--author:liaozhiyang---date:20250813---for：【issues/8690】BasicTable的rowSelection新增onSelect方法
     emitChange();
   }
 
@@ -573,7 +604,12 @@ export function useCustomSelection(
   // 通过 selectedKeys 同步 selectedRows
   function syncSelectedRows() {
     if (selectedKeys.value.length !== selectedRows.value.length) {
-      setSelectedRowKeys(selectedKeys.value);
+      // update-begin--author:liaozhiyang---date:20250429---for：【issues/8163】关联记录夸页数据丢失
+      // 延迟是为了等watch selectedRows
+      setTimeout(() => {
+        setSelectedRowKeys(selectedKeys.value);
+      }, 0);
+      // update-end--author:liaozhiyang---date:20250429---for：【issues/8163】关联记录夸页数据丢失
     }
   }
 

@@ -1,6 +1,7 @@
 package org.jeecg.modules.system.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -119,12 +120,9 @@ public class ThirdAppWechatEnterpriseServiceImpl implements IThirdAppService {
     public String getAppAccessToken(SysThirdAppConfig config) {
         //update-begin---author:wangshuai ---date:20230224  for：[QQYUN-3440]新建企业微信和钉钉配置表，通过租户模式隔离------------
         String corpId = config.getClientId();
-        String secret = config.getAgentAppSecret();
         // 如果没有配置APP秘钥，就说明是老企业，可以通用秘钥
-        if (oConvertUtils.isEmpty(secret)) {
-            secret = config.getClientSecret();
+        String secret = config.getClientSecret();
         //update-end---author:wangshuai ---date:20230224  for：[QQYUN-3440]新建企业微信和钉钉配置表，通过租户模式隔离------------
-        }
 
         AccessToken accessToken = JwAccessTokenAPI.getAccessToken(corpId, secret);
         if (accessToken != null) {
@@ -849,7 +847,7 @@ public class ThirdAppWechatEnterpriseServiceImpl implements IThirdAppService {
      * @param verifyConfig 是否验证配置（未启用的APP会拒绝发送）
      * @return
      */
-    public JSONObject sendTextCardMessage(SysAnnouncement announcement, boolean verifyConfig) {
+    public JSONObject sendTextCardMessage(SysAnnouncement announcement,String mobileOpenUrl, boolean verifyConfig) {
         SysThirdAppConfig config = this.getWeChatThirdAppConfig();
         if (verifyConfig && null == config) {
             return null;
@@ -885,9 +883,30 @@ public class ThirdAppWechatEnterpriseServiceImpl implements IThirdAppService {
         textCard.setTouser(this.getTouser(usernameString, isToAll));
         TextCardEntity entity = new TextCardEntity();
         entity.setTitle(announcement.getTitile());
-        entity.setDescription(oConvertUtils.getString(announcement.getMsgAbstract(),"空"));
-        String baseUrl = null;
+        
+        //update-begin---author:scott ---date:2025-08-05  for：【QQYUN-13257】【h5】催办、抄送消息，在企业微信中显示json乱码---
+        // 判断announcement.getMsgAbstract()值是json格式
+        if(oConvertUtils.isJson(announcement.getMsgAbstract()) && oConvertUtils.isNotEmpty(mobileOpenUrl)){
+            entity.setDescription(announcement.getMsgContent());
+            entity.setUrl(mobileOpenUrl);
+        }else{
+            entity.setDescription(oConvertUtils.getString(announcement.getMsgAbstract(),"空"));
+            entity.setUrl(geQywxtAnnouncementUrl(announcement));
+        }
+        //update-end---author:scott ---date::2025-08-05  for：【QQYUN-13257】【h5】催办、抄送消息，在企业微信中显示json乱码---
+        
+        textCard.setTextcard(entity);
+        return JwMessageAPI.sendTextCardMessage(textCard, accessToken);
+    }
 
+    
+    /**
+     * 获取企业微信的公告链接
+     *
+     * @return
+     */
+    private String geQywxtAnnouncementUrl(SysAnnouncement announcement){
+        String baseUrl = null;
         //优先通过请求获取basepath，获取不到读取 jeecg.domainUrl.pc
         try {
             baseUrl = RestUtil.getBaseUrl();
@@ -896,10 +915,7 @@ public class ThirdAppWechatEnterpriseServiceImpl implements IThirdAppService {
             baseUrl =  jeecgBaseConfig.getDomainUrl().getPc();
             //e.printStackTrace();
         }
-
-        entity.setUrl(baseUrl + "/sys/annountCement/show/" + announcement.getId());
-        textCard.setTextcard(entity);
-        return JwMessageAPI.sendTextCardMessage(textCard, accessToken);
+       return baseUrl + "/sys/annountCement/show/" + announcement.getId();
     }
 
     private String getTouser(String origin, boolean toAll) {

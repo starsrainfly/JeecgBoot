@@ -1,7 +1,5 @@
 package org.jeecg.modules.test.sharding.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.common.system.base.controller.JeecgController;
@@ -12,6 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -23,23 +23,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Tag(name = "分库分表测试")
 @RestController
-@RequestMapping("/sharding")
+@RequestMapping("/demo/sharding")
 public class JeecgShardingDemoController extends JeecgController<ShardingSysLog, IShardingSysLogService> {
     @Autowired
     private IShardingSysLogService shardingSysLogService;
 
     /**
-     * 单库分表 —— 添加
+     * 单库分表 —— 插入
      * @return
      */
-    @PostMapping(value = "/test1")
-    @Operation(summary = "单库分表")
-    public Result<?> add() {
+    @PostMapping(value = "/insert")
+    @Operation(summary = "单库分表插入")
+    public Result<?> insert() {
         log.info("---------------------------------单库分表插入--------------------------------");
         int size = 10;
         for (int i = 0; i < size; i++) {
             ShardingSysLog shardingSysLog = new ShardingSysLog();
-            shardingSysLog.setLogContent("jeecg");
+            shardingSysLog.setLogContent("采用shardingsphere实现分库分表，插入测试！");
             shardingSysLog.setLogType(i);
             shardingSysLog.setOperateType(i);
             shardingSysLogService.save(shardingSysLog);
@@ -51,8 +51,8 @@ public class JeecgShardingDemoController extends JeecgController<ShardingSysLog,
      * 单库分表 —— 查询
      * @return
      */
-    @PostMapping(value = "/list1")
-    @Operation(summary = "单库分表")
+    @PostMapping(value = "/list")
+    @Operation(summary = "单库分表查询")
     public Result<?> list() {
         return Result.OK(shardingSysLogService.list());
     }
@@ -61,9 +61,9 @@ public class JeecgShardingDemoController extends JeecgController<ShardingSysLog,
      * 分库分表 - 插入
      * @return
      */
-    @PostMapping(value = "/test2")
-    @Operation(summary = "分库分表")
-    public Result<?> test2() {
+    @PostMapping(value = "/insert2")
+    @Operation(summary = "分库分表插入")
+    public Result<?> insert2() {
         int start=20;
         int size=30;
         for (int i = start; i <= size; i++) {
@@ -81,7 +81,7 @@ public class JeecgShardingDemoController extends JeecgController<ShardingSysLog,
      * @return
      */
     @PostMapping(value = "/list2")
-    @Operation(summary = "分库分表")
+    @Operation(summary = "分库分表查询")
     public Result<?> list2() {
         return Result.OK(shardingSysLogService.list());
     }

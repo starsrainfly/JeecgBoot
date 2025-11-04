@@ -1,7 +1,7 @@
 //package org.jeecg.config;
 //
 //
-//import io.swagger.annotations.ApiOperation;
+//import io.swagger.v3.oas.annotations.Operation;
 //import org.jeecg.common.constant.CommonConstant;
 //import org.jeecg.config.mybatis.MybatisPlusSaasConfig;
 //import org.springframework.beans.BeansException;

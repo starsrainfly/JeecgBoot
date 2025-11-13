@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Param;
 /**
  * @Description: 供应商采购员
  * @Author: jeecg-boot
- * @Date:   2025-05-18
+ * @Date:   2025-05-26
  * @Version: V1.0
  */
 public interface SupplierPurchaserMapper extends BaseMapper<SupplierPurchaser> {

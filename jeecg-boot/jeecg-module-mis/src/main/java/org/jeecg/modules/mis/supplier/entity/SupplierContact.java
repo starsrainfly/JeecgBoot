@@ -18,7 +18,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * @Description: 供应商联系人
  * @Author: jeecg-boot
- * @Date:   2025-05-18
+ * @Date:   2025-05-26
  * @Version: V1.0
  */
 @Schema(description="供应商联系人")
@@ -30,72 +30,72 @@ public class SupplierContact implements Serializable {
 	/**id*/
 	@TableId(type = IdType.ASSIGN_ID)
     @Schema(description = "id")
-    private String id;
+    private java.lang.String id;
 	/**供应商id*/
     @Schema(description = "供应商id")
-    private String supplierId;
+    private java.lang.String supplierId;
 	/**联系人*/
 	@Excel(name = "联系人", width = 15)
     @Schema(description = "联系人")
-    private String contact;
+    private java.lang.String contact;
 	/**职位*/
 	@Excel(name = "职位", width = 15)
     @Schema(description = "职位")
-    private String job;
+    private java.lang.String job;
 	/**固定电话*/
 	@Excel(name = "固定电话", width = 15)
     @Schema(description = "固定电话")
-    private String telNo;
+    private java.lang.String telNo;
 	/**手机号码*/
 	@Excel(name = "手机号码", width = 15)
     @Schema(description = "手机号码")
-    private String mobileNo;
+    private java.lang.String mobileNo;
 	/**传真*/
 	@Excel(name = "传真", width = 15)
     @Schema(description = "传真")
-    private String fax;
+    private java.lang.String fax;
 	/**电子邮箱*/
 	@Excel(name = "电子邮箱", width = 15)
     @Schema(description = "电子邮箱")
-    private String email;
+    private java.lang.String email;
 	/**微信*/
 	@Excel(name = "微信", width = 15)
     @Schema(description = "微信")
-    private String wechat;
+    private java.lang.String wechat;
 	/**QQ号*/
 	@Excel(name = "QQ号", width = 15)
     @Schema(description = "QQ号")
-    private String qq;
+    private java.lang.String qq;
 	/**联系人类型*/
 	@Excel(name = "联系人类型", width = 15)
     @Schema(description = "联系人类型")
-    private String contactType;
+    private java.lang.String contactType;
 	/**状态*/
 	@Excel(name = "状态", width = 15)
     @Schema(description = "状态")
-    private String status;
+    private java.lang.String status;
 	/**删除*/
 	@Excel(name = "删除", width = 15)
     @Schema(description = "删除")
     @TableLogic
-    private String delFlag;
+    private java.lang.String delFlag;
 	/**创建人*/
     @Schema(description = "创建人")
-    private String createBy;
+    private java.lang.String createBy;
 	/**创建日期*/
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     @Schema(description = "创建日期")
-    private Date createTime;
+    private java.util.Date createTime;
 	/**更新人*/
     @Schema(description = "更新人")
-    private String updateBy;
+    private java.lang.String updateBy;
 	/**更新日期*/
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     @Schema(description = "更新日期")
-    private Date updateTime;
+    private java.util.Date updateTime;
 	/**所属部门*/
     @Schema(description = "所属部门")
-    private String sysOrgCode;
+    private java.lang.String sysOrgCode;
 }

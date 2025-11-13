@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * @Description: 供应商联系人
  * @Author: jeecg-boot
- * @Date:   2025-05-18
+ * @Date:   2025-05-26
  * @Version: V1.0
  */
 public interface ISupplierContactService extends IService<SupplierContact> {

@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * @Description: 供应商表
  * @Author: jeecg-boot
- * @Date:   2025-05-18
+ * @Date:   2025-05-26
  * @Version: V1.0
  */
 @Schema(description="供应商表")
@@ -32,48 +32,48 @@ public class Supplier implements Serializable {
 	/**id*/
 	@TableId(type = IdType.ASSIGN_ID)
     @Schema(description = "id")
-    private String id;
+    private java.lang.String id;
 	/**供应商编码*/
 	@Excel(name = "供应商编码", width = 15)
     @Schema(description = "供应商编码")
-    private String supplierCode;
+    private java.lang.String supplierCode;
 	/**供应商名称*/
 	@Excel(name = "供应商名称", width = 15)
     @Schema(description = "供应商名称")
-    private String supplierName;
+    private java.lang.String supplierName;
 	/**简称*/
 	@Excel(name = "简称", width = 15)
     @Schema(description = "简称")
-    private String shortName;
+    private java.lang.String shortName;
 	/**注册税号*/
 	@Excel(name = "注册税号", width = 15)
     @Schema(description = "注册税号")
-    private String taxRegistrationNo;
+    private java.lang.String taxRegistrationNo;
 	/**注册类型*/
 	@Excel(name = "注册类型", width = 15)
     @Schema(description = "注册类型")
-    private String registeredCapital;
+    private java.lang.String registeredCapital;
 	/**开户行*/
 	@Excel(name = "开户行", width = 15)
     @Schema(description = "开户行")
-    private String openBank;
+    private java.lang.String openBank;
 	/**法人*/
 	@Excel(name = "法人", width = 15)
     @Schema(description = "法人")
-    private String legalPerson;
+    private java.lang.String legalPerson;
 	/**账号*/
 	@Excel(name = "账号", width = 15)
     @Schema(description = "账号")
-    private String accountNo;
+    private java.lang.String accountNo;
 	/**账户名称*/
 	@Excel(name = "账户名称", width = 15)
     @Schema(description = "账户名称")
-    private String accountName;
+    private java.lang.String accountName;
 	/**供应商类型*/
 	@Excel(name = "供应商类型", width = 15, dicCode = "supplier_type")
     @Dict(dicCode = "supplier_type")
     @Schema(description = "供应商类型")
-    private String supplierType;
+    private java.lang.String supplierType;
 	/**账期(天)*/
 	@Excel(name = "账期(天)", width = 15)
     @Schema(description = "账期(天)")
@@ -85,7 +85,7 @@ public class Supplier implements Serializable {
 	/**省市区*/
     @Excel(name = "省市区", width = 15,exportConvert=true,importConvert = true )
     @Schema(description = "省市区")
-    private String areaId;
+    private java.lang.String areaId;
 
     public String convertisAreaId() {
         return SpringContextUtils.getBean(ProvinceCityArea.class).getText(areaId);
@@ -97,53 +97,53 @@ public class Supplier implements Serializable {
 	/**供应商地址*/
 	@Excel(name = "供应商地址", width = 15)
     @Schema(description = "供应商地址")
-    private String supplierAddress;
+    private java.lang.String supplierAddress;
 	/**备注*/
 	@Excel(name = "备注", width = 15)
     @Schema(description = "备注")
-    private String remark;
+    private java.lang.String remark;
 	/**状态*/
 	@Excel(name = "状态", width = 15, dicCode = "status")
     @Dict(dicCode = "status")
     @Schema(description = "状态")
-    private String status;
+    private java.lang.String status;
 	/**删除*/
 	@Excel(name = "删除", width = 15)
     @Schema(description = "删除")
     @TableLogic
-    private String delFlag;
+    private java.lang.String delFlag;
 	/**审核标识*/
 	@Excel(name = "审核标识", width = 15, dicCode = "approval_status")
     @Dict(dicCode = "approval_status")
     @Schema(description = "审核标识")
-    private Integer auditFlag;
+    private java.lang.String auditFlag;
 	/**审核人*/
 	@Excel(name = "审核人", width = 15)
     @Schema(description = "审核人")
-    private String auditor;
+    private java.lang.String auditor;
 	/**审核时间*/
 	@Excel(name = "审核时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     @Schema(description = "审核时间")
-    private Date auditDate;
+    private java.util.Date auditDate;
 	/**创建人*/
     @Schema(description = "创建人")
-    private String createBy;
+    private java.lang.String createBy;
 	/**创建日期*/
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     @Schema(description = "创建日期")
-    private Date createTime;
+    private java.util.Date createTime;
 	/**更新人*/
     @Schema(description = "更新人")
-    private String updateBy;
+    private java.lang.String updateBy;
 	/**更新日期*/
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     @Schema(description = "更新日期")
-    private Date updateTime;
+    private java.util.Date updateTime;
 	/**所属部门*/
     @Schema(description = "所属部门")
-    private String sysOrgCode;
+    private java.lang.String sysOrgCode;
 }

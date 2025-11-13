@@ -4,6 +4,8 @@ import { rules} from '/@/utils/helper/validator';
 import { render } from '/@/utils/common/renderUtils';
 import {JVxeTypes,JVxeColumn} from '/@/components/jeecg/JVxeTable/types'
 import { getWeekMonthQuarterYear } from '/@/utils';
+import{usePermission} from '/@/hooks/web/usePermission'
+const{isDisabledAuth} = usePermission();
 //列表数据
 export const columns: BasicColumn[] = [
    {
@@ -339,8 +341,11 @@ export const formSchema: FormSchema[] = [
   {
     label: '审核标识',
     field: 'auditFlag',
-    defaultValue: 0,
+    defaultValue: "0",
     component: 'JDictSelectTag',
+    dynamicDisabled:({values}) =>{
+      return isDisabledAuth('mis_supplier:auditFlag');
+    } ,
     componentProps:{
         dictCode:"approval_status"
      },
@@ -576,7 +581,7 @@ export const superQuerySchema = {
   supplierAddress: {title: '供应商地址',order: 13,view: 'text', type: 'string',},
   remark: {title: '备注',order: 14,view: 'text', type: 'string',},
   status: {title: '状态',order: 15,view: 'list', type: 'string',dictCode: 'status',},
-  auditFlag: {title: '审核标识',order: 16,view: 'number', type: 'number',dictCode: 'approval_status',},
+  auditFlag: {title: '审核标识',order: 16,view: 'list', type: 'string',dictCode: 'approval_status',},
   auditor: {title: '审核人',order: 17,view: 'text', type: 'string',},
   auditDate: {title: '审核时间',order: 18,view: 'datetime', type: 'string',},
   //子表高级查询

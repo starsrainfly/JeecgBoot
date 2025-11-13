@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * @Description: 供应商表
  * @Author: jeecg-boot
- * @Date:   2025-05-18
+ * @Date:   2025-05-26
  * @Version: V1.0
  */
 public interface ISupplierService extends IService<Supplier> {

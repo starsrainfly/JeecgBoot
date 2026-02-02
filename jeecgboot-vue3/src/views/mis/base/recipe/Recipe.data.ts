@@ -17,6 +17,16 @@ export const columns: BasicColumn[] = [
     dataIndex: 'recipeName'
    },
    {
+    title: '版本',
+    align:"center",
+    dataIndex: 'version'
+   },
+   {
+    title:'是否发布',
+     align:"center",
+     dataIndex:'publishStatus_dictText'
+   },
+   {
     title: '技术要求',
     align:"center",
     dataIndex: 'technics'
@@ -46,6 +56,16 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'status_dictText'
    },
+  {
+    title:'发布人',
+    align:"center",
+    dataIndex:'publishBy'
+  },
+  {
+    title:'发布日期',
+    align:"center",
+    dataIndex:'publishTime'
+  },
 ];
 //查询数据
 export const searchFormSchema: FormSchema[] = [
@@ -68,6 +88,14 @@ export const searchFormSchema: FormSchema[] = [
       },
       //colProps: {span: 6},
  	},
+  {
+    label:"是否发布",
+    field:"publishStatus",
+    component: 'JSelectMultiple',
+    componentProps:{
+      dictCode:"yn"
+    },
+  },
 ];
 //表单数据
 export const formSchema: FormSchema[] = [
@@ -90,6 +118,16 @@ export const formSchema: FormSchema[] = [
                  { required: true, message: '请输入配方名称!'},
           ];
      },
+  },
+  {
+    label: '版本',
+    field: 'version',
+    component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入配方版本!'},
+      ];
+    },
   },
   {
     label: '技术要求',
@@ -242,6 +280,8 @@ export const superQuerySchema = {
   remark: {title: '备注',order: 5,view: 'textarea', type: 'string',},
   notes: {title: '注意事项',order: 6,view: 'textarea', type: 'string',},
   status: {title: '状态',order: 7,view: 'list', type: 'string',dictCode: 'status',},
+  version:{title: '版本',order: 8,view: 'list', type: 'string',},
+  publishStatus:{title: '是否发布',order: 9,view: 'list', type: 'string',dictCode: 'yn',},
   //子表高级查询
   recipeDetail: {
     title: '配方明细',

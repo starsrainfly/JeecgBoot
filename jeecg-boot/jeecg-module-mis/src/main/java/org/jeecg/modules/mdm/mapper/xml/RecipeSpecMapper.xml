@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.mdm.mapper.RecipeSpecMapper">
+<select id="getByRecipeId" parameterType="java.lang.String" resultType="org.jeecg.modules.mdm.entity.RecipeSpec">
+    SELECT *
+    FROM mis_recipe_spec
+    WHERE recipe_Id=#{recipeId} LIMIT 1
+</select>
+</mapper>

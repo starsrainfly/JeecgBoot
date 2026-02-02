@@ -1,0 +1,25 @@
+package org.jeecg.modules.scm.service;
+
+import org.jeecg.modules.scm.entity.PricingStrategy;
+import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.math.BigDecimal;
+
+/**
+ * @Description: 价格策略
+ * @Author: jeecg-boot
+ * @Date:   2026-02-01
+ * @Version: V1.0
+ */
+public interface IPricingStrategyService extends IService<PricingStrategy> {
+
+    /**
+     * 匹配价格 返回单独一个实体或空
+     * 1️⃣	客户 + 产品 + 业务员 + 有效期内	最精准（如：大客户专属价）
+     * 2️⃣	客户 + 产品 + 有效期内	客户通用价
+     * 3️⃣	业务员 + 产品 + 有效期内	业务员特价
+     * 4️⃣	产品 + 有效期内（全局默认价）	标准售价
+     * 5️⃣	无匹配 → 使用产品主数据中的标准成本 or 报错	兜底
+     */
+    public PricingStrategy matchPrice(String customerId, String salesmanUserId, String itemId);
+}

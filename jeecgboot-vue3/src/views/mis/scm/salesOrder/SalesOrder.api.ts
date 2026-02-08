@@ -4,23 +4,31 @@ import { useMessage } from "/@/hooks/web/useMessage";
 const { createConfirm } = useMessage();
 
 enum Api {
-  list = '/scm/pricingStrategy/list_new',
-  save='/scm/pricingStrategy/add',
-  edit='/scm/pricingStrategy/edit',
-  deleteOne = '/scm/pricingStrategy/delete',
-  deleteBatch = '/scm/pricingStrategy/deleteBatch',
-  importExcel = '/scm/pricingStrategy/importExcel',
-  exportXls = '/scm/pricingStrategy/exportXls',
+  list = '/scm/salesOrder/list',
+  save='/scm/salesOrder/add',
+  edit='/scm/salesOrder/edit',
+  deleteOne = '/scm/salesOrder/delete',
+  deleteBatch = '/scm/salesOrder/deleteBatch',
+  importExcel = '/scm/salesOrder/importExcel',
+  exportXls = '/scm/salesOrder/exportXls',
+  salesOrderLineList = '/scm/salesOrder/querySalesOrderLineByMainId',
+  getMaterialPriceList = '/scm/pricingStrategy/priceSelectList',
 }
 /**
  * 导出api
  * @param params
  */
 export const getExportUrl = Api.exportXls;
+
 /**
  * 导入api
  */
 export const getImportUrl = Api.importExcel;
+/**
+ * 查询子表数据
+ * @param params
+ */
+export const salesOrderLineList = Api.salesOrderLineList;
 /**
  * 列表接口
  * @param params

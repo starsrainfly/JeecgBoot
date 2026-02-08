@@ -10,11 +10,11 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'strategyName'
    },
-   // {
-   //  title: '产品',
-   //  align:"center",
-   //  dataIndex: 'itemId'
-   // },
+   {
+    title: '产品',
+    align:"center",
+    dataIndex: 'itemId'
+   },
    {
     title: '产品编码',
     align:"center",
@@ -40,6 +40,16 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'salesmanName'
    },
+   {
+    title: '包装名称',
+    align:"center",
+    dataIndex: 'packageName'
+   },
+  {
+    title: '包装规格',
+    align:"center",
+    dataIndex: 'packageSpec'
+  },
    {
     title: '价格',
     align:"center",
@@ -125,30 +135,13 @@ export const searchFormSchema: FormSchema[] = [
  	},
 	{
       label: "业务员id",
-      field: 'salesmanUserId',
+      field: 'salesmanId',
       component: 'JSelectMultiple',
       componentProps:{
           dictCode:"sys_user where del_flag='0',realname,id"
       },
       //colProps: {span: 6},
  	},
-  {
-    label: '定价类型',
-    field: 'pricingType',
-    component: 'JDictSelectTag',
-    componentProps:{
-      dictCode:"scm_pricing_type"
-    },
-
-  },
-  {
-    label: '是否启用',
-    field: 'isActive',
-    component: 'JDictSelectTag',
-    componentProps:{
-      dictCode:"yn"
-    },
-  },
 ];
 //表单数据
 export const formSchema: FormSchema[] = [
@@ -165,8 +158,21 @@ export const formSchema: FormSchema[] = [
   {
     label: '产品',
     field: 'itemId',
-    component: 'input',
-    show: 'false',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"mdm_product_popup",
+            fieldConfig: [
+                { source: 'id', target: 'itemId' },
+                { source: 'product_code', target: 'itemCode' },
+                { source: 'product_name', target: 'itemName' },
+            ],
+            multi:true
+        }
+    },
+
     dynamicRules: ({model,schema}) => {
           return [
                  { required: true, message: '请输入产品!'},
@@ -176,20 +182,7 @@ export const formSchema: FormSchema[] = [
   {
     label: '产品编码',
     field: 'itemCode',
-    component: 'JPopup',
-    componentProps: ({ formActionType }) => {
-      const {setFieldsValue} = formActionType;
-      return{
-        setFieldsValue:setFieldsValue,
-        code:"mdm_product_popup",
-        fieldConfig: [
-          { source: 'id', target: 'itemId' },
-          { source: 'product_code', target: 'itemCode' },
-          { source: 'product_name', target: 'itemName' },
-        ],
-        multi:true
-      }
-    },
+    component: 'Input',
     dynamicRules: ({model,schema}) => {
           return [
                  { required: true, message: '请输入产品编码!'},
@@ -235,10 +228,18 @@ export const formSchema: FormSchema[] = [
   },
   {
     label: '业务员',
-    field: 'salesmanUserId',
+    field: 'salesmanId',
     component: 'JDictSelectTag',
     componentProps:{
         dictCode:"sys_user where del_flag='0',realname,id"
+     },
+  },
+  {
+    label: '包装id',
+    field: 'packageItemId',
+    component: 'JDictSelectTag',
+    componentProps:{
+        dictCode:"mis_material where is_package='1' and del_flag='0',material_spec,id"
      },
   },
   {
@@ -336,13 +337,14 @@ export const superQuerySchema = {
   currencyCode: {title: '币种代码',order: 4,view: 'list', type: 'string',dictTable: "mis_currency", dictCode: 'currency_code', dictText: 'currency_name',},
   customerName: {title: '客户名称',order: 5,view: 'popup', type: 'string',code: 'scm_customer', orgFields: 'customer_name', destFields: 'customerName', popupMulti: false,},
   salesmanName: {title: '业务员',order: 7,view: 'text', type: 'string',},
-  agreedPrice: {title: '价格',order: 8,view: 'number', type: 'number',},
-  minQuantity: {title: '最小起订量',order: 9,view: 'number', type: 'number',},
-  effectiveFrom: {title: '生效日期',order: 10,view: 'date', type: 'string',},
-  effectiveTo: {title: '失效日期',order: 11,view: 'date', type: 'string',},
-  pricingType: {title: '定价类型',order: 12,view: 'list', type: 'string',dictCode: 'scm_pricing_type',},
-  isActive: {title: '是否启用',order: 13,view: 'list', type: 'string',dictCode: 'yn',},
-  remark: {title: '备注',order: 14,view: 'text', type: 'string',},
+  packageItemId: {title: '包装id',order: 8,view: 'list', type: 'string',dictTable: "mis_material where is_package='1' and del_flag='0'", dictCode: 'id', dictText: 'material_spec',},
+  agreedPrice: {title: '价格',order: 9,view: 'number', type: 'number',},
+  minQuantity: {title: '最小起订量',order: 10,view: 'number', type: 'number',},
+  effectiveFrom: {title: '生效日期',order: 11,view: 'date', type: 'string',},
+  effectiveTo: {title: '失效日期',order: 12,view: 'date', type: 'string',},
+  pricingType: {title: '定价类型',order: 13,view: 'list', type: 'string',dictCode: 'scm_pricing_type',},
+  isActive: {title: '是否启用',order: 14,view: 'list', type: 'string',dictCode: 'yn',},
+  remark: {title: '备注',order: 15,view: 'text', type: 'string',},
 };
 
 /**

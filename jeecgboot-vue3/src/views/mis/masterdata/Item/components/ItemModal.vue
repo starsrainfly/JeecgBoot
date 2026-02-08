@@ -6,8 +6,8 @@
 
 <script lang="ts" setup>
     import {ref, computed, unref} from 'vue';
-    import {BasicModal, useModalInner} from '/@/components/Modal';
-    import {BasicForm, useForm} from '/@/components/Form/index';
+    import {BasicModal, useModalInner} from '@/components/Modal';
+    import {BasicForm, useForm} from '@/components/Form';
     import {formSchema} from '../Item.data';
     import {saveOrUpdate} from '../Item.api';
     // Emits声明

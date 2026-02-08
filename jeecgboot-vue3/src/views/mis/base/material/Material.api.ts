@@ -4,15 +4,15 @@ import { useMessage } from "/@/hooks/web/useMessage";
 const { createConfirm } = useMessage();
 
 enum Api {
-  list = '/material/material/rootList',
-  save='/material/material/add',
-  edit='/material/material/edit',
-  deleteMaterial = '/material/material/delete',
-  importExcel = '/material/material/importExcel',
-  exportXls = '/material/material/exportXls',
-  loadTreeData = '/material/material/loadTreeRoot',
-  getChildList = '/material/material/childList',
-  getChildListBatch = '/material/material/getChildListBatch',
+  list = '/mdm/material/rootList',
+  save='/mdm/material/add',
+  edit='/mdm/material/edit',
+  deleteMaterial = '/mdm/material/delete',
+  importExcel = '/mdm/material/importExcel',
+  exportXls = '/mdm/material/exportXls',
+  loadTreeData = '/mdm/material/loadTreeRoot',
+  getChildList = '/mdm/material/childList',
+  getChildListBatch = '/mdm/material/getChildListBatch',
 }
 
 /**

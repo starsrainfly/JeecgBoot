@@ -8,10 +8,10 @@
 </template>
 
 <script lang="ts">
-    import {BasicForm, useForm} from '/@/components/Form/index';
+    import {BasicForm, useForm} from '@/components/Form';
     import {computed, defineComponent} from 'vue';
-    import {defHttp} from '/@/utils/http/axios';
-    import { propTypes } from '/@/utils/propTypes';
+    import {defHttp} from '@/utils/http/axios';
+    import { propTypes } from '@/utils/propTypes';
     import {getBpmFormSchema} from '../Item.data';
     import {saveOrUpdate} from '../Item.api';
     

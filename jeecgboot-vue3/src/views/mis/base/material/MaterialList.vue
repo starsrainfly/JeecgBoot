@@ -4,9 +4,9 @@
     <BasicTable @register="registerTable" :rowSelection="rowSelection" :expandedRowKeys="expandedRowKeys" @expand="handleExpand" @fetch-success="onFetchSuccess">
       <!--插槽:table标题-->
       <template #tableTitle>
-          <a-button type="primary" v-auth="'material:mis_material:add'" @click="handleCreate" preIcon="ant-design:plus-outlined"> 新增</a-button>
-          <a-button  type="primary" v-auth="'material:mis_material:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
-          <j-upload-button  type="primary" v-auth="'material:mis_material:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
+          <a-button type="primary" v-auth="'mdm:mis_material:add'" @click="handleCreate" preIcon="ant-design:plus-outlined"> 新增</a-button>
+          <a-button  type="primary" v-auth="'mdm:mis_material:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
+          <j-upload-button  type="primary" v-auth="'mdm:mis_material:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
 
           <a-dropdown v-if="selectedRowKeys.length > 0">
           <template #overlay>
@@ -17,7 +17,7 @@
               </a-menu-item>
             </a-menu>
           </template>
-          <a-button  v-auth="'material:mis_material:deleteBatch'">批量操作
+          <a-button  v-auth="'mdm:mis_material:deleteBatch'">批量操作
             <Icon icon="ant-design:down-outlined"></Icon>
           </a-button>
         </a-dropdown>
@@ -37,7 +37,7 @@
   </div>
 </template>
 
-<script lang="ts" name="material-material" setup>
+<script lang="ts" name="mdm-material" setup>
   //ts语法
   import {ref, reactive, computed, unref, toRaw, nextTick} from 'vue';
   import {BasicTable, TableAction} from '/@/components/Table';
@@ -74,7 +74,7 @@
            fixed:'right'
          },
          beforeFetch: (params) => {
-           params.hasQuery = "true";
+           params.hasQuery = "true"; 
            return Object.assign(params, queryParam);
          },
     },
@@ -297,7 +297,7 @@
       {
         label: '编辑',
         onClick: handleEdit.bind(null, record),
-        auth: 'material:mis_material:edit'
+        auth: 'mdm:mis_material:edit'
       },
       {
         label: '添加下级',
@@ -320,11 +320,10 @@
            confirm: handleDelete.bind(null, record),
            placement: 'topLeft'
          },
-         auth: 'material:mis_material:delete'
+         auth: 'mdm:mis_material:delete'
        }
      ]
    }
-
 
 </script>
 

@@ -29,7 +29,7 @@
                 labelWidth: 150,
                 schemas: getBpmFormSchema(props.formData),
                 showActionButtonGroup: false,
-                baseColProps: {span: 24},
+                baseColProps: {span: 8},
             });
 
             const formDisabled = computed(()=>{
@@ -40,7 +40,7 @@
             });
 
             let formData = {};
-            const queryByIdUrl = '/material/material/queryById';
+            const queryByIdUrl = '/mdm/material/queryById';
             async function initFormData(){
                 let params = {id: props.formData.dataId};
                 const data = await defHttp.get({url: queryByIdUrl, params});

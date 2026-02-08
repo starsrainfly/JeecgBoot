@@ -1,16 +1,16 @@
-import {defHttp} from '/@/utils/http/axios';
-import { useMessage } from "/@/hooks/web/useMessage";
+import {defHttp} from '@/utils/http/axios';
+import { useMessage } from "@/hooks/web/useMessage";
 
 const { createConfirm } = useMessage();
 
 enum Api {
-  list = '/masterdata/item/list',
-  save='/masterdata/item/add',
-  edit='/masterdata/item/edit',
-  deleteOne = '/masterdata/item/delete',
-  deleteBatch = '/masterdata/item/deleteBatch',
-  importExcel = '/masterdata/item/importExcel',
-  exportXls = '/masterdata/item/exportXls',
+  list = '/mdm/item/list',
+  save='/mdm/item/add',
+  edit='/mdm/item/edit',
+  deleteOne = '/mdm/item/delete',
+  deleteBatch = '/mdm/item/deleteBatch',
+  importExcel = '/mdm/item/importExcel',
+  exportXls = '/mdm/item/exportXls',
 }
 /**
  * 导出api

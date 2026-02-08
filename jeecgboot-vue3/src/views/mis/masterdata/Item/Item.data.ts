@@ -1,8 +1,8 @@
-import {BasicColumn} from '/@/components/Table';
-import {FormSchema} from '/@/components/Table';
-import { rules} from '/@/utils/helper/validator';
-import { render } from '/@/utils/common/renderUtils';
-import { getWeekMonthQuarterYear } from '/@/utils';
+import {BasicColumn} from '@/components/Table';
+import {FormSchema} from '@/components/Table';
+import { rules} from '@/utils/helper/validator';
+import { render } from '@/utils/common/renderUtils';
+import { getWeekMonthQuarterYear } from '@/utils';
 //列表数据
 export const columns: BasicColumn[] = [
    {
@@ -28,12 +28,27 @@ export const columns: BasicColumn[] = [
    {
     title: '单位',
     align:"center",
-    dataIndex: 'unit'
+    dataIndex: 'unit_dictText'
    },
    {
-    title: '状态',
+    title: '是否启用',
     align:"center",
-    dataIndex: 'isActive'
+    dataIndex: 'isActive_dictText'
+   },
+   {
+    title: '是否包装材料',
+    align:"center",
+    dataIndex: 'isPackage_dictText'
+   },
+   {
+    title: '包装容量',
+    align:"center",
+    dataIndex: 'packageCapacity'
+   },
+   {
+    title: '包装单位',
+    align:"center",
+    dataIndex: 'packageCapacityUnit'
    },
 ];
 //查询数据
@@ -66,9 +81,12 @@ export const searchFormSchema: FormSchema[] = [
       //colProps: {span: 6},
  	},
 	{
-      label: "状态",
+      label: "是否启用",
       field: 'isActive',
-      component: 'Input',
+      component: 'JSelectMultiple',
+      componentProps:{
+          dictCode:"yn"
+      },
       //colProps: {span: 6},
  	},
 ];
@@ -77,6 +95,7 @@ export const formSchema: FormSchema[] = [
   {
     label: '项目类型',
     field: 'itemType',
+    defaultValue: "0",
     component: 'JDictSelectTag',
     componentProps:{
         dictCode:"item_type"
@@ -115,11 +134,35 @@ export const formSchema: FormSchema[] = [
   {
     label: '单位',
     field: 'unit',
-    component: 'Input',
+    component: 'JDictSelectTag',
+    componentProps:{
+        dictCode:"mis_unit,unit,unit"
+     },
   },
   {
-    label: '状态',
+    label: '是否启用',
     field: 'isActive',
+    component: 'JDictSelectTag',
+    componentProps:{
+        dictCode:"yn"
+     },
+  },
+  {
+    label: '是否包装材料',
+    field: 'isPackage',
+    component: 'JDictSelectTag',
+    componentProps:{
+        dictCode:"yn"
+     },
+  },
+  {
+    label: '包装容量',
+    field: 'packageCapacity',
+    component: 'InputNumber',
+  },
+  {
+    label: '包装单位',
+    field: 'packageCapacityUnit',
     component: 'Input',
   },
 	// TODO 主键隐藏字段，目前写死为ID
@@ -137,8 +180,11 @@ export const superQuerySchema = {
   code: {title: '编码',order: 1,view: 'text', type: 'string',},
   name: {title: '名称',order: 2,view: 'text', type: 'string',},
   spec: {title: '型号规格',order: 3,view: 'text', type: 'string',},
-  unit: {title: '单位',order: 4,view: 'text', type: 'string',},
-  isActive: {title: '状态',order: 5,view: 'text', type: 'string',},
+  unit: {title: '单位',order: 4,view: 'list', type: 'string',dictTable: "mis_unit", dictCode: 'unit', dictText: 'unit',},
+  isActive: {title: '是否启用',order: 5,view: 'list', type: 'string',dictCode: 'yn',},
+  isPackage: {title: '是否包装材料',order: 6,view: 'list', type: 'string',dictCode: 'yn',},
+  packageCapacity: {title: '包装容量',order: 7,view: 'number', type: 'number',},
+  packageCapacityUnit: {title: '包装单位',order: 8,view: 'text', type: 'string',},
 };
 
 /**

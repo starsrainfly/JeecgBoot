@@ -18,12 +18,10 @@
     const [registerForm, { setProps,resetFields, setFieldsValue, validate, scrollToField }] = useForm({
         schemas: formSchema,
         showActionButtonGroup: false,
-        baseColProps: {span: 8},
-      // ✅ 使用 labelCol / wrapperCol 控制比例
+		// ✅ 使用 labelCol / wrapperCol 控制比例
         labelCol: { span: 9 },      // label 占 9 栅格
         wrapperCol: { span: 15 },   // 控件占 15 栅格（9+15=24）
-
-      // baseColProps 控制每行占多少栅格（如一行放 3 个字段：span=8）
+        baseColProps: {span: 8}
     });
     //表单赋值
     const [registerModal, {setModalProps, closeModal}] = useModalInner(async (data) => {

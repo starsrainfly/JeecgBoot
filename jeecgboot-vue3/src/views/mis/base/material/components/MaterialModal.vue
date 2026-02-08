@@ -1,5 +1,5 @@
 <template>
-  <BasicModal v-bind="$attrs" @register="registerModal" destroyOnClose :width="800" :title="getTitle" @ok="handleSubmit">
+  <BasicModal v-bind="$attrs" @register="registerModal" destroyOnClose :width="1024" :title="getTitle" @ok="handleSubmit">
     <BasicForm @register="registerForm" name="MaterialForm" />
   </BasicModal>
 </template>
@@ -21,14 +21,14 @@
   const [registerForm, { setProps,resetFields, setFieldsValue, validate, updateSchema, scrollToField }] = useForm({
     schemas: formSchema,
     showActionButtonGroup: false,
-    baseColProps: {span: 24},
+    baseColProps: {span: 8},
     labelCol: {
       xs: { span: 24 },
-      sm: { span: 4 },
+      sm: { span: 8 },
     },
     wrapperCol: {
       xs: { span: 24 },
-      sm: { span: 18 },
+      sm: { span: 14 },
     },
   });
   //表单赋值

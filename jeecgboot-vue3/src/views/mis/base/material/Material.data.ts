@@ -1,17 +1,24 @@
 import {BasicColumn} from '/@/components/Table';
 import {FormSchema} from '/@/components/Table';
-
+import { rules} from '/@/utils/helper/validator';
+import { render } from '/@/utils/common/renderUtils';
+import { getWeekMonthQuarterYear } from '/@/utils';
 //列表数据
 export const columns: BasicColumn[] = [
    {
     title: '物料编码',
-    align: 'center',
+    align: 'left',
     dataIndex: 'materialCode'
    },
    {
     title: '物料名称',
-    align: 'left',
+    align: 'center',
     dataIndex: 'materialName'
+   },
+   {
+    title: '物料英文名称',
+    align: 'center',
+    dataIndex: 'materialNameEn'
    },
    {
     title: '描述',
@@ -43,39 +50,90 @@ export const columns: BasicColumn[] = [
     align: 'center',
     dataIndex: 'status_dictText'
    },
+   {
+    title: '是否为包装物料',
+    align: 'center',
+    dataIndex: 'isPackage_dictText'
+   },
+   {
+    title: '包装容量数值',
+    align: 'center',
+    dataIndex: 'packageCapacity'
+   },
+   {
+    title: '包装容量单位',
+    align: 'center',
+    dataIndex: 'packageCapacityUnit'
+   },
 ];
 //查询数据
 export const searchFormSchema: FormSchema[] = [
-     {
+	{
       label: "物料编码",
       field: "materialCode",
-      component: 'Input', //TODO 范围查询
+      component: 'Input',
       //colProps: {span: 6},
-	},
-     {
+     },
+	{
       label: "物料名称",
       field: "materialName",
-      component: 'Input', //TODO 范围查询
+      component: 'Input',
       //colProps: {span: 6},
-	},
-     {
+     },
+	{
+      label: "物料英文名称",
+      field: "materialNameEn",
+      component: 'Input',
+      //colProps: {span: 6},
+     },
+	{
       label: "描述",
       field: "description",
-      component: 'Input', //TODO 范围查询
+      component: 'Input',
       //colProps: {span: 6},
-	},
-     {
+     },
+	{
       label: "规格型号",
       field: "materialSpec",
-      component: 'Input', //TODO 范围查询
+      component: 'Input',
       //colProps: {span: 6},
-	},
+     },
+	{
+      label: "版本",
+      field: "version",
+      component: 'Input',
+      //colProps: {span: 6},
+     },
+	{
+      label: "是否符合ROHS",
+      field: "isrohs",
+      component: 'JSelectMultiple',
+      componentProps:{
+          dictCode:"yn"
+      },
+      //colProps: {span: 6},
+     },
+	{
+      label: "备注",
+      field: "remark",
+      component: 'Input',
+      //colProps: {span: 6},
+     },
 	{
       label: "状态",
       field: "status",
       component: 'JSelectMultiple',
       componentProps:{
-          dictCode:"status",
+          dictCode:"status"
+      },
+      //colProps: {span: 6},
+     },
+	{
+      label: "是否为包装物料",
+      field: "isPackage",
+      component: 'JSelectMultiple',
+      componentProps:{
+          dictCode:"yn"
       },
       //colProps: {span: 6},
      },
@@ -87,7 +145,7 @@ export const formSchema: FormSchema[] = [
     field: 'pid',
     component: 'JTreeSelect',
     componentProps: {
-      dict: "mis_material,material_name,id",
+      dict: "mis_material,material_code,id",
       pidField: "pid",
       pidValue: "0",
       hasChildField: "has_child",
@@ -97,10 +155,26 @@ export const formSchema: FormSchema[] = [
     label: '物料编码',
     field: 'materialCode',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入物料编码!'},
+                 {...rules.duplicateCheckRule('mis_material', 'material_code',model,schema)[0]},
+          ];
+     },
   },
   {
     label: '物料名称',
     field: 'materialName',
+    component: 'Input',
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入物料名称!'},
+          ];
+     },
+  },
+  {
+    label: '物料英文名称',
+    field: 'materialNameEn',
     component: 'Input',
   },
   {
@@ -112,6 +186,11 @@ export const formSchema: FormSchema[] = [
     label: '规格型号',
     field: 'materialSpec',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入规格型号!'},
+          ];
+     },
   },
   {
     label: '版本',
@@ -121,9 +200,15 @@ export const formSchema: FormSchema[] = [
   {
     label: '是否符合ROHS',
     field: 'isrohs',
+    defaultValue: "0",
     component: 'JDictSelectTag',
     componentProps:{
-      dictCode:"yn",
+        dictCode:"yn"
+     },
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入是否符合ROHS!'},
+          ];
      },
   },
   {
@@ -134,15 +219,35 @@ export const formSchema: FormSchema[] = [
   {
     label: '状态',
     field: 'status',
-    // defaultValue: "1",
+    defaultValue: "1",
     component: 'JDictSelectTag',
     componentProps:{
-        dictCode:'status',
-      // options: [
-      //   { label: '正常', value: 1 },
-      //   { label: '冻结', value: 2 },
-      // ],
+        dictCode:"status"
      },
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入状态!'},
+          ];
+     },
+  },
+  {
+    label: '是否为包装物料',
+    field: 'isPackage',
+    defaultValue: "0",
+    component: 'JDictSelectTag',
+    componentProps:{
+        dictCode:"yn"
+     },
+  },
+  {
+    label: '包装容量数值',
+    field: 'packageCapacity',
+    component: 'InputNumber',
+  },
+  {
+    label: '包装容量单位',
+    field: 'packageCapacityUnit',
+    component: 'Input',
   },
 	// TODO 主键隐藏字段，目前写死为ID
 	{
@@ -157,12 +262,16 @@ export const formSchema: FormSchema[] = [
 export const superQuerySchema = {
   materialCode: {title: '物料编码',order: 1,view: 'text', type: 'string',},
   materialName: {title: '物料名称',order: 2,view: 'text', type: 'string',},
-  description: {title: '描述',order: 3,view: 'text', type: 'string',},
-  materialSpec: {title: '规格型号',order: 4,view: 'text', type: 'string',},
-  version: {title: '版本',order: 5,view: 'text', type: 'string',},
-  isrohs: {title: '是否符合ROHS',order: 6,view: 'number', type: 'number',dictCode: 'yn',},
-  remark: {title: '备注',order: 7,view: 'text', type: 'string',},
-  status: {title: '状态',order: 8,view: 'list', type: 'string',dictCode: 'status',},
+  materialNameEn: {title: '物料英文名称',order: 3,view: 'text', type: 'string',},
+  description: {title: '描述',order: 4,view: 'text', type: 'string',},
+  materialSpec: {title: '规格型号',order: 5,view: 'text', type: 'string',},
+  version: {title: '版本',order: 6,view: 'text', type: 'string',},
+  isrohs: {title: '是否符合ROHS',order: 7,view: 'number', type: 'number',dictCode: 'yn',},
+  remark: {title: '备注',order: 8,view: 'text', type: 'string',},
+  status: {title: '状态',order: 9,view: 'list', type: 'string',dictCode: 'status',},
+  isPackage: {title: '是否为包装物料',order: 10,view: 'list', type: 'string',dictCode: 'yn',},
+  packageCapacity: {title: '包装容量数值',order: 11,view: 'number', type: 'number',},
+  packageCapacityUnit: {title: '包装容量单位',order: 12,view: 'text', type: 'string',},
 };
 
 

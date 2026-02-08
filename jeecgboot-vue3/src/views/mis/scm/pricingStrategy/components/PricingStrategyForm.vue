@@ -30,7 +30,6 @@
                 schemas: getBpmFormSchema(props.formData),
                 showActionButtonGroup: false,
                 baseColProps: {span: 8}
-
             });
 
             const formDisabled = computed(()=>{

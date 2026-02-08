@@ -1,17 +1,17 @@
 package org.jeecg.modules.mdm.service;
 
 import org.jeecg.common.system.vo.SelectTreeModel;
+import org.jeecg.modules.mdm.entity.Item;
 import org.jeecg.modules.mdm.entity.Material;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.common.exception.JeecgBootException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import java.util.List;
-import org.jeecg.modules.mdm.entity.Item;
 
 /**
  * @Description: 物料表
  * @Author: jeecg-boot
- * @Date:   2024-11-14
+ * @Date:   2026-02-03
  * @Version: V1.0
  */
 public interface IMaterialService extends IService<Material> {
@@ -72,6 +72,5 @@ public interface IMaterialService extends IService<Material> {
 	 */
 	List<SelectTreeModel> queryListByPid(String pid);
 
-	 Item buildItemFromMaterial(Material material);
-
+	Item buildItemFromMaterial(Material material);
 }

@@ -20,16 +20,16 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 /**
- * @Description: 统一库存项表
+ * @Description: 统一库存项目表
  * @Author: jeecg-boot
- * @Date:   2026-01-15
+ * @Date:   2026-02-03
  * @Version: V1.0
  */
 @Data
 @TableName("mis_item")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-@Schema(description="统一库存项表")
+@Schema(description="统一库存项目表")
 public class Item implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -59,7 +59,8 @@ public class Item implements Serializable {
     @Schema(description = "型号规格")
     private String spec;
 	/**单位*/
-	@Excel(name = "单位", width = 15)
+	@Excel(name = "单位", width = 15, dictTable = "mis_unit", dicText = "unit", dicCode = "unit")
+	@Dict(dictTable = "mis_unit", dicText = "unit", dicCode = "unit")
     @Schema(description = "单位")
     private String unit;
 	/**是否删除*/
@@ -67,10 +68,24 @@ public class Item implements Serializable {
     @Schema(description = "是否删除")
     @TableLogic
     private String delFlag;
-	/**状态*/
-	@Excel(name = "状态", width = 15)
-    @Schema(description = "状态")
+	/**是否启用*/
+	@Excel(name = "是否启用", width = 15, dicCode = "yn")
+	@Dict(dicCode = "yn")
+    @Schema(description = "是否启用")
     private String isActive;
+	/**是否包装材料*/
+	@Excel(name = "是否包装材料", width = 15, dicCode = "yn")
+	@Dict(dicCode = "yn")
+    @Schema(description = "是否包装材料")
+    private String isPackage;
+	/**包装容量*/
+	@Excel(name = "包装容量", width = 15)
+    @Schema(description = "包装容量")
+    private BigDecimal packageCapacity;
+	/**包装单位*/
+	@Excel(name = "包装单位", width = 15)
+    @Schema(description = "包装单位")
+    private String packageCapacityUnit;
 	/**所属部门*/
     @Schema(description = "所属部门")
     private String sysOrgCode;

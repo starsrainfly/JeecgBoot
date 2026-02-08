@@ -10,7 +10,7 @@
 	<select id="queryListByPid" parameterType="java.lang.Object" resultType="org.jeecg.common.system.vo.SelectTreeModel">
 		select
 		  id as "key",
-		  material_name as "title",
+		  material_code as "title",
 		  (case when has_child = '1' then 0 else 1 end) as isLeaf,
 		  pid as parentId
 		from mis_material

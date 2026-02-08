@@ -27,6 +27,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jeecg.modules.scm.vo.PricingStrategyVo;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
@@ -87,6 +88,59 @@ public class PricingStrategyController extends JeecgController<PricingStrategy, 
 		IPage<PricingStrategy> pageList = pricingStrategyService.page(page, queryWrapper);
 		return Result.OK(pageList);
 	}
+
+	 /**
+	  * 分页列表查询
+	  *
+	  * @param pricingStrategy
+	  * @param pageNo
+	  * @param pageSize
+	  * @param req
+	  * @return
+	  */
+	 //@AutoLog(value = "价格策略-分页列表查询")
+	 @Operation(summary="价格策略-分页列表查询")
+	 @GetMapping(value = "/list_new")
+	 public Result<IPage<PricingStrategyVo>> queryPageList_new(PricingStrategy pricingStrategy,
+														 @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
+														 @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
+														 HttpServletRequest req) {
+		 // 自定义查询规则
+		 Map<String, QueryRuleEnum> customeRuleMap = new HashMap<>();
+		 // 自定义多选的查询规则为：LIKE_WITH_OR
+		 customeRuleMap.put("salesmanUserId", QueryRuleEnum.LIKE_WITH_OR);
+		 QueryWrapper<PricingStrategy> queryWrapper = QueryGenerator.initQueryWrapper(pricingStrategy, req.getParameterMap(),customeRuleMap);
+		 Page<PricingStrategy> page = new Page<PricingStrategy>(pageNo, pageSize);
+		// IPage<PricingStrategy> pageList = pricingStrategyService.page(page, queryWrapper);
+		 IPage<PricingStrategyVo> pageList = pricingStrategyService.queryPageList(pricingStrategy, page);
+		 return Result.OK(pageList);
+	 }
+
+	 /**
+	  * 分页列表查询
+	  *
+	  * @param pricingStrategy
+	  * @param pageNo
+	  * @param pageSize
+	  * @param req
+	  * @return
+	  */
+	 //@AutoLog(value = "价格策略选择-分页列表查询")
+	 @Operation(summary="价格策略选择-分页列表查询")
+	 @GetMapping(value = "/priceSelectList")
+	 public  Result<IPage<PricingStrategyVo>>queryPageBestPricingStrategies(PricingStrategy pricingStrategy,
+																			@RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
+																			@RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
+																			HttpServletRequest req){
+		 Map<String, QueryRuleEnum> customeRuleMap = new HashMap<>();
+		 // 自定义多选的查询规则为：LIKE_WITH_OR
+		 customeRuleMap.put("salesmanUserId", QueryRuleEnum.LIKE_WITH_OR);
+		 QueryWrapper<PricingStrategy> queryWrapper = QueryGenerator.initQueryWrapper(pricingStrategy, req.getParameterMap(),customeRuleMap);
+		 Page<PricingStrategy> page = new Page<PricingStrategy>(pageNo, pageSize);
+		 // IPage<PricingStrategy> pageList = pricingStrategyService.page(page, queryWrapper);
+		 IPage<PricingStrategyVo> pageList = pricingStrategyService.selectBestPricingStrategies(pricingStrategy, page);
+		 return Result.OK(pageList);
+	 }
 	
 	/**
 	 *   添加
@@ -99,8 +153,8 @@ public class PricingStrategyController extends JeecgController<PricingStrategy, 
 	@RequiresPermissions("scm:mis_pricing_strategy:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody PricingStrategy pricingStrategy) {
-		if(!StringUtils.isEmpty(pricingStrategy.getSalesmanUserId())){
-			SysUser systemUser = sysUserService.getById(pricingStrategy.getSalesmanUserId());
+		if(!StringUtils.isEmpty(pricingStrategy.getSalesmanId())){
+			SysUser systemUser = sysUserService.getById(pricingStrategy.getSalesmanId());
 			pricingStrategy.setSalesmanName(systemUser.getRealname());
 		}
 		pricingStrategyService.save(pricingStrategy);
@@ -118,8 +172,8 @@ public class PricingStrategyController extends JeecgController<PricingStrategy, 
 	@RequiresPermissions("scm:mis_pricing_strategy:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody PricingStrategy pricingStrategy) {
-		if(!StringUtils.isEmpty(pricingStrategy.getSalesmanUserId())){
-			SysUser systemUser = sysUserService.getById(pricingStrategy.getSalesmanUserId());
+		if(!StringUtils.isEmpty(pricingStrategy.getSalesmanId())){
+			SysUser systemUser = sysUserService.getById(pricingStrategy.getSalesmanId());
 			pricingStrategy.setSalesmanName(systemUser.getRealname());
 		}
 		else{
@@ -214,10 +268,11 @@ public class PricingStrategyController extends JeecgController<PricingStrategy, 
 	 public Result<PricingStrategy> matchPrice(
 			 @RequestParam(required = false) String customerId,
 			 @RequestParam(required = false) String salesmanUserId,
-			 @RequestParam String itemId) {
+			 @RequestParam String itemId,
+			 @RequestParam String packageId) {
 
 		 PricingStrategy matched = pricingStrategyService.matchPrice(
-				 customerId, salesmanUserId, itemId);
+				 customerId, salesmanUserId, itemId, packageId);
 
 		 if (matched == null) {
 			 return Result.error("未找到有效的价格策略");

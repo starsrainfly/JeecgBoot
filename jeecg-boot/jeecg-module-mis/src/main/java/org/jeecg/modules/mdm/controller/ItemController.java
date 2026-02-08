@@ -2,12 +2,18 @@ package org.jeecg.modules.mdm.controller;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
+import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.mdm.entity.Item;
 import org.jeecg.modules.mdm.service.IItemService;
 
@@ -16,24 +22,32 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jeecgframework.poi.excel.ExcelImportUtil;
+import org.jeecgframework.poi.excel.def.NormalExcelConstants;
+import org.jeecgframework.poi.excel.entity.ExportParams;
+import org.jeecgframework.poi.excel.entity.ImportParams;
+import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 import org.jeecg.common.system.base.controller.JeecgController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
+import com.alibaba.fastjson.JSON;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 
  /**
- * @Description: 统一库存项表
+ * @Description: 统一库存项目表
  * @Author: jeecg-boot
- * @Date:   2026-01-15
+ * @Date:   2026-02-03
  * @Version: V1.0
  */
-@Tag(name="统一库存项表")
+@Tag(name="统一库存项目表")
 @RestController
-@RequestMapping("/masterdata/item")
+@RequestMapping("/mdm/item")
 @Slf4j
 public class ItemController extends JeecgController<Item, IItemService> {
 	@Autowired
@@ -48,8 +62,8 @@ public class ItemController extends JeecgController<Item, IItemService> {
 	 * @param req
 	 * @return
 	 */
-	//@AutoLog(value = "统一库存项表-分页列表查询")
-	@Operation(summary="统一库存项表-分页列表查询")
+	//@AutoLog(value = "统一库存项目表-分页列表查询")
+	@Operation(summary="统一库存项目表-分页列表查询")
 	@GetMapping(value = "/list")
 	public Result<IPage<Item>> queryPageList(Item item,
 								   @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
@@ -59,6 +73,7 @@ public class ItemController extends JeecgController<Item, IItemService> {
         Map<String, QueryRuleEnum> customeRuleMap = new HashMap<>();
         // 自定义多选的查询规则为：LIKE_WITH_OR
         customeRuleMap.put("itemType", QueryRuleEnum.LIKE_WITH_OR);
+        customeRuleMap.put("isActive", QueryRuleEnum.LIKE_WITH_OR);
         QueryWrapper<Item> queryWrapper = QueryGenerator.initQueryWrapper(item, req.getParameterMap(),customeRuleMap);
 		Page<Item> page = new Page<Item>(pageNo, pageSize);
 		IPage<Item> pageList = itemService.page(page, queryWrapper);
@@ -71,9 +86,9 @@ public class ItemController extends JeecgController<Item, IItemService> {
 	 * @param item
 	 * @return
 	 */
-	@AutoLog(value = "统一库存项表-添加")
-	@Operation(summary="统一库存项表-添加")
-	//@RequiresPermissions("masterdata:mis_item:add")
+	@AutoLog(value = "统一库存项目表-添加")
+	@Operation(summary="统一库存项目表-添加")
+	@RequiresPermissions("mdm:mis_item:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody Item item) {
 		itemService.save(item);
@@ -86,9 +101,9 @@ public class ItemController extends JeecgController<Item, IItemService> {
 	 * @param item
 	 * @return
 	 */
-	@AutoLog(value = "统一库存项表-编辑")
-	@Operation(summary="统一库存项表-编辑")
-	//@RequiresPermissions("masterdata:mis_item:edit")
+	@AutoLog(value = "统一库存项目表-编辑")
+	@Operation(summary="统一库存项目表-编辑")
+	@RequiresPermissions("mdm:mis_item:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody Item item) {
 		itemService.updateById(item);
@@ -101,9 +116,9 @@ public class ItemController extends JeecgController<Item, IItemService> {
 	 * @param id
 	 * @return
 	 */
-	@AutoLog(value = "统一库存项表-通过id删除")
-	@Operation(summary="统一库存项表-通过id删除")
-	//@RequiresPermissions("masterdata:mis_item:delete")
+	@AutoLog(value = "统一库存项目表-通过id删除")
+	@Operation(summary="统一库存项目表-通过id删除")
+	@RequiresPermissions("mdm:mis_item:delete")
 	@DeleteMapping(value = "/delete")
 	public Result<String> delete(@RequestParam(name="id",required=true) String id) {
 		itemService.removeById(id);
@@ -116,9 +131,9 @@ public class ItemController extends JeecgController<Item, IItemService> {
 	 * @param ids
 	 * @return
 	 */
-	@AutoLog(value = "统一库存项表-批量删除")
-	@Operation(summary="统一库存项表-批量删除")
-	//@RequiresPermissions("masterdata:mis_item:deleteBatch")
+	@AutoLog(value = "统一库存项目表-批量删除")
+	@Operation(summary="统一库存项目表-批量删除")
+	@RequiresPermissions("mdm:mis_item:deleteBatch")
 	@DeleteMapping(value = "/deleteBatch")
 	public Result<String> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
 		this.itemService.removeByIds(Arrays.asList(ids.split(",")));
@@ -131,8 +146,8 @@ public class ItemController extends JeecgController<Item, IItemService> {
 	 * @param id
 	 * @return
 	 */
-	//@AutoLog(value = "统一库存项表-通过id查询")
-	@Operation(summary="统一库存项表-通过id查询")
+	//@AutoLog(value = "统一库存项目表-通过id查询")
+	@Operation(summary="统一库存项目表-通过id查询")
 	@GetMapping(value = "/queryById")
 	public Result<Item> queryById(@RequestParam(name="id",required=true) String id) {
 		Item item = itemService.getById(id);
@@ -148,10 +163,10 @@ public class ItemController extends JeecgController<Item, IItemService> {
     * @param request
     * @param item
     */
-    @RequiresPermissions("masterdata:mis_item:exportXls")
+    @RequiresPermissions("mdm:mis_item:exportXls")
     @RequestMapping(value = "/exportXls")
     public ModelAndView exportXls(HttpServletRequest request, Item item) {
-        return super.exportXls(request, item, Item.class, "统一库存项表");
+        return super.exportXls(request, item, Item.class, "统一库存项目表");
     }
 
     /**
@@ -161,7 +176,7 @@ public class ItemController extends JeecgController<Item, IItemService> {
     * @param response
     * @return
     */
-    @RequiresPermissions("masterdata:mis_item:importExcel")
+    @RequiresPermissions("mdm:mis_item:importExcel")
     @RequestMapping(value = "/importExcel", method = RequestMethod.POST)
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, Item.class);

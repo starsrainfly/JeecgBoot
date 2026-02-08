@@ -1,13 +1,14 @@
 package org.jeecg.modules.mdm.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.common.system.vo.SelectTreeModel;
 import org.jeecg.modules.mdm.entity.Item;
-import org.jeecg.modules.mdm.service.IItemService;
 import org.jeecg.modules.mdm.entity.Material;
 import org.jeecg.modules.mdm.mapper.MaterialMapper;
+import org.jeecg.modules.mdm.service.IItemService;
 import org.jeecg.modules.mdm.service.IMaterialService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,19 +19,19 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+
 import static org.jeecg.modules.mdm.constant.ItemTypeConstants.MATERIAL;
+
 /**
  * @Description: 物料表
  * @Author: jeecg-boot
- * @Date:   2024-11-14
+ * @Date:   2026-02-03
  * @Version: V1.0
  */
 @Service
 public class MaterialServiceImpl extends ServiceImpl<MaterialMapper, Material> implements IMaterialService {
-
     @Autowired
     private IItemService itemService;
-
 	@Override
 	public void addMaterial(Material material) {
 	   //新增时设置hasChild为0
@@ -50,7 +51,6 @@ public class MaterialServiceImpl extends ServiceImpl<MaterialMapper, Material> i
             Item item = buildItemFromMaterial(material);
             itemService.save(item);
         }
-
 	}
 	
 	@Override
@@ -72,13 +72,13 @@ public class MaterialServiceImpl extends ServiceImpl<MaterialMapper, Material> i
 		}
 		baseMapper.updateById(material);
         String itemId = itemService.GetIdByMaterialId(material.getId());
-        if(!itemId.isEmpty()){
+        if(StrUtil.isNotBlank(itemId)){
             Item item = buildItemFromMaterial(material);
             item.setId(itemId);
             itemService.updateById(item);
         }
 	}
-
+	
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void deleteMaterial(String id) throws JeecgBootException {
@@ -116,7 +116,7 @@ public class MaterialServiceImpl extends ServiceImpl<MaterialMapper, Material> i
             baseMapper.deleteById(id);
 
             String itemId = itemService.GetIdByMaterialId(id);
-            if(!itemId.isEmpty()){
+            if(StrUtil.isNotBlank(itemId)){
                 itemService.removeById(itemId);
             }
         }
@@ -179,11 +179,13 @@ public class MaterialServiceImpl extends ServiceImpl<MaterialMapper, Material> i
         item.setSpec(material.getMaterialSpec());
         item.setDelFlag(material.getDelFlag());
         item.setIsActive(material.getStatus());
+        item.setIsPackage(material.getIsPackage());
+        item.setPackageCapacity(material.getPackageCapacity());
+        item.setPackageCapacityUnit(material.getPackageCapacityUnit());
         item.setSysOrgCode(material.getSysOrgCode());
         return item;
     }
-
-    /**
+	/**
 	 * 根据所传pid查询旧的父级节点的子节点并修改相应状态值
 	 * @param pid
 	 */

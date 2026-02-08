@@ -1,5 +1,127 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.scm.mapper.PricingStrategyMapper">
+    <select id="selectWithPackage" resultType="org.jeecg.modules.scm.vo.PricingStrategyVo">
+        SELECT
+        ps.*,
+        item.material_name AS packageName,
+        item.material_spec AS packageSpec
+        FROM mis_pricing_strategy ps
+        LEFT JOIN mis_material item ON ps.package_item_id = item.id
+        <where>
+            <!-- 使用 entity 引用传入的 pricingStrategy -->
+            <if test="entity.itemId != null and entity.itemId != ''">
+                AND ps.item_id = #{entity.itemId}
+            </if>
+            <if test="entity.packageItemId != null and entity.packageItemId != ''">
+                AND ps.package_item_id = #{entity.packageItemId}
+            </if>
+            <if test="entity.isActive != null and entity.isActive != ''">
+                AND ps.is_active = #{entity.isActive}
+            </if>
+            <if test="entity.pricingType != null and entity.pricingType != ''">
+                AND ps.pricing_type=#{entity.pricingType}
+            </if>
+           <if test="entity.salesmanId != null and entity.salesmanId != ''">
+               AND ps.salesman_id = #{entity.salesmanId}
+           </if>
+           <if test="entity.customerId != null and entity.customerId != ''">
+               AND ps.customer_id = #{entity.customer_id}
+           </if>
+            <!-- 其他字段... -->
+            <!-- 所有模糊查询都直接用主表字段（高性能！） -->
+            <if test="entity.itemCode != null and entity.itemCode != ''">
+                AND ps.item_code LIKE CONCAT('%', #{entity.itemCode}, '%')
+            </if>
+            <if test="entity.itemName != null and entity.itemName != ''">
+                AND ps.item_name LIKE CONCAT('%', #{entity.itemName}, '%')
+            </if>
+            <if test="entity.customerName != null and entity.customerName != ''">
+                AND ps.customer_name LIKE CONCAT('%', #{entity.customerName}, '%')
+            </if>
+            <if test="entity.salesmanName != null and entity.salesmanName != ''">
+                AND ps.salesman_name LIKE CONCAT('%', #{entity.salesmanName}, '%')
+            </if>
+            <if test="entity.strategyName != null and entity.strategyName != ''">
+                AND ps.strategy_name LIKE CONCAT('%', #{entity.strategyName}, '%')
+            </if>
+        </where>
+    </select>
 
+    <select id="selectBestPricingStrategies" resultType="org.jeecg.modules.scm.vo.PricingStrategyVo">
+        SELECT
+        mps.*,
+        m.material_name,
+        m.material_spec,
+        m.package_capacity,
+        m.package_capacity_unit
+        FROM mis_pricing_strategy mps
+        LEFT JOIN mis_material m
+        ON m.is_package = '1' AND mps.package_item_id = m.id
+        WHERE
+        mps.is_active = '1'
+        AND mps.del_flag = '0'
+        AND CURDATE() BETWEEN mps.effective_from AND mps.effective_to
+
+        <!-- 宽松匹配条件 -->
+        AND (
+        #{entity.customer_id} IS NULL
+        OR mps.customer_id = #{entity.customer_id}
+        OR mps.customer_id IS NULL
+        )
+        AND (
+        #{entity.salesman_id} IS NULL
+        OR mps.salesman_id = #{entity.salesman_id}
+        OR mps.salesman_id IS NULL
+        )
+        AND (
+        #{entity.package_item_id} IS NULL
+        OR mps.package_item_id = #{entity.package_item_id}
+        OR mps.package_item_id IS NULL
+        )
+
+        AND NOT EXISTS (
+        SELECT 1
+        FROM mis_pricing_strategy mps2
+        WHERE
+        mps2.item_code = mps.item_code
+        AND mps2.is_active = '1'
+        AND mps2.del_flag = '0'
+        AND CURDATE() BETWEEN mps2.effective_from AND mps2.effective_to
+
+        AND (
+        #{entity.customer_id} IS NULL
+        OR mps2.customer_id = #{entity.customer_id}
+        OR mps2.customer_id IS NULL
+        )
+        AND (
+        #{entity.salesman_id} IS NULL
+        OR mps2.salesman_id = #{entity.salesman_id}
+        OR mps2.salesman_id IS NULL
+        )
+        AND (
+        #{entity.package_item_id} IS NULL
+        OR mps2.package_item_id = #{entity.package_item_id}
+        OR mps2.package_item_id IS NULL
+        )
+
+        AND (
+        (
+        (CASE WHEN #{entity.customer_id} IS NOT NULL AND mps2.customer_id = #{entity.customer_id} THEN 100 ELSE 0 END) +
+        (CASE WHEN #{entity.salesman_id} IS NOT NULL AND mps2.salesman_id = #{entity.salesman_id} THEN 10 ELSE 0 END) +
+        (CASE WHEN #{entity.package_item_id} IS NOT NULL AND mps2.package_item_id = #{entity.package_item_id} THEN 1 ELSE 0 END)
+        ) > (
+        (CASE WHEN #{entity.customer_id} IS NOT NULL AND mps.customer_id = #{entity.customer_id} THEN 100 ELSE 0 END) +
+        (CASE WHEN #{entity.salesman_id} IS NOT NULL AND mps.salesman_id = #{entity.salesman_id} THEN 10 ELSE 0 END) +
+        (CASE WHEN #{entity.package_item_id} IS NOT NULL AND mps.package_item_id = #{entity.package_item_id} THEN 1 ELSE 0 END)
+        )
+        OR (
+        -- 同分比时间
+        ( ... 同上打分相等 ... )
+        AND mps2.create_time > mps.create_time
+        )
+        )
+        )
+        ORDER BY mps.create_time DESC
+    </select>
 </mapper>

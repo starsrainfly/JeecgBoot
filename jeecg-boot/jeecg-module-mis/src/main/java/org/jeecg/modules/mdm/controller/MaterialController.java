@@ -2,6 +2,11 @@ package org.jeecg.modules.mdm.controller;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jeecg.common.api.vo.Result;
@@ -16,24 +21,32 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jeecgframework.poi.excel.ExcelImportUtil;
+import org.jeecgframework.poi.excel.def.NormalExcelConstants;
+import org.jeecgframework.poi.excel.entity.ExportParams;
+import org.jeecgframework.poi.excel.entity.ImportParams;
+import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 import org.jeecg.common.system.base.controller.JeecgController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import com.alibaba.fastjson.JSON;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 
  /**
  * @Description: 物料表
  * @Author: jeecg-boot
- * @Date:   2024-11-14
+ * @Date:   2026-02-03
  * @Version: V1.0
  */
-@Api(tags="物料表")
+@Tag(name="物料表")
 @RestController
-@RequestMapping("/material/material")
+@RequestMapping("/mdm/material")
 @Slf4j
 public class MaterialController extends JeecgController<Material, IMaterialService>{
 	@Autowired
@@ -49,7 +62,7 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
 	 * @return
 	 */
 	//@AutoLog(value = "物料表-分页列表查询")
-	@ApiOperation(value="物料表-分页列表查询", notes="物料表-分页列表查询")
+	@Operation(summary="物料表-分页列表查询")
 	@GetMapping(value = "/rootList")
 	public Result<IPage<Material>> queryPageList(Material material,
 								   @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
@@ -145,7 +158,7 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
       * @return
       */
 	//@AutoLog(value = "物料表-获取子数据")
-	@ApiOperation(value="物料表-获取子数据", notes="物料表-获取子数据")
+	@Operation(summary="物料表-获取子数据")
 	@GetMapping(value = "/childList")
 	public Result<IPage<Material>> queryPageList(Material material,HttpServletRequest req) {
 		QueryWrapper<Material> queryWrapper = QueryGenerator.initQueryWrapper(material, req.getParameterMap());
@@ -163,7 +176,7 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
       * @return
       */
 	//@AutoLog(value = "物料表-批量获取子数据")
-    @ApiOperation(value="物料表-批量获取子数据", notes="物料表-批量获取子数据")
+    @Operation(summary="物料表-批量获取子数据")
     @GetMapping("/getChildListBatch")
     public Result getChildListBatch(@RequestParam("parentIds") String parentIds) {
         try {
@@ -187,8 +200,8 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
 	 * @return
 	 */
 	@AutoLog(value = "物料表-添加")
-	@ApiOperation(value="物料表-添加", notes="物料表-添加")
-    @RequiresPermissions("material:mis_material:add")
+	@Operation(summary="物料表-添加")
+    @RequiresPermissions("mdm:mis_material:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody Material material) {
 		materialService.addMaterial(material);
@@ -202,8 +215,8 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
 	 * @return
 	 */
 	@AutoLog(value = "物料表-编辑")
-	@ApiOperation(value="物料表-编辑", notes="物料表-编辑")
-    @RequiresPermissions("material:mis_material:edit")
+	@Operation(summary="物料表-编辑")
+    @RequiresPermissions("mdm:mis_material:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody Material material) {
 		materialService.updateMaterial(material);
@@ -217,8 +230,8 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
 	 * @return
 	 */
 	@AutoLog(value = "物料表-通过id删除")
-	@ApiOperation(value="物料表-通过id删除", notes="物料表-通过id删除")
-    @RequiresPermissions("material:mis_material:delete")
+	@Operation(summary="物料表-通过id删除")
+    @RequiresPermissions("mdm:mis_material:delete")
 	@DeleteMapping(value = "/delete")
 	public Result<String> delete(@RequestParam(name="id",required=true) String id) {
 		materialService.deleteMaterial(id);
@@ -232,8 +245,8 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
 	 * @return
 	 */
 	@AutoLog(value = "物料表-批量删除")
-	@ApiOperation(value="物料表-批量删除", notes="物料表-批量删除")
-    @RequiresPermissions("material:mis_material:deleteBatch")
+	@Operation(summary="物料表-批量删除")
+    @RequiresPermissions("mdm:mis_material:deleteBatch")
 	@DeleteMapping(value = "/deleteBatch")
 	public Result<String> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
 		this.materialService.removeByIds(Arrays.asList(ids.split(",")));
@@ -247,7 +260,7 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
 	 * @return
 	 */
 	//@AutoLog(value = "物料表-通过id查询")
-	@ApiOperation(value="物料表-通过id查询", notes="物料表-通过id查询")
+	@Operation(summary="物料表-通过id查询")
 	@GetMapping(value = "/queryById")
 	public Result<Material> queryById(@RequestParam(name="id",required=true) String id) {
 		Material material = materialService.getById(id);
@@ -263,7 +276,7 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
     * @param request
     * @param material
     */
-    @RequiresPermissions("material:mis_material:exportXls")
+    @RequiresPermissions("mdm:mis_material:exportXls")
     @RequestMapping(value = "/exportXls")
     public ModelAndView exportXls(HttpServletRequest request, Material material) {
 		return super.exportXls(request, material, Material.class, "物料表");
@@ -276,7 +289,7 @@ public class MaterialController extends JeecgController<Material, IMaterialServi
     * @param response
     * @return
     */
-    @RequiresPermissions("material:mis_material:importExcel")
+    @RequiresPermissions("mdm:mis_material:importExcel")
     @RequestMapping(value = "/importExcel", method = RequestMethod.POST)
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
 		return super.importExcel(request, response, Material.class);

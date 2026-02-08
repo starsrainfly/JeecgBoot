@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * @Description: 物料表
  * @Author: jeecg-boot
- * @Date:   2024-11-14
+ * @Date:   2026-02-03
  * @Version: V1.0
  */
 public interface MaterialMapper extends BaseMapper<Material> {
@@ -21,7 +21,7 @@ public interface MaterialMapper extends BaseMapper<Material> {
 	 * @param id
 	 * @param status
 	 */
-	void updateTreeNodeStatus(@Param("id") String id, @Param("status") String status);
+	void updateTreeNodeStatus(@Param("id") String id,@Param("status") String status);
 
 	/**
 	 * 【vue3专用】根据父级ID查询树节点数据

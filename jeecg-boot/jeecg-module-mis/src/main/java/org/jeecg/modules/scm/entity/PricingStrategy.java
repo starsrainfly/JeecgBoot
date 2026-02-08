@@ -70,11 +70,15 @@ public class PricingStrategy implements Serializable {
 	@Excel(name = "业务员id", width = 15, dictTable = "sys_user where del_flag='0'", dicText = "realname", dicCode = "id")
 	@Dict(dictTable = "sys_user where del_flag='0'", dicText = "realname", dicCode = "id")
     @Schema(description = "业务员id")
-    private String salesmanUserId;
+    private String salesmanId;
 	/**业务员*/
 	@Excel(name = "业务员", width = 15)
     @Schema(description = "业务员")
     private String salesmanName;
+    /**包装Id*/
+    @Excel(name = "包装Id", width = 15)
+    @Schema(description = "包装id")
+    private String packageItemId;
 	/**价格*/
 	@Excel(name = "价格", width = 15)
     @Schema(description = "价格")

@@ -117,4 +117,9 @@ public class Material implements Serializable {
 	@Excel(name = "包装容量单位", width = 15)
     @Schema(description = "包装容量单位")
     private String packageCapacityUnit;
+    /**包装类型*/
+    @Excel(name = "包装类型", width = 15, dicCode = "mdm_package_type")
+    @Dict(dicCode = "mdm_package_type")
+    @Schema(description = "包装类型")
+    private String packageType;
 }

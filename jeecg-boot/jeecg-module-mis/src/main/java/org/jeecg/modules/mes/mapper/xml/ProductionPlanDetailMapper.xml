@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.mes.mapper.ProductionPlanDetailMapper">
+
+	<delete id="deleteByMainId" parameterType="java.lang.String">
+		DELETE 
+		FROM  mis_production_plan_detail 
+		WHERE
+			 plan_id = #{mainId} 	</delete>
+	
+	<select id="selectByMainId" parameterType="java.lang.String" resultType="org.jeecg.modules.mes.entity.ProductionPlanDetail">
+		SELECT * 
+		FROM  mis_production_plan_detail
+		WHERE
+			 plan_id = #{mainId} 	</select>
+    <select id="selectAvailableForOrder" resultType="org.jeecg.modules.mes.vo.ProductionPlanDetailVo">
+		SELECT
+		d.id,
+		d.plan_id,
+		p.plan_no,
+		p.plan_type,
+		d.sales_order_id,
+		d.sales_order_no,
+		d.sales_order_detail_id,
+		d.customer_id,
+		d.customer_name,
+		d.customer_code,
+		d.product_id,
+		d.product_code,
+		pr.product_name,
+		pr.product_spec,
+		d.allocated_qty,
+		d.completed_qty,
+		(d.allocated_qty - IFNULL(d.completed_qty, 0)) as remaining_qty,
+		d.package_id,
+		pkg.material_name as package_name,
+		pkg.description as package_spec,
+		d.delivery_date,
+		d.sales_remark,
+		d.plan_remark
+		FROM mis_production_plan_detail d
+		INNER JOIN mis_production_plan p ON d.plan_id = p.id AND p.del_flag = '0'
+		LEFT JOIN mis_product pr ON d.product_id = pr.id
+		LEFT JOIN mis_material pkg ON d.package_id = pkg.id
+		WHERE p.plan_status = '1'           <!-- 已发布 -->
+		AND d.del_flag = '0'
+		AND (d.completed_qty IS NULL OR d.completed_qty &lt; d.allocated_qty)  <!-- 有剩余 -->
+		<if test="planNo != null and planNo != ''">
+			AND p.plan_no LIKE CONCAT('%', #{planNo}, '%')
+		</if>
+		<if test="productCode != null and productCode != ''">
+			AND d.product_code LIKE CONCAT('%', #{productCode}, '%')
+		</if>
+		ORDER BY d.delivery_date ASC, d.create_time ASC
+	</select>
+</mapper>

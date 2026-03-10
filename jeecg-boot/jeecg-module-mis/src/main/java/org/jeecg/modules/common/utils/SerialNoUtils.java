@@ -8,7 +8,8 @@ import org.jeecg.common.util.RedisUtil;
 import org.jeecg.common.util.SpringContextUtils;
 
 import java.text.SimpleDateFormat;
-
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 
 
 /**
@@ -33,8 +34,8 @@ public class SerialNoUtils {
     /**
      * 生成唯一业务单号
      *
-     * @param prefix 单号前缀，如 "RK"（入库）、"SO"（销售）、"WO"（工单）等
-     * @return 完整单号字符串，如 "RK20250405123450001"
+     * @param prefix 单号前缀，如 "IN"（入库）、"SO"（销售）、"WO"（工单）等
+     * @return 完整单号字符串，如 "IN20250405123450001"
      * @throws IllegalArgumentException 当 prefix 为空时
      */
     public static String generate(String prefix) {
@@ -70,7 +71,12 @@ public class SerialNoUtils {
         return orderNo;
     }
 
-    public static String generateDaily(String prefix) {
+    /**
+     *生成唯一业务单号
+     * @param prefix 单号前缀，
+     * @return 整单号字符串，如 "PO202603060001"
+     */
+    public static String generateSerialNo(String prefix) {
         if (StringUtils.isBlank(prefix)) {
             throw new IllegalArgumentException("单号前缀（prefix）不能为空");
         }
@@ -85,22 +91,34 @@ public class SerialNoUtils {
         // 从 Spring 容器获取 RedisUtil（兼容非 Spring 管理的类，如 IFillRuleHandler）
         RedisUtil redisUtil = SpringContextUtils.getBean(RedisUtil.class);
 
-        // 设置 key 60 秒过期（覆盖当日剩余时间足够）
-        redisUtil.expire(redisKey, 60);
+        long ttlSeconds = getSecondsUntilMidnight();
+        // 至少保留 1 秒，防止边界问题
+        ttlSeconds = Math.max(ttlSeconds, 1);
+        // 设置 key 到午夜过期（覆盖当日剩余时间足够）
+        redisUtil.expire(redisKey, ttlSeconds);
         Long sequence = redisUtil.incr(redisKey, 1);
 
         // 流水号固定4位，不足补0（最大支持 9999 单/秒）
-        String seqPart = StringUtils.leftPad(sequence.toString(), 4, '0');
+        String seqPart = StringUtils.leftPad(sequence.toString(), 5, '0');
 
         String orderNo = redisKey + seqPart;
 
-        log.debug("生成业务单号 | 单号: {} | 时间: {} | 秒偏移: {} | 流水: {}",
+        log.debug("生成业务单号 | 单号: {} | 时间: {} |  流水: {}",
                 orderNo,
                 now.toString("yyyy-MM-dd HH:mm:ss"),
-                secondsPart,
                 seqPart);
 
         return orderNo;
+    }
+
+    /**
+     * 计算从 now 到 24:00 的剩余秒数
+     * @return
+     */
+    public static long getSecondsUntilMidnight() {
+        LocalTime now = LocalTime.now();
+        LocalTime midnight = LocalTime.MIDNIGHT; // 00:00:00 of next day
+        return now.until(midnight, ChronoUnit.SECONDS);
     }
 
     /**

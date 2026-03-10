@@ -128,6 +128,12 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
+    label:'配方id',
+    field:'recipeId',
+    component:'Input',
+    show:false
+  },
+  {
     label: '配方编码',
     field: 'recipeCode',
     component: 'JPopup',
@@ -140,7 +146,7 @@ export const formSchema: FormSchema[] = [
                 { source: 'id', target: 'recipeId' },
                 { source: 'recipe_code', target: 'recipeCode' },
             ],
-            multi:true
+            multi:false
         }
     },
 
@@ -195,7 +201,7 @@ export const superQuerySchema = {
   productCode: {title: '产品编码',order: 0,view: 'text', type: 'string',},
   productName: {title: '产品名称',order: 1,view: 'text', type: 'string',},
   productSpec: {title: '型号规格',order: 2,view: 'text', type: 'string',},
-  recipeCode: {title: '配方编码',order: 3,view: 'popup', type: 'string',code: 'mis_recipe_select', orgFields: 'recipe_code', destFields: 'recipeCode', popupMulti: false,},
+  recipeCode: {title: '配方编码',order: 3,view: 'popup', type: 'string',code: 'mis_recipe_select', orgFields: 'id,recipe_code', destFields: 'recipe_id,recipeCode', popupMulti: false,},
   description: {title: '产品描述',order: 4,view: 'text', type: 'string',},
   characteristic: {title: '特点',order: 5,view: 'text', type: 'string',},
   color: {title: '颜色',order: 6,view: 'text', type: 'string',},
@@ -215,6 +221,7 @@ export const superQuerySchema = {
   compression: {title: '抗压强度',order: 20,view: 'text', type: 'string',},
   remark: {title: '备注',order: 21,view: 'text', type: 'string',},
   status: {title: '状态',order: 22,view: 'list', type: 'string',dictCode: 'status',},
+  recipeId: {title: '配方id',order: 23,view: 'text', type: 'string',},
 };
 
 

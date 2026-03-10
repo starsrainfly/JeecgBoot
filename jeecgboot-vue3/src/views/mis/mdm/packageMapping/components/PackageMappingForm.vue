@@ -8,15 +8,15 @@
 </template>
 
 <script lang="ts">
-    import {BasicForm, useForm} from '@/components/Form';
+    import {BasicForm, useForm} from '/@/components/Form/index';
     import {computed, defineComponent} from 'vue';
-    import {defHttp} from '@/utils/http/axios';
-    import { propTypes } from '@/utils/propTypes';
-    import {getBpmFormSchema} from '../Item.data';
-    import {saveOrUpdate} from '../Item.api';
+    import {defHttp} from '/@/utils/http/axios';
+    import { propTypes } from '/@/utils/propTypes';
+    import {getBpmFormSchema} from '../PackageMapping.data';
+    import {saveOrUpdate} from '../PackageMapping.api';
     
     export default defineComponent({
-        name: "ItemForm",
+        name: "PackageMappingForm",
         components:{
             BasicForm
         },
@@ -40,7 +40,7 @@
             });
 
             let formData = {};
-            const queryByIdUrl = '/masterdata/item/queryById';
+            const queryByIdUrl = '/mdm/packageMapping/queryById';
             async function initFormData(){
                 let params = {id: props.formData.dataId};
                 const data = await defHttp.get({url: queryByIdUrl, params});

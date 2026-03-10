@@ -185,7 +185,8 @@ export const formSchema: FormSchema[] = [
                 { source: 'id', target: 'customerId' },
                 { source: 'payment_days', target: 'paymentDays' },
             ],
-            multi:true
+            multi:true,
+
         }
     },
 
@@ -285,35 +286,15 @@ export const salesOrderLineColumns: JVxeColumn[] = [
     {
       title: '产品编码',
       key: 'itemCode',
-      // type: JVxeTypes.popup,
-      // popupCode:"mdm_product_select",
-      // fieldConfig: [
-      //   { source: 'id', target: 'itemId' },
-      //   { source: 'product_code', target: 'itemCode' },
-      //   { source: 'product_name', target: 'itemName' },
-      //   { source: 'product_spec', target: 'itemSpec' },
-      // ],
-      type: JVxeTypes.input,
-      renderEdit: ({ row, rowIndex, $table }) => {
-        return h('div', { style: { display: 'flex', alignItems: 'center' } }, [
-          h(
-            'a-input',
-            {
-              value: row.itemCode,
-              readonly: true,
-              onClick: () => {
-                console.log('🖱️ 产品编码被点击！');
-                if (openPriceSelectModal) {
-                  openPriceSelectModal(row, rowIndex, $table)
-                }
-              },
-              placeholder: '点击选择价格策略',
-              style: { cursor: 'pointer', backgroundColor: '#fafafa' },
-            },
-            { suffix: h(SearchOutlined) }
-          ),
-        ])
-      },
+      type: JVxeTypes.popup,
+      popupCode:"mdm_product_select",
+      fieldConfig: [
+        { source: 'id', target: 'itemId' },
+        { source: 'product_code', target: 'itemCode' },
+        { source: 'product_name', target: 'itemName' },
+        { source: 'product_spec', target: 'itemSpec' },
+      ],
+
 
       width:"200px",
       placeholder: '请输入${title}',

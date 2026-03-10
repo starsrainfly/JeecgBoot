@@ -30,11 +30,11 @@ export const columns: BasicColumn[] = [
     align: 'center',
     dataIndex: 'materialSpec'
    },
-   {
-    title: '版本',
-    align: 'center',
-    dataIndex: 'version'
-   },
+   // {
+   //  title: '版本',
+   //  align: 'center',
+   //  dataIndex: 'version'
+   // },
    {
     title: '是否符合ROHS',
     align: 'center',
@@ -55,6 +55,11 @@ export const columns: BasicColumn[] = [
     align: 'center',
     dataIndex: 'isPackage_dictText'
    },
+  {
+    title: '包装类型',
+    align:'center',
+    dataIndex:'packageType_dictText'
+    },
    {
     title: '包装容量数值',
     align: 'center',
@@ -98,12 +103,12 @@ export const searchFormSchema: FormSchema[] = [
       component: 'Input',
       //colProps: {span: 6},
      },
-	{
-      label: "版本",
-      field: "version",
-      component: 'Input',
-      //colProps: {span: 6},
-     },
+	// {
+  //     label: "版本",
+  //     field: "version",
+  //     component: 'Input',
+  //     //colProps: {span: 6},
+  //    },
 	{
       label: "是否符合ROHS",
       field: "isrohs",
@@ -137,6 +142,7 @@ export const searchFormSchema: FormSchema[] = [
       },
       //colProps: {span: 6},
      },
+
 ];
 //表单数据
 export const formSchema: FormSchema[] = [
@@ -166,31 +172,54 @@ export const formSchema: FormSchema[] = [
     label: '物料名称',
     field: 'materialName',
     component: 'Input',
+    componentProps: ({ formModel, formActionType }) => ({
+      onChange: (e) => {
+        const name = e.target.value;
+        const spec = formModel.materialSpec || '';
+        formActionType.setFieldsValue({
+          description: [name, spec].filter(Boolean).join(' ')
+        });
+      }
+    }),
     dynamicRules: ({model,schema}) => {
           return [
                  { required: true, message: '请输入物料名称!'},
           ];
      },
   },
-  {
-    label: '物料英文名称',
-    field: 'materialNameEn',
-    component: 'Input',
-  },
-  {
-    label: '描述',
-    field: 'description',
-    component: 'Input',
-  },
+  // {
+  //   label: '物料英文名称',
+  //   field: 'materialNameEn',
+  //   component: 'Input',
+  // },
+
   {
     label: '规格型号',
     field: 'materialSpec',
     component: 'Input',
+    componentProps: ({ formModel, formActionType }) => ({
+      onChange: (e) => {
+        const spec = e.target.value;
+        const name = formModel.materialName || '';
+        formActionType.setFieldsValue({
+          description: [name, spec].filter(Boolean).join(' ')
+        });
+      }
+    }),
     dynamicRules: ({model,schema}) => {
           return [
                  { required: true, message: '请输入规格型号!'},
           ];
      },
+  },
+  {
+    label: '描述',
+    field: 'description',
+    component: 'Input',
+    componentProps: {
+      readonly: true,
+      // 或 disabled: true（但 disabled 不会提交值！）
+    },
   },
   {
     label: '版本',
@@ -240,15 +269,41 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
+    label: '包装类型',
+    field: 'packageType',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"mdm_package_type"
+    },
+
+   show: ({ values }) => values.isPackage === '1',
+    dynamicRules: ({ model }) => {
+      // 当 isPackage 为 "1"（是）时，packageType 必填
+      if (model.isPackage === '1') {
+        return [{ required: true, message: '请选择包装类型！' }];
+      }
+      return []; // 否则不校验
+    },
+  },
+  {
     label: '包装容量数值',
     field: 'packageCapacity',
     component: 'InputNumber',
+   show: ({ values }) => values.isPackage === '1' && values.packageType == '0',
+    dynamicRules: ({ model }) => {
+      return model.isPackage === '1' && model.packageType == '0' ? [{ required: true, message: '请输入包装容量数值！' }] : [];
+    },
   },
   {
     label: '包装容量单位',
     field: 'packageCapacityUnit',
     component: 'Input',
+   show: ({ values }) => values.isPackage === '1' && values.packageType == '0',
+    dynamicRules: ({ model }) => {
+      return model.isPackage === '1' && model.packageType == '0' ? [{ required: true, message: '请输入包装容量单位！' }] : [];
+    },
   },
+
 	// TODO 主键隐藏字段，目前写死为ID
 	{
 	  label: '',

@@ -1,16 +1,16 @@
 <template>
-  <BasicModal v-bind="$attrs" @register="registerModal" destroyOnClose :title="title" :width="1280" @ok="handleSubmit">
-    <BasicForm @register="registerForm" ref="formRef" name="SalesOrderForm"/>
+  <BasicModal v-bind="$attrs" @register="registerModal" destroyOnClose :title="title" :width="1024" @ok="handleSubmit">
+    <BasicForm @register="registerForm" ref="formRef" name="ProcessRoutingForm"/>
     <!-- 子表单区域 -->
     <a-tabs v-model:activeKey="activeKey" animated @change="handleChangeTabs">
-      <a-tab-pane tab="销售订单明细表" key="salesOrderLine" :forceRender="true">
+      <a-tab-pane tab="工序步骤" key="processRoutingStep" :forceRender="true">
         <JVxeTable
           keep-source
           resizable
-          ref="salesOrderLine"
-          :loading="salesOrderLineTable.loading"
-          :columns="salesOrderLineTable.columns"
-          :dataSource="salesOrderLineTable.dataSource"
+          ref="processRoutingStep"
+          :loading="processRoutingStepTable.loading"
+          :columns="processRoutingStepTable.columns"
+          :dataSource="processRoutingStepTable.dataSource"
           :height="340"
           :rowNumber="true"
           :rowSelection="true"
@@ -24,32 +24,31 @@
 
 <script lang="ts" setup>
     import {ref, computed, unref,reactive} from 'vue';
-    import {BasicModal, useModal, useModalInner} from '/@/components/Modal';
+    import {BasicModal, useModalInner} from '/@/components/Modal';
     import {BasicForm, useForm} from '/@/components/Form/index';
     import { JVxeTable } from '/@/components/jeecg/JVxeTable'
     import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods.ts'
-    import {formSchema, salesOrderLineColumns, setPriceSelectModalOpener} from '../SalesOrder.data';
-    import {saveOrUpdate,salesOrderLineList} from '../SalesOrder.api';
+    import {formSchema,processRoutingStepColumns} from '../ProcessRouting.data';
+    import {saveOrUpdate,processRoutingStepList} from '../ProcessRouting.api';
     import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
-
     // Emits声明
     const emit = defineEmits(['register','success']);
     const isUpdate = ref(true);
     const formDisabled = ref(false);
-    const refKeys = ref(['salesOrderLine', ]);
-    const activeKey = ref('salesOrderLine');
-    const salesOrderLine = ref();
-    const tableRefs = {salesOrderLine, };
-    const salesOrderLineTable = reactive({
+    const refKeys = ref(['processRoutingStep', ]);
+    const activeKey = ref('processRoutingStep');
+    const processRoutingStep = ref();
+    const tableRefs = {processRoutingStep, };
+    const processRoutingStepTable = reactive({
           loading: false,
           dataSource: [],
-          columns:salesOrderLineColumns
+          columns:processRoutingStepColumns
     })
     //表单配置
     const [registerForm, {setProps,resetFields, setFieldsValue, validate}] = useForm({
         schemas: formSchema,
         showActionButtonGroup: false,
-        baseColProps: {span: 6}
+        baseColProps: {span: 8}
     });
      //表单赋值
     const [registerModal, {setModalProps, closeModal}] = useModalInner(async (data) => {
@@ -63,31 +62,27 @@
             await setFieldsValue({
                 ...data.record,
             });
-             requestSubTableData(salesOrderLineList, {id:data?.record?.id}, salesOrderLineTable)
+             requestSubTableData(processRoutingStepList, {id:data?.record?.id}, processRoutingStepTable)
         }
         // 隐藏底部时禁用整个表单
        setProps({ disabled: !data?.showFooter })
-
     });
     //方法配置
-    const formRef = ref()
-    const [handleChangeTabs,handleSubmit,requestSubTableData] = useJvxeMethod(requestAddOrEdit,classifyIntoFormData,tableRefs,activeKey,refKeys);
-
-
+    const [handleChangeTabs,handleSubmit,requestSubTableData,formRef] = useJvxeMethod(requestAddOrEdit,classifyIntoFormData,tableRefs,activeKey,refKeys);
 
     //设置标题
     const title = computed(() => (!unref(isUpdate) ? '新增' : !unref(formDisabled) ? '编辑' : '详情'));
 
     async function reset(){
       await resetFields();
-      activeKey.value = 'salesOrderLine';
-      salesOrderLineTable.dataSource = [];
+      activeKey.value = 'processRoutingStep';
+      processRoutingStepTable.dataSource = [];
     }
     function classifyIntoFormData(allValues) {
          let main = Object.assign({}, allValues.formValue)
          return {
            ...main, // 展开
-           salesOrderLineList: allValues.tablesValue[0].tableData,
+           processRoutingStepList: allValues.tablesValue[0].tableData,
          }
        }
     //表单提交事件
@@ -104,10 +99,6 @@
             setModalProps({confirmLoading: false});
         }
     }
-
-
-
-
 </script>
 
 <style lang="less" scoped>

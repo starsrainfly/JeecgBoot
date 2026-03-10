@@ -1,6 +1,8 @@
 <template>
   <BasicModal v-bind="$attrs" @register="registerModal" destroyOnClose :width="1024" :title="getTitle" @ok="handleSubmit">
+
     <BasicForm @register="registerForm" name="MaterialForm" />
+
   </BasicModal>
 </template>
 <script lang="ts" setup>
@@ -36,7 +38,7 @@
     //重置表单
     await resetFields();
     expandedRowKeys.value = [];
-    setModalProps({confirmLoading: false, minHeight: 80 ,showOkBtn: !!!data?.hideFooter});
+    setModalProps({confirmLoading: false, minHeight: 280 ,showOkBtn: !!!data?.hideFooter});
     isUpdate.value = !!data?.isUpdate;
     isDetail.value = !!data?.showFooter;
     if (data?.record) {
@@ -104,6 +106,7 @@
       setModalProps({confirmLoading: false});
     }
   }
+
 </script>
 <style lang="less" scoped>
 	/** 时间和数字输入框样式 */

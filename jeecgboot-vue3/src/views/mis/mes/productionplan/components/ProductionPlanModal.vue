@@ -24,7 +24,7 @@
 </template>
 
 <script lang="ts" setup>
-    import {ref, computed, unref,reactive, nextTick} from 'vue';
+    import {ref, computed, unref,reactive, nextTick,onUnmounted} from 'vue';
     import {BasicModal, useModalInner} from '/@/components/Modal';
     import {BasicForm, useForm} from '/@/components/Form/index';
     import { JVxeTable } from '/@/components/jeecg/JVxeTable'
@@ -48,8 +48,6 @@
     });
 
     const { createMessage, createWarningModal } = useMessage();
-    // 关键：使用 ref 而不是 reactive，确保响应式
-    const currentPlanType = ref('0');
 
     //表单配置 - 关键：添加 onValuesChange 实时监听
     const [registerForm, {setProps,resetFields, setFieldsValue, validate, getFieldsValue}] = useForm({
@@ -57,15 +55,17 @@
         showActionButtonGroup: false,
         baseColProps: {span: 8},
 
-      // 关键：实时监听所有字段变化
-      onValuesChange: (values, allValues) => {
-        // 同步计划类型
-        if (values.planType !== undefined) {
-          currentPlanType.value = values.planType;
-        }
-        // 计划数量变化时，不需要额外处理，校验时实时获取
-      }
     });
+
+    function getCurrentPlanType(): string {
+      try {
+        const formData = getFieldsValue();
+        return formData?.planType || '0';
+      } catch (e) {
+        return '0';
+      }
+    }
+
      //表单赋值
     const [registerModal, {setModalProps, closeModal}] = useModalInner(async (data) => {
         //重置表单
@@ -79,13 +79,9 @@
                 ...data.record,
             });
 
-          currentPlanType.value = data.record?.planType || '0'; //新增
              requestSubTableData(productionPlanDetailList, {id:data?.record?.id}, productionPlanDetailTable)
         }
-        else {
-          // 新增时默认值
-          currentPlanType.value = '0';
-        }
+
         // 隐藏底部时禁用整个表单
        setProps({ disabled: !data?.showFooter })
     });
@@ -99,15 +95,51 @@
       await resetFields();
       activeKey.value = 'productionPlanDetail';
       productionPlanDetailTable.dataSource = [];
-      currentPlanType.value = '0';
     }
     function classifyIntoFormData(allValues) {
-         let main = Object.assign({}, allValues.formValue)
-         return {
-           ...main, // 展开
-           productionPlanDetailList: allValues.tablesValue[0].tableData,
-         }
-       }
+      let main = Object.assign({}, allValues.formValue || {});
+
+      // 1. 尝试从 allValues 获取 (标准流程)
+      let subTableData = allValues?.tablesValue?.[0]?.tableData;
+
+      // 2. 【强力修复】如果标准流程拿不到，尝试直接从 ref 实例获取
+      if (!subTableData || subTableData.length === 0) {
+        console.warn('⚠️ useJvxeMethod 未收集到子表数据，尝试从 Ref 实例直接获取...');
+
+        const tableInstance = unref(productionPlanDetail);
+        if (tableInstance) {
+          // 尝试多种可能的获取数据方法
+          const getData = tableInstance.getTableData || tableInstance.getData || tableInstance.getDataSource;
+
+          if (getData && typeof getData === 'function') {
+            const directData = getData.call(tableInstance);
+            // VXE Table getTableData 通常返回 { fullData: [...] } 或直接返回数组，视版本而定
+            // Jeecg JVxeTable 通常 getTableData() 返回的是包含数据的对象或直接是数组
+            if (Array.isArray(directData)) {
+              subTableData = directData;
+            } else if (directData && Array.isArray(directData.fullData)) {
+              subTableData = directData.fullData;
+            } else if (directData && Array.isArray(directData.records)) {
+              subTableData = directData.records;
+            }
+
+            console.log('✅ 从 Ref 实例成功获取数据，长度:', subTableData.length);
+          } else {
+            console.error('❌ 表格实例没有发现获取数据的方法 (getTableData/getData)');
+          }
+        } else {
+          console.error('❌ 表格实例 productionPlanDetail 仍然为 undefined');
+        }
+      }
+
+      // 3. 最终兜底
+      subTableData = subTableData || [];
+
+      return {
+        ...main,
+        productionPlanDetailList: subTableData,
+      };
+    }
 
     // ==================== 核心校验逻辑 - 关键修正 ====================
 
@@ -129,7 +161,7 @@
 
       // 关键：实时从表单获取最新的计划数量，而不是用缓存值
       const plannedQty = await getCurrentPlannedQty();
-      const planType = currentPlanType.value;
+      const planType = getCurrentPlanType();
 
       const rows = detailTable.getTableData() || [];
       let totalAllocated = 0;
@@ -168,7 +200,7 @@
       const detailTable = productionPlanDetail.value;
       if (!detailTable) return { valid: true };
 
-      const planType = currentPlanType.value;
+      const planType = getCurrentPlanType();
       const rows = detailTable.getTableData() || [];
       let totalAllocated = 0;
       const errors: string[] = [];

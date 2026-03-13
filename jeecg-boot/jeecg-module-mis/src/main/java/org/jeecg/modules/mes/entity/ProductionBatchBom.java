@@ -62,6 +62,10 @@ public class ProductionBatchBom implements Serializable {
 	@Excel(name = "需求数量", width = 15)
     @Schema(description = "需求数量")
     private java.math.BigDecimal plannedQty;
+    /**单位*/
+    @Excel(name = "单位", width = 15)
+    @Schema(description = "单位")
+    private String unit;
 	/**是否删除*/
 	@Excel(name = "是否删除", width = 15, dicCode = "del_flag")
     @Schema(description = "是否删除")

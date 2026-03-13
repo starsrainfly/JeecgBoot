@@ -72,7 +72,7 @@ public class ProductionOrder implements Serializable {
 	/**批次数量*/
 	@Excel(name = "批次数量", width = 15)
     @Schema(description = "批次数量")
-    private Integer batchNum;
+    private Integer batchCount;
 	/**内包装*/
 	@Excel(name = "内包装", width = 15, dictTable = "mis_material where is_package='1' and package_type='0'", dicText = "description", dicCode = "id")
     @Dict(dictTable = "mis_material where is_package='1' and package_type='0'", dicText = "description", dicCode = "id")

@@ -33,6 +33,8 @@
 		d.completed_qty,
 		(d.allocated_qty - IFNULL(d.completed_qty, 0)) as remaining_qty,
 		d.package_id,
+		d.package_capacity,
+		d.package_capacity_unit,
 		pkg.material_name as package_name,
 		pkg.description as package_spec,
 		d.delivery_date,

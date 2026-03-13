@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
+import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.common.utils.SerialNoUtils;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
@@ -63,7 +64,9 @@ public class ProductionOrderController {
 	private IProductionOrderService productionOrderService;
 	@Autowired
 	private IProductionOrderDetailService productionOrderDetailService;
-	
+
+	 @Autowired
+	 private ISerialNoService serialNoService;
 	/**
 	 * 分页列表查询
 	 *
@@ -91,7 +94,16 @@ public class ProductionOrderController {
 		IPage<ProductionOrder> pageList = productionOrderService.page(page, queryWrapper);
 		return Result.OK(pageList);
 	}
-	
+
+	 @AutoLog(value = "生产订单-下达")
+	 @Operation(summary="生产订单-下达")
+	 @RequiresPermissions("mes:mis_production_order:release")
+	 @PostMapping(value = "/release")
+	public Result<String> release(@RequestParam String ids){
+
+		return Result.OK("添加成功！");
+	}
+
 	/**
 	 *   添加
 	 *
@@ -104,8 +116,8 @@ public class ProductionOrderController {
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody ProductionOrderPage productionOrderPage) {
 		ProductionOrder productionOrder = new ProductionOrder();
-		productionOrder.setOrderNo(SerialNoUtils.generateSerialNo(SerialNoPrefixEnum.PRODUCTION_ORDER.getPrefix()));
 		BeanUtils.copyProperties(productionOrderPage, productionOrder);
+		productionOrder.setOrderNo(serialNoService.generateSerialNo(SerialNoPrefixEnum.PRODUCTION_ORDER.getPrefix()));
 		productionOrderService.saveMain(productionOrder, productionOrderPage.getProductionOrderDetailList());
 		return Result.OK("添加成功！");
 	}
@@ -274,5 +286,7 @@ public class ProductionOrderController {
       }
       return Result.OK("文件导入失败！");
     }
+
+
 
 }

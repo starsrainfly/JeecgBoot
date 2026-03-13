@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
+import org.jeecg.modules.common.service.SerialNoService;
 import org.jeecg.modules.common.utils.SerialNoUtils;
 import org.jeecg.modules.mes.vo.ProductionPlanDetailVo;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
@@ -64,7 +65,8 @@ public class ProductionPlanController {
 	private IProductionPlanService productionPlanService;
 	@Autowired
 	private IProductionPlanDetailService productionPlanDetailService;
-	
+	 @Autowired
+	 private SerialNoService serialNoService;
 	/**
 	 * 分页列表查询
 	 *
@@ -122,7 +124,7 @@ public class ProductionPlanController {
 	public Result<String> add(@RequestBody ProductionPlanPage productionPlanPage) {
 		ProductionPlan productionPlan = new ProductionPlan();
 		BeanUtils.copyProperties(productionPlanPage, productionPlan);
-		productionPlan.setPlanNo(SerialNoUtils.generateSerialNo(SerialNoPrefixEnum.PRODUCTION_PLAN.getPrefix()));
+		productionPlan.setPlanNo(serialNoService.generateSerialNo(SerialNoPrefixEnum.PRODUCTION_PLAN.getPrefix()));
 		productionPlanService.saveMain(productionPlan, productionPlanPage.getProductionPlanDetailList());
 		return Result.OK("添加成功！");
 	}

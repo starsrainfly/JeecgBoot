@@ -63,6 +63,10 @@ public class Recipe implements Serializable {
     @Dict(dicCode = "status")
     @Schema(description = "状态")
     private String status;
+    /**工艺id*/
+    @Excel(name = "注意事项", width = 15)
+    @Schema(description = "注意事项")
+    private String routingId;
 	/**是否删除*/
 	@Excel(name = "是否删除", width = 15)
     @Schema(description = "是否删除")

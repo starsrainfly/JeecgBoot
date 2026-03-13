@@ -8,6 +8,7 @@ import org.jeecg.common.util.RedisUtil;
 import org.jeecg.common.util.SpringContextUtils;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 
@@ -80,34 +81,34 @@ public class SerialNoUtils {
         if (StringUtils.isBlank(prefix)) {
             throw new IllegalArgumentException("单号前缀（prefix）不能为空");
         }
-        // 获取当前时间
-        DateTime now = DateUtil.date();
+
+        // 1. 时间处理
+        DateTime now = DateUtil.date(); // Hutool
         String datePart = new SimpleDateFormat("yyyyMMdd").format(now);
-        String secondsPart = convertTimeToSeconds(now); // 5位秒偏移，00000 ～ 86399
+        String redisKey = prefix + datePart;
 
-        // 构造 Redis key：前缀 + 日期
-        String redisKey = prefix + datePart ;//+ secondsPart
-
-        // 从 Spring 容器获取 RedisUtil（兼容非 Spring 管理的类，如 IFillRuleHandler）
         RedisUtil redisUtil = SpringContextUtils.getBean(RedisUtil.class);
 
-        long ttlSeconds = getSecondsUntilMidnight();
-        // 至少保留 1 秒，防止边界问题
-        ttlSeconds = Math.max(ttlSeconds, 1);
-        // 设置 key 到午夜过期（覆盖当日剩余时间足够）
-        redisUtil.expire(redisKey, ttlSeconds);
+        // 2. 【核心操作】先自增
         Long sequence = redisUtil.incr(redisKey, 1);
 
-        // 流水号固定4位，不足补0（最大支持 9999 单/秒）
+        // 3. 设置过期时间
+        long ttlSeconds = getSecondsUntilMidnight();
+
+        // 只要 ttl > 0 就设置，防止极端情况下设为 0 或负数导致立即过期
+        if (ttlSeconds > 0) {
+            redisUtil.expire(redisKey, ttlSeconds);
+        } else {
+            // 兜底：万一计算出错，至少给 24 小时，保证今天的数据不丢
+            redisUtil.expire(redisKey, 86400);
+        }
+
+        // 4. 格式化
+        // 确认：5位最大 99999。
         String seqPart = StringUtils.leftPad(sequence.toString(), 5, '0');
+        String orderNo = prefix + datePart + seqPart;
 
-        String orderNo = redisKey + seqPart;
-
-        log.debug("生成业务单号 | 单号: {} | 时间: {} |  流水: {}",
-                orderNo,
-                now.toString("yyyy-MM-dd HH:mm:ss"),
-                seqPart);
-
+        log.debug("生成业务单号成功 | 单号: {} | Key: {} | 流水: {}", orderNo, redisKey, sequence);
         return orderNo;
     }
 
@@ -116,9 +117,14 @@ public class SerialNoUtils {
      * @return
      */
     public static long getSecondsUntilMidnight() {
-        LocalTime now = LocalTime.now();
-        LocalTime midnight = LocalTime.MIDNIGHT; // 00:00:00 of next day
-        return now.until(midnight, ChronoUnit.SECONDS);
+        LocalDateTime now = LocalDateTime.now();
+        // 获取明天的 00:00:00
+        LocalDateTime tomorrowMidnight = now.toLocalDate().plusDays(1).atStartOfDay();
+
+        long seconds = now.until(tomorrowMidnight, ChronoUnit.SECONDS);
+
+        // 防御性编程：确保至少大于 0
+        return Math.max(seconds, 1);
     }
 
     /**

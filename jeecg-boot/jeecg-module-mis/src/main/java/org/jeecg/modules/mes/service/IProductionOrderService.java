@@ -44,5 +44,11 @@ public interface IProductionOrderService extends IService<ProductionOrder> {
 	 * @param idList
 	 */
 	public void delBatchMain (Collection<? extends Serializable> idList);
+
+	/**
+	 * 下达订单
+	 * @param ids
+	 */
+	public void releaseOrder(String ids);
 	
 }

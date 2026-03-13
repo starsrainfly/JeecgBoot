@@ -83,6 +83,13 @@
   const formWatchTimer = ref<any>(null);
   const isCalculating = ref(false);
 
+  // ===== 关键：产量计算相关变量 =====
+  // 用于防止循环触发的标志
+  const isUpdatingQty = ref(false);
+  // 记录最后修改的字段，用于决定计算策略
+  const triggerSource  = ref<'plannedQty' | 'batchSize' | 'batchCount' | null>(null);
+
+
   //表单配置
   const [registerForm, {setProps,resetFields, setFieldsValue, validate,getFieldsValue}] = useForm({
     schemas: formSchema,
@@ -106,8 +113,8 @@
           const formData = getFieldsValue();
           const currentOuterPackageId = formData?.outerPackageId;
 
-          // 有值且与上次不同，触发计算
-          // BUG修复：这里原来是 outerPackageId.value，应该是 lastOuterPackageId.value
+          // 1、监听外包装变化 有值且与上次不同，触发计算
+
           if (currentOuterPackageId && currentOuterPackageId !== lastOuterPackageId.value) {
             console.log('检测到外包装变化:', lastOuterPackageId.value, '->', currentOuterPackageId);
             lastOuterPackageId.value = currentOuterPackageId;
@@ -117,6 +124,10 @@
               handleOuterPackageChange(currentOuterPackageId);
             });
           }
+
+          // 2. 监听产量相关字段变化（新增）
+          handleQtyFieldsChange(formData);
+
         } catch (e) {
           // 表单可能还未初始化，忽略错误
           console.log('监听检查失败:', e);
@@ -125,12 +136,160 @@
     }, 1000); // 延迟1秒启动，确保表单已渲染
   }
 
+  // ===== 新增：处理产量字段变化 =====
+  function handleQtyFieldsChange(formData: any) {
+    if (isUpdatingQty.value) return; // 防止循环
+
+    const plannedQty = formData?.plannedQty;
+    const batchSize = formData?.batchSize;
+    const batchCount = formData?.batchCount;
+
+    // 检测哪个字段发生了变化
+    // 使用一个简单的方式：比较当前值和上次记录的值
+    // 这里我们用另一种方式：通过 onValuesChange 来捕获变化
+
+    // 这个函数只处理非空值的计算逻辑
+    // 实际的变化检测在下面的 watch 中处理
+  }
+
+  // ===== 关键：使用 watch 监听表单值变化（更可靠）=====
+  const programSettingFields = ref<Set<string>>(new Set());
+  // 存储上次的表单值用于比较
+  const prevFormValues = ref({
+    plannedQty: null as number | null,
+    batchSize: null as number | null,
+    batchCount: null as number | null,
+  });
+  // 在 registerModal 中初始化 watch
+  let stopQtyWatch: (() => void) | null = null;
+
+  function startQtyWatch() {
+    // 停止之前的监听
+    if (stopQtyWatch) {
+      stopQtyWatch();
+    }
+
+    // 使用定时轮询方式监听（因为 useForm 不提供直接的 watch）
+    const timer = setInterval(() => {
+      try {
+        // 如果正在更新中，跳过检测
+        if (isUpdatingQty.value) return;
+
+        const formData = getFieldsValue();
+        const current = {
+          plannedQty: formData?.plannedQty ?? null,
+          batchSize: formData?.batchSize ?? null,
+          batchCount: formData?.batchCount ?? null,
+        };
+
+        // 检测变化
+        // 检测哪个字段发生了变化（用户主动修改的）
+        let changedField: 'plannedQty' | 'batchSize' | 'batchCount' | null = null;
+
+
+        // 检查变化，且不是程序设置的
+        if (
+          current.plannedQty !== prevFormValues.value.plannedQty &&
+          !programSettingFields.value.has('plannedQty')
+        ) {
+          changedField = 'plannedQty';
+        } else if (
+          current.batchSize !== prevFormValues.value.batchSize &&
+          !programSettingFields.value.has('batchSize')
+        ) {
+          changedField = 'batchSize';
+        } else if (
+          current.batchCount !== prevFormValues.value.batchCount &&
+          !programSettingFields.value.has('batchCount')
+        ) {
+          changedField = 'batchCount';
+        }
+
+        // 如果有变化，执行对应的计算逻辑
+        if (changedField) {
+          console.log('检测到变化:', changedField, '值从', prevFormValues.value, '变为', current);
+
+          // 记录触发源和当前值
+          triggerSource.value = changedField;
+          prevFormValues.value = { ...current };
+
+          // 根据触发源执行对应的计算
+          executeCalculation(changedField, current);
+        }
+        else {
+          // 同步 prev 值（避免程序设置后残留差异）
+          prevFormValues.value = { ...current };
+        }
+
+      } catch (e) {
+        // 忽略错误
+      }
+    }, 200);
+
+    stopQtyWatch = () => clearInterval(timer);
+  }
+
+  // === MODIFIED === 替换 executeCalculation
+  function executeCalculation(
+    source: 'plannedQty' | 'batchSize' | 'batchCount',
+    values: { plannedQty: number | null; batchSize: number | null; batchCount: number | null }
+  ) {
+    const { plannedQty, batchSize, batchCount } = values;
+    if (!plannedQty || plannedQty <= 0) return;
+
+    // 清空上一次标记
+    programSettingFields.value.clear();
+
+    try {
+      switch (source) {
+        case 'plannedQty':
+          if (batchSize && batchSize > 0) {
+            const newBatchCount = Math.ceil(plannedQty / batchSize);
+            if (newBatchCount !== batchCount) {
+              programSettingFields.value.add('batchCount');
+              setFieldsValue({ batchCount: newBatchCount });
+            }
+          }
+          break;
+
+        case 'batchSize':
+          if (batchSize && batchSize > 0) {
+            const newBatchCount = Math.ceil(plannedQty / batchSize);
+            if (newBatchCount !== batchCount) {
+              programSettingFields.value.add('batchCount'); // 关键：标记是程序设置
+              setFieldsValue({ batchCount: newBatchCount });
+            }
+          }
+          break;
+
+        case 'batchCount':
+          if (batchCount && batchCount > 0) {
+            const newBatchSize = Math.ceil(plannedQty / batchCount);
+            if (newBatchSize !== batchSize) {
+              programSettingFields.value.add('batchSize'); // 关键：标记是程序设置
+              setFieldsValue({ batchSize: newBatchSize });
+            }
+          }
+          break;
+      }
+    } finally {
+      // 延迟清除标记
+      setTimeout(() => {
+        programSettingFields.value.clear();
+      }, 300);
+    }
+  }
+
   // ===== 关键：停止表单监听 =====
   function stopFormWatch() {
     if (formWatchTimer.value) {
       clearInterval(formWatchTimer.value);
       formWatchTimer.value = null;
       console.log('停止表单字段监听');
+    }
+    if (stopQtyWatch) {
+      stopQtyWatch();
+      stopQtyWatch = null;
     }
   }
 
@@ -145,7 +304,7 @@
     const currentProduct = getFieldsValue().productId;
     // 关键：收集已选择的计划明细 ID
     const alreadySelectedIds = productionOrderDetailTable.dataSource
-      .map(row => row.planDetailId)
+      .map(row => row.id)
       .filter(Boolean); // 过滤掉空值
 
     console.log('已选择的计划明细 ID:', alreadySelectedIds);
@@ -167,16 +326,22 @@
     console.log('planDetailId:', selectedRows[0]?.id); // ✅ 计划明细 ID
 
     console.log('新选择的行:', selectedRows);
-
-    // 1. 过滤掉已存在的（根据 sourcePlanDetailId 去重）
+    console.log('当前 dataSource:', productionOrderDetailTable.dataSource.map(r => ({ planDetailId: r.planDetailId, planNo: r.planNo })));
+    // 1. 过滤掉已存在的（根据 planDetailId 去重）
     const existingIds = new Set(
-      productionOrderDetailTable.dataSource.map(row => row.sourcePlanDetailId)
+      productionOrderDetailTable.dataSource
+        .filter(row => row && row.planDetailId)  // 过滤空值
+        .map(row => row.planDetailId)
     );
 
+    console.log('已存在的 planDetailIds:', Array.from(existingIds));
+
+    // 关键修复：selectedRows 中的 id 字段对应 planDetailId
     const newRows = selectedRows.filter(row => {
-      const isDuplicate = existingIds.has(row.planDetailId);
+      const rowId = String(row.id);  // ← 关键：用 row.id，不是 row.planDetailId
+      const isDuplicate = existingIds.has(rowId);
       if (isDuplicate) {
-        console.log('过滤重复:', row.planNo, row.planDetailId);
+        console.log('过滤重复:', row.planNo, rowId);
       }
       return !isDuplicate;
     });
@@ -202,24 +367,31 @@
     const startIndex = productionOrderDetailTable.dataSource.length;
 
     const formattedRows = newRows.map((row, index) => ({
-      id: `${Date.now()}_${startIndex + index}`,  // 临时ID
+      id: null,  // 临时ID
       planNo: row.planNo,
       planType: row.planType,
-      planTypeName: row.planTypeName,
 
       // 关键：保存关联 ID
-      sourcePlanId: row.planId,
-      sourcePlanDetailId: row.planDetailId,
+      planId: row.planId,
+      planDetailId: row.id,
 
       // 销售订单来源
       salesOrderNo: row.salesOrderNo || '-',
       salesOrderId: row.salesOrderId,
       salesOrderLineId: row.salesOrderDetailId,
 
+      productId: row.productId,
+      productCode: row.productCode,
+      productName: row.productName,
       // 客户
       customerCode: row.customerCode || '-',
       customerName: row.customerName || '-',
       customerId: row.customerId,
+
+      //包装
+      innerPackageId: row.packageId,
+      innerPackageCapacity: row.packageCapacity,
+
 
       // 数量（关键：使用剩余可分配数量）
       planAllocatedQty: row.remainingQty,
@@ -232,14 +404,17 @@
 
       sortNo: startIndex + index + 1
     }));
+    console.log('formattedRows:', formattedRows);
 
     // 追加到现有数据
-    productionOrderDetailTable.dataSource = [
-      ...productionOrderDetailTable.dataSource,
-      ...formattedRows
-    ];
-    // 关键修改：更新提示标签为实际总数量
-    selectedPlanDetails.value = productionOrderDetailTable.dataSource;
+    const newDataSource = [...productionOrderDetailTable.dataSource, ...formattedRows];
+    productionOrderDetailTable.dataSource = newDataSource;
+
+    console.log('选择完数据源:', productionOrderDetailTable.dataSource);
+
+    // 更新提示
+    selectedPlanDetails.value = newDataSource;
+    lastAddedCount.value = addedCount;  // 记录本次新增数量
     // 3. 更新主表汇总数据
     updateMainFormValues();
 
@@ -249,7 +424,7 @@
   // 提取：更新主表汇总数据
   function updateMainFormValues() {
     const allRows = productionOrderDetailTable.dataSource;
-
+    const firstOriginalRow = selectedPlanDetails.value[0];
     if (allRows.length === 0) {
       // 清空主表
       setFieldsValue({
@@ -257,6 +432,7 @@
         productCode: undefined,
         productName: undefined,
         innerPackageId: undefined,
+        innerPackageCapacity:undefined,
         innerPackageName: undefined,
         plannedQty: 0,
         deliveryDate: undefined,
@@ -267,6 +443,8 @@
 
     // 重新计算（以第一行为基准，理论上应该一致）
     const firstRow = allRows[0];
+    console.log('updateMainFormValues firstRow:', allRows[0]);
+    console.log('updateMainFormValues firstOriginalRow:', firstOriginalRow);
     const totalQty = allRows.reduce((sum, row) => sum + Number(row.allocatedQty || 0), 0);
 
     // 取最早的交期
@@ -275,10 +453,35 @@
       .filter(Boolean)
       .sort()[0];
 
+    // 关键：设置计划产量时，检查是否需要计算批次数量
+    const currentBatchSize = getFieldsValue().batchSize || 50; // 默认50
+    const newBatchCount = Math.ceil(totalQty / currentBatchSize);
+
+    const innerPackageQty = Math.ceil(totalQty / firstOriginalRow.innerPackageCapacity);
+    // setFieldsValue({
+    //   productId: firstRow.productId, // 注意：这里需要从某处获取，可能需要在 formattedRows 中保留
+    //   plannedQty: totalQty,
+    //   deliveryDate: earliestDate,
+    // });
     setFieldsValue({
-      productId: firstRow.productId, // 注意：这里需要从某处获取，可能需要在 formattedRows 中保留
+      productId: firstOriginalRow.productId,
+      productCode:firstOriginalRow.productCode,
+      productName:firstOriginalRow.productName,
+      innerPackageId:firstOriginalRow.innerPackageId,
+      innerPackageCapacity:firstOriginalRow.innerPackageCapacity,
+      innerPackageQty:innerPackageQty,
       plannedQty: totalQty,
+      batchSize: currentBatchSize,
+      batchCount: newBatchCount, // 自动计算
       deliveryDate: earliestDate,
+    });
+    console.log('已设置主表值:', {
+      productId: firstOriginalRow.productId,
+      productCode: firstOriginalRow.productCode,
+      productName: firstOriginalRow.productName,
+      innerPackageId:firstOriginalRow.innerPackageId,
+      innerPackageCapacity:firstOriginalRow.innerPackageCapacity,
+      innerPackageQty:innerPackageQty,
     });
 
     createMessage.success(`订单计划数量已更新：${totalQty} kg，共 ${allRows.length} 条明细`);
@@ -289,7 +492,7 @@
       // 校验：本次执行 ≤ 原始数量
       const original = Number(row.planAllocatedQty) || 0;
       const current = Number(row.allocatedQty) || 0;
-
+console.log("handleDetailChange original:", original)
       if (current > original) {
         createMessage.warning(`本次执行数量(${current})不能大于计划数量(${original})`);
         // 重置为原始数量
@@ -309,11 +512,16 @@
     const rows = productionOrderDetailTable.dataSource;
     const total = rows.reduce((sum, row) => sum + (Number(row.allocatedQty) || 0), 0);
 
+    // 关键：更新计划产量时，同步更新批次数量
+    const currentBatchSize = getFieldsValue().batchSize || 50;
+    const newBatchCount = Math.ceil(total / currentBatchSize);
+
     setFieldsValue({
-      plannedQty: total
+      plannedQty: total,
+      batchCount: newBatchCount
     });
 
-    createMessage.success(`订单计划数量已更新：${total} kg`);
+    createMessage.success(`订单计划数量已更新：${total} kg，${newBatchCount} 批`);
   }
 
   // 外包装变化，自动计算包装数量
@@ -393,6 +601,11 @@
     // 校验2：本次执行数量必须大于0且不超过原始
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
+      // 关键修复：检查 row 是否存在
+      if (!row) {
+        console.warn(`第${i + 1}行数据为空，跳过校验`);
+        continue;
+      }
       const original = Number(row.planAllocatedQty) || 0;
       const current = Number(row.allocatedQty) || 0;
 
@@ -461,6 +674,7 @@
       console.log('准备启动表单监听，data.showFooter=', data.showFooter);
       nextTick(() => {
         startFormWatch();
+        startQtyWatch(); // 启动产量字段监听
       });
     } else {
       console.log('未启动监听，data.showFooter=', data?.showFooter);
@@ -481,19 +695,35 @@
     lastOuterPackageId.value = null;
     // 停止监听
     stopFormWatch();
+    stopFormWatch();
+    // 重置产量监听
+    prevFormValues.value = { plannedQty: null, batchSize: null, batchCount: null };
   }
 
   function classifyIntoFormData(allValues) {
     let main = Object.assign({}, allValues.formValue)
+
+    let list = allValues?.tablesValue?.[0]?.tableData || [];
+
+    // 清理 JVxeTable 生成的临时 ID，强制设为 null
+    list = list.map(row => {
+      const id = row.id;
+      // 如果是临时 ID（row_ 开头）或空字符串，设为 null
+      if (!id || id === '' || (typeof id === 'string' && id.startsWith('row_'))) {
+        return { ...row, id: null };
+      }
+      return row;
+    });
     return {
       ...main, // 展开
-      productionOrderDetailList: allValues.tablesValue[0].tableData,
+      productionOrderDetailList: list,//allValues.tablesValue[0].tableData,
     }
   }
 
   //表单提交事件
   async function requestAddOrEdit(values) {
     try {
+      console.log('提交前数据源:', productionOrderDetailTable.dataSource);
       setModalProps({confirmLoading: true});
       //提交表单
       await saveOrUpdate(values, isUpdate.value);

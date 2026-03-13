@@ -55,6 +55,10 @@ public class RecipeDetail implements Serializable {
 	@Excel(name = "配比", width = 15)
     @Schema(description = "配比")
     private java.math.BigDecimal proportion;
+    /**单位*/
+    @Excel(name = "单位", width = 15)
+    @Schema(description = "单位")
+    private String unit;
 	/**备注*/
 	@Excel(name = "备注", width = 15)
     @Schema(description = "备注")

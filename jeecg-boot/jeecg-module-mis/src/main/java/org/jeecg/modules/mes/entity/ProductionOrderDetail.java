@@ -111,4 +111,17 @@ public class ProductionOrderDetail implements Serializable {
 	/**所属部门*/
     @Schema(description = "所属部门")
     private String sysOrgCode;
+
+    /**产品id*/
+    @Excel(name = "产品id", width = 15)
+    @Schema(description = "产品id")
+    private String productId;
+    /**产品编码*/
+    @Excel(name = "产品编码", width = 15)
+    @Schema(description = "产品编码")
+    private String productCode;
+    /**产品名称*/
+    @Excel(name = "产品名称", width = 15)
+    @Schema(description = "产品名称")
+    private String productName;
 }

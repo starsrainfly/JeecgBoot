@@ -22,7 +22,7 @@ import lombok.experimental.Accessors;
 /**
  * @Description: 工序表
  * @Author: jeecg-boot
- * @Date:   2026-03-11
+ * @Date:   2026-03-17
  * @Version: V1.0
  */
 @Data
@@ -69,6 +69,10 @@ public class ProductionTask implements Serializable {
 	@Excel(name = "生产订单号", width = 15)
     @Schema(description = "生产订单号")
     private String orderNo;
+	/**产品id*/
+	@Excel(name = "产品id", width = 15)
+    @Schema(description = "产品id")
+    private String productId;
 	/**产品编号*/
 	@Excel(name = "产品编号", width = 15)
     @Schema(description = "产品编号")
@@ -136,12 +140,12 @@ public class ProductionTask implements Serializable {
     @Schema(description = "实际设备设置")
     private String actualEquipmentSettings;
 	/**指派操作员id*/
-	@Excel(name = "指派操作员id", width = 15)
+	@Excel(name = "指派操作员id", width = 15, dictTable = "sys_user where del_flag='0' and status='1'", dicText = "realname", dicCode = "id")
+	@Dict(dictTable = "sys_user where del_flag='0' and status='1'", dicText = "realname", dicCode = "id")
     @Schema(description = "指派操作员id")
     private String assignedOperatorId;
 	/**指派操作员*/
-	@Excel(name = "指派操作员", width = 15, dictTable = "sys_user", dicText = "realname", dicCode = "username")
-	@Dict(dictTable = "sys_user", dicText = "realname", dicCode = "username")
+	@Excel(name = "指派操作员", width = 15)
     @Schema(description = "指派操作员")
     private String assignedOperatorName;
 	/**状态*/

@@ -8,7 +8,7 @@
     <!--左侧菜单上的图标-->
     <div class="ml-2 truncate md:opacity-100" :class="getTitleClass" v-show="showTitle">
 <!--      {{ shortTitle }}-->
-      {{ '企业信息管理系统' }}
+      {{ '信息管理系统' }}
     </div>
   </div>
 </template>

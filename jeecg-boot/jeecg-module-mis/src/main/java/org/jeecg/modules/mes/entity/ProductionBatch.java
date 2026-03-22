@@ -61,6 +61,15 @@ public class ProductionBatch implements Serializable {
     @Excel(name = "配方id", width = 15)
     @Schema(description = "配方id")
     private String recipeId;
+    @Excel(name = "配方名称", width = 15)
+    @Schema(description = "配方名称")
+    private String recipeName;
+    @Excel(name = "配方编码", width = 15)
+    @Schema(description = "配方编码")
+    private String recipeCode;
+    @Excel(name = "配方版本", width = 15)
+    @Schema(description = "配方版本")
+    private String recipeVersion;
 	/**计划生产量(Kg)*/
 	@Excel(name = "计划生产量(Kg)", width = 15)
     @Schema(description = "计划生产量(Kg)")

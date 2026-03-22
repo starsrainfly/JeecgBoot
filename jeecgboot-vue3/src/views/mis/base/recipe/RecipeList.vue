@@ -19,7 +19,7 @@
                     新增属性
                   </a-menu-item>
                   <a-menu-item key="3" @click="handleEditSpec">
-                    <Icon icon="ant-design:delete-outlined"></Icon>
+                    <Icon icon="ant-design:edit-outlined"></Icon>
                     编辑属性
                   </a-menu-item>
                   <a-menu-item key="4" @click="handleSpecDetail">
@@ -62,7 +62,7 @@
   import RecipeModal from './components/RecipeModal.vue'
   import RecipeSpecDrawer from './components/RecipeSpecDrawer.vue'
   import {columns, searchFormSchema, superQuerySchema} from './Recipe.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './Recipe.api';
+  import {list, deleteOne, batchDelete, getImportUrl, getExportUrl, publishOne} from './Recipe.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
 
   import { useDrawer } from '/@/components/Drawer';
@@ -143,6 +143,10 @@
     * 编辑事件
     */
   function handleEdit(record: Recordable) {
+     // if(record.publishStatus ==="1"){
+     //   createMessage.error('已经发布不可编辑');
+     //   return ;
+     // }
      openModal(true, {
        record,
        isUpdate: true,
@@ -163,6 +167,11 @@
     * 删除事件
     */
   async function handleDelete(record) {
+    if(record.publishStatus ==="1"){
+        createMessage.error('已经发布不可删除');
+        return ;
+      }
+
      await deleteOne({id: record.id}, handleSuccess);
    }
    /**
@@ -184,6 +193,7 @@
        return [
          {
            label: '编辑',
+          // disabled: record.publishStatus === '1' || record.isActive !== '1',
            onClick: handleEdit.bind(null, record),
            auth: 'Recipe:mis_recipe:edit'
          }
@@ -202,6 +212,7 @@
       },
       {
         label: '删除',
+
         popConfirm: {
           title: '是否确认删除',
           confirm: handleDelete.bind(null, record),
@@ -223,7 +234,12 @@
       },
       {
         label:'发布配方',
-        onClick: handlePublish.bind(null, record)
+        popConfirm: {
+          title: '是否确认发布',
+          confirm: handlePublish.bind(null, record),
+          placement: 'topLeft'
+        },
+
       },
     ]
   }
@@ -280,6 +296,7 @@
       createMessage.error('已经发布不可再次发布');
       return ;
     }
+    await publishOne({id: record.id}, handleSuccess);
   }
   /**
    * 详情

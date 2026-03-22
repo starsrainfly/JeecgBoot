@@ -1,5 +1,8 @@
 package org.jeecg.modules.mdm.service.impl;
 
+import org.apache.shiro.SecurityUtils;
+import org.jeecg.common.exception.JeecgBootException;
+import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.modules.mdm.entity.Recipe;
 import org.jeecg.modules.mdm.entity.RecipeDetail;
 import org.jeecg.modules.mdm.mapper.RecipeDetailMapper;
@@ -71,6 +74,17 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
 		for(Serializable id:idList) {
 			recipeDetailMapper.deleteByMainId(id.toString());
 			recipeMapper.deleteById(id);
+		}
+	}
+
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void publishRecipe(String id) {
+		LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+		String publishBy  = loginUser.getRealname();
+		int rows = recipeMapper.publishRecipe(id,publishBy);
+		if(rows == 0){
+			throw new JeecgBootException("发布失败，请刷新后重试");
 		}
 	}
 	

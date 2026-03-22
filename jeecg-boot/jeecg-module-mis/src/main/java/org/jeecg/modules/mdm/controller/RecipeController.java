@@ -10,6 +10,7 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.jeecg.modules.mes.entity.ProductionPlan;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -120,6 +121,25 @@ public class RecipeController {
 		}
 		recipeService.updateMain(recipe, recipePage.getRecipeDetailList());
 		return Result.OK("编辑成功!");
+	}
+	 @AutoLog(value = "配方表-发布")
+	 @Operation(summary="配方表-发布")
+	// @RequiresPermissions("recipe:mis_recipe:publish")
+	 @RequestMapping(value = "/publish", method = {RequestMethod.PUT,RequestMethod.POST})
+	public Result<String> publish(@RequestParam(name="id",required = true) String id){
+		 Recipe recipe = recipeService.getById(id);
+		 if(recipe==null) {
+			 return Result.error("未找到对应数据");
+		 }
+		 if("0".equals(recipe.getStatus())){
+			 return Result.error("该配方已禁用，不可发布");
+		 }
+		 if ("1".equals(recipe.getPublishStatus())) {
+			 return Result.error("该配方已发布，不可重复发布");
+		 }
+		 recipeService.publishRecipe(id);
+
+		return Result.OK("发布成功!");
 	}
 	
 	/**

@@ -145,11 +145,28 @@ export const formSchema: FormSchema[] = [
             fieldConfig: [
                 { source: 'id', target: 'recipeId' },
                 { source: 'recipe_code', target: 'recipeCode' },
+              { source: 'recipe_name', target: 'recipeName' },
+              { source: 'version', target: 'recipeVersion' },
             ],
             multi:false
         }
     },
-
+  },
+  {
+    label: '配方名称',
+    field: 'recipeName',
+    component: 'Input',
+    componentProps:{
+      readOnly:true
+    }
+  },
+  {
+    label: '配方版本',
+    field: 'recipeVersion',
+    component: 'Input',
+    componentProps:{
+      readOnly:true
+    }
   },
   {
     label: '产品描述',

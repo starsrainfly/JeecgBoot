@@ -12,5 +12,6 @@
 		SELECT * 
 		FROM  mis_process_routing_step
 		WHERE
-			 routing_id = #{mainId} 	</select>
+			 routing_id = #{mainId}
+		ORDER BY step_seq </select>
 </mapper>

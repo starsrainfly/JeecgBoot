@@ -51,6 +51,14 @@ public class Product implements Serializable {
 	@Excel(name = "配方编码", width = 15)
     @Schema(description = "配方编码")
     private String recipeCode;
+    /**配方名称*/
+    @Excel(name = "配方名称", width = 15)
+    @Schema(description = "配方名称")
+    private String recipeName;
+    /**配方编码*/
+    @Excel(name = "配方版本", width = 15)
+    @Schema(description = "配方版本")
+    private String recipeVersion;
 	/**产品描述*/
 	@Excel(name = "产品描述", width = 15)
     @Schema(description = "产品描述")

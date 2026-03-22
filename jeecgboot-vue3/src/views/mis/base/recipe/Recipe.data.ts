@@ -21,6 +21,17 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'version'
    },
+  {
+    title: '工艺名称',
+    align:"center",
+    dataIndex: 'routingName',
+
+  },
+  {
+    title: '工艺版本',
+    align:"center",
+    dataIndex: 'routingVersion',
+  },
    {
     title:'是否发布',
      align:"center",
@@ -140,6 +151,77 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
+    label: '工艺id',
+    field: 'routingId',
+    component: 'Input',
+    show:false
+  },
+  {
+    label: '工艺名称',
+    field: 'routingName',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+      const {setFieldsValue} = formActionType;
+      return{
+        setFieldsValue:setFieldsValue,
+        code:"mdm_routing_select",
+        fieldConfig: [
+          { source: 'id', target: 'routingId' },
+          { source: 'routing_name', target: 'routingName' },
+          { source: 'version', target: 'routingVersion' },
+        ],
+        multi:false
+      }
+    },
+
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入工艺名称!'},
+      ];
+    },
+  },
+  {
+    label: '工艺版本',
+    field: 'routingVersion',
+    component: 'Input',
+  },
+  {
+    label: '占比类型',
+    field: 'proportionType',
+    defaultValue: "1",
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"mdm_proportion_type",
+
+    },
+
+  },
+  {
+    label: '配比总和',
+    field: 'proportionTotal',
+    component: 'Input',
+    componentProps: {
+      readonly: true, // 设置为只读，自动计算
+      style: { color: '#000', fontWeight: 'bold' }
+    },
+    dynamicRules: ({ model, schema }) => {
+      return [
+        {
+          validator: (_, value) => {
+            // 只有当占比类型为1(标准)时才校验
+            if (model.proportionType === '1') {
+              const total = parseFloat(value) || 0;
+              if (total !== 100) {
+                return Promise.reject('标准类型的配比总和必须等于100！');
+              }
+            }
+            return Promise.resolve();
+          }
+        }
+      ];
+    },
+  },
+  {
     label: '主配人',
     field: 'formulatorFirst',
     component: 'Input',
@@ -180,7 +262,7 @@ export const formSchema: FormSchema[] = [
     defaultValue: "1",
     component: 'JDictSelectTag',
     componentProps:{
-        dictCode:"status"
+        dictCode:"mdm_recipe_status"
      },
   },
 	// TODO 主键隐藏字段，目前写死为ID
@@ -206,7 +288,7 @@ export const recipeDetailColumns: JVxeColumn[] = [
       title: '物料编码',
       key: 'materialCode',
       type: JVxeTypes.popup,
-      popupCode:"mis_material_select",
+      popupCode:"mdm_material_select",
       fieldConfig: [
         { source: 'id', target: 'materialId' },
         { source: 'material_code', target: 'materialCode' },

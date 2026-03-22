@@ -61,6 +61,10 @@ public class ProductionOrder implements Serializable {
 	@Excel(name = "配方名称", width = 15)
     @Schema(description = "配方名称")
     private String recipeName;
+    /**配方名称*/
+    @Excel(name = "配方版本", width = 15)
+    @Schema(description = "配方版本")
+    private String recipeVersion;
 	/**计划产量(Kg)*/
 	@Excel(name = "计划产量(Kg)", width = 15)
     @Schema(description = "计划产量(Kg)")
@@ -145,6 +149,12 @@ public class ProductionOrder implements Serializable {
     @DateTimeFormat(pattern="yyyy-MM-dd")
     @Schema(description = "交货日期")
     private Date deliveryDate;
+    /**实际开工*/
+    @Excel(name = "下达时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "下达时间")
+    private Date releaseTime;
 	/**状态0草稿1已下达，2部分完成3已完成*/
 	@Excel(name = "状态0草稿1已下达，2部分完成3已完成", width = 15, dicCode = "mes_production_status")
     @Dict(dicCode = "mes_production_status")

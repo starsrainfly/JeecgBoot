@@ -1,5 +1,6 @@
 package org.jeecg.modules.mes.service;
 
+import org.jeecg.modules.mes.entity.ProductionBatch;
 import org.jeecg.modules.mes.entity.ProductionTask;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -11,4 +12,13 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IProductionTaskService extends IService<ProductionTask> {
 
+    /**
+     * 生成任务记录
+     * @param batchId
+     * @param routingId
+
+     */
+    public void generateTasks(String batchId, String routingId);
+
+    public void generateTasks(ProductionBatch batch, String routingId);
 }

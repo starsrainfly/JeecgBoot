@@ -12,6 +12,7 @@ enum Api {
   importExcel = '/Recipe/recipe/importExcel',
   exportXls = '/Recipe/recipe/exportXls',
   recipeDetailList = '/Recipe/recipe/queryRecipeDetailByMainId',
+  publish = '/Recipe/recipe/publish',
 }
 /**
  * 导出api
@@ -40,6 +41,12 @@ export const list = (params) =>
  */
 export const deleteOne = (params,handleSuccess) => {
   return defHttp.delete({url: Api.deleteOne, params}, {joinParamsToUrl: true}).then(() => {
+    handleSuccess();
+  });
+}
+
+export const publishOne = (params, handleSuccess) =>{
+  return defHttp.post({url: Api.publish, params}, {joinParamsToUrl: true}).then(() => {
     handleSuccess();
   });
 }

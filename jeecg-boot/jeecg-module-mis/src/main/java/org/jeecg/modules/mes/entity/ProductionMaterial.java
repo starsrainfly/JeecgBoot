@@ -41,6 +41,14 @@ public class ProductionMaterial implements Serializable {
 	@Excel(name = "生产单号", width = 15)
     @Schema(description = "生产单号")
     private String orderNo;
+    /**生产单号*/
+    @Excel(name = "批次id", width = 15)
+    @Schema(description = "批次id")
+    private String batchId;
+    /**生产单号*/
+    @Excel(name = "批次单号", width = 15)
+    @Schema(description = "批次单号")
+    private String batchNo;
 	/**物料id*/
 	@Excel(name = "物料id", width = 15)
     @Schema(description = "物料id")

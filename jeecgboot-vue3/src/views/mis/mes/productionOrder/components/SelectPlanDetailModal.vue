@@ -7,6 +7,7 @@
     :zIndex="2000"
     :okButtonProps="{ disabled: !canConfirm }"
     @ok="handleConfirm"
+    @cancel="handleCancel"
   >
     <!-- 提示信息 -->
     <a-alert
@@ -85,6 +86,8 @@
   const { createMessage, createWarningModal } = useMessage();
 
   const [registerModal, { closeModal }] = useModalInner(async (data) => {
+    selectedKeys.value = [];
+    selectedRows.value = [];
     restrictProductId.value = data?.restrictProductId || '';
     restrictPackageId.value = data?.restrictPackageId || '';
 // 关键：接收已选择的明细 ID，用于禁用已选
@@ -250,9 +253,14 @@
     }
 
     emit('success', validRows);
+    selectedKeys.value = [];
+    selectedRows.value = [];
     closeModal();
   }
-
+  function handleCancel() {
+    selectedKeys.value = [];
+    selectedRows.value = [];
+  }
   // 加载数据
   async function loadData() {
     loading.value = true;

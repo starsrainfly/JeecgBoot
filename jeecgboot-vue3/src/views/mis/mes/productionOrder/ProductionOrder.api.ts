@@ -16,7 +16,8 @@ enum Api {
   // 新增接口
   getPackageMapping = '/mdm/packageMapping/getByInnerAndOuter',  // 查询包装映射
   getPlanDetailList = '/mes/productionPlan/listForOrder',  // 查询可用计划明细
-  //getPlanList = '/mes/productionPlan/listForOrder',              // 查询可用计划
+  batchRelease = '/mes/productionOrder/batchRelease',              // 批量下达任务
+  release = '/mes/productionOrder/release',
 }
 /**
  * 导出api
@@ -89,9 +90,24 @@ export const getPlanDetailList = (params) => {
   return defHttp.get({url: Api.getPlanDetailList, params});
 }
 
-/**
- * 查询可用计划列表
- */
-export const getPlanList = (params) => {
-  return defHttp.get({url: Api.getPlanList, params});
+/**下达任务*/
+export const releaseOne = (params,handleSuccess) => {
+  return defHttp.post({url: Api.release, params}, {joinParamsToUrl: true}).then(() => {
+    handleSuccess();
+  });
+}
+/**批量下达任务*/
+export const batchRelease = (params, handleSuccess) => {
+  createConfirm({
+    iconType: 'warning',
+    title: '确认下达',
+    content: '是否下达选中数据',
+    okText: '确认',
+    cancelText: '取消',
+    onOk: () => {
+      return defHttp.post({url: Api.batchRelease, data: params}, {joinParamsToUrl: true}).then(() => {
+        handleSuccess();
+      });
+    }
+  });
 }

@@ -14,6 +14,10 @@
                     <Icon icon="ant-design:delete-outlined"></Icon>
                     删除
                   </a-menu-item>
+                  <a-menu-item key="2" @click="batchHandleRelease">
+                    <Icon icon="ant-design:delete-outlined"></Icon>
+                    下达任务
+                  </a-menu-item>
                 </a-menu>
               </template>
               <a-button v-auth="'mes:mis_production_order:deleteBatch'">批量操作
@@ -43,7 +47,14 @@
   import {useModal} from '/@/components/Modal';
   import ProductionOrderModal from './components/ProductionOrderModal.vue'
   import {columns, searchFormSchema, superQuerySchema} from './ProductionOrder.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './ProductionOrder.api';
+  import {
+    list,
+    deleteOne,
+    batchDelete,
+    getImportUrl,
+    getExportUrl,
+    batchRelease, releaseOne
+  } from './ProductionOrder.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
   const queryParam = reactive<any>({});
@@ -143,6 +154,17 @@
   async function batchHandleDelete() {
      await batchDelete({ids: selectedRowKeys.value},handleSuccess);
    }
+
+  /**下达一个任务*/
+  async function HandleRelease(record){
+    await releaseOne({id:record.id}, handleSuccess);
+  }
+
+   /**批量下达任务*/
+   async function batchHandleRelease(){
+     await batchRelease({ids: selectedRowKeys.value},handleSuccess);
+   }
+
    /**
     * 成功回调
     */
@@ -179,7 +201,16 @@
           placement: 'topLeft'
         },
         auth: 'mes:mis_production_order:delete'
-      }
+      },
+      {
+        label: '下达任务',
+        popConfirm: {
+          title: '是否确认下达任务',
+          confirm: HandleRelease.bind(null, record),
+          placement: 'topLeft'
+        },
+        auth: 'mes:mis_production_order:release'
+      },
     ]
   }
 

@@ -172,6 +172,12 @@ export const formSchema: FormSchema[] = [
     component: 'Input',
   },
   {
+    label:'产品id',
+    field:'productId',
+    component:'Input',
+    show:false
+  },
+  {
     label: '产品编码',
     field: 'productCode',
     component: 'JPopup',
@@ -204,6 +210,11 @@ export const formSchema: FormSchema[] = [
       readonly:true,
     }
   },
+  // {
+  //   label:'配方id',
+  //   field:'recipeId',
+  //   component:'Input',
+  // },
   {
     label: '计划产量(Kg)',
     field: 'plannedQty',

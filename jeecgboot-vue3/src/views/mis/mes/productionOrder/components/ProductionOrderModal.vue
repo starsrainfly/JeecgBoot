@@ -304,7 +304,7 @@
     const currentProduct = getFieldsValue().productId;
     // 关键：收集已选择的计划明细 ID
     const alreadySelectedIds = productionOrderDetailTable.dataSource
-      .map(row => row.id)
+      .map(row => row.planDetailId)
       .filter(Boolean); // 过滤掉空值
 
     console.log('已选择的计划明细 ID:', alreadySelectedIds);

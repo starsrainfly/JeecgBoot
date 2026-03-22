@@ -44,5 +44,7 @@ public interface IRecipeService extends IService<Recipe> {
 	 * @param idList
 	 */
 	public void delBatchMain (Collection<? extends Serializable> idList);
+
+	public void publishRecipe(String id);
 	
 }

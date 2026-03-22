@@ -239,6 +239,7 @@ export const formSchema: FormSchema[] = [
     componentProps:{
         dictCode:"mes_plan_status"
      },
+    defaultValue:'0',
     dynamicRules: ({model,schema}) => {
       return [
         { required: true, message: '请选择计划状态!'},

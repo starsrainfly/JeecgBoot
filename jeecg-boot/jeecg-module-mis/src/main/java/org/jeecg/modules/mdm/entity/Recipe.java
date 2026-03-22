@@ -1,6 +1,7 @@
 package org.jeecg.modules.mdm.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -59,14 +60,32 @@ public class Recipe implements Serializable {
     @Schema(description = "注意事项")
     private String notes;
 	/**状态*/
-	@Excel(name = "状态", width = 15, dicCode = "status")
-    @Dict(dicCode = "status")
+	@Excel(name = "状态", width = 15, dicCode = "mdm_recipe_status")
+    @Dict(dicCode = "mdm_recipe_status")
     @Schema(description = "状态")
     private String status;
     /**工艺id*/
-    @Excel(name = "注意事项", width = 15)
-    @Schema(description = "注意事项")
+    @Excel(name = "工艺id", width = 15)
+    @Schema(description = "工艺id")
     private String routingId;
+    /**工艺名称*/
+    @Excel(name = "工艺名称", width = 15)
+    @Schema(description = "工艺名称")
+    private String routingName;
+    /**工艺版本*/
+    @Excel(name = "工艺版本", width = 15)
+    @Schema(description = "工艺版本")
+    private String routingVersion;
+
+    /**占比类型*/
+    @Excel(name = "占比类型", width = 15 , dicCode = "mdm_recipe_status")
+    @Dict(dicCode = "mdm_proportion_type")
+    @Schema(description = "占比类型")
+    private String proportionType;
+    /**总占比*/
+    @Excel(name = "总占比", width = 15)
+    @Schema(description = "总占比")
+    private BigDecimal proportionTotal;
 	/**是否删除*/
 	@Excel(name = "是否删除", width = 15)
     @Schema(description = "是否删除")

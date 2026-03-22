@@ -1,5 +1,6 @@
 package org.jeecg.modules.mdm.vo;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.jeecg.modules.mdm.entity.RecipeDetail;
@@ -38,6 +39,27 @@ public class RecipePage {
 	@Excel(name = "技术要求", width = 15)
 	@Schema(description = "技术要求")
     private String technics;
+	/**工艺id*/
+	@Excel(name = "工艺id", width = 15)
+	@Schema(description = "工艺id")
+	private String routingId;
+	/**工艺名称*/
+	@Excel(name = "工艺名称", width = 15)
+	@Schema(description = "工艺名称")
+	private String routingName;
+	/**工艺版本*/
+	@Excel(name = "工艺版本", width = 15)
+	@Schema(description = "工艺版本")
+	private String routingVersion;
+	/**占比类型*/
+	@Excel(name = "占比类型", width = 15 , dicCode = "mdm_recipe_status")
+	@Dict(dicCode = "mdm_proportion_type")
+	@Schema(description = "占比类型")
+	private String proportionType;
+	/**总占比*/
+	@Excel(name = "总占比", width = 15)
+	@Schema(description = "总占比")
+	private BigDecimal proportionTotal;
 	/**主配人*/
 	@Excel(name = "主配人", width = 15)
 	@Schema(description = "主配人")

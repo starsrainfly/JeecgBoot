@@ -148,7 +148,7 @@ export const processRoutingStepColumns: JVxeColumn[] = [
     {
       title: '工序名称',
       key: 'stepName',
-      type: JVxeTypes.input,
+      type: JVxeTypes.textarea,
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',
@@ -159,7 +159,7 @@ export const processRoutingStepColumns: JVxeColumn[] = [
     {
       title: '操作要求',
       key: 'stepDesc',
-      type: JVxeTypes.input,
+      type: JVxeTypes.textarea,
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',

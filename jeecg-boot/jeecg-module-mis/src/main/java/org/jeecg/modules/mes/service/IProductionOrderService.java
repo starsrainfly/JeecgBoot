@@ -45,10 +45,11 @@ public interface IProductionOrderService extends IService<ProductionOrder> {
 	 */
 	public void delBatchMain (Collection<? extends Serializable> idList);
 
+	public void releaseOrder(String id);
 	/**
-	 * 下达订单
+	 * 批量下达订单
 	 * @param ids
 	 */
-	public void releaseOrder(String ids);
+	public void BatchReleaseOrder(String ids);
 	
 }

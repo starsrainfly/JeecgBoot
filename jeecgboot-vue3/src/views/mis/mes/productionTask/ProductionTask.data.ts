@@ -28,11 +28,6 @@ export const columns: BasicColumn[] = [
     dataIndex: 'taskDesc'
    },
    {
-    title: '工艺步骤id',
-    align:"center",
-    dataIndex: 'routingDetailId'
-   },
-   {
     title: '批次号',
     align:"center",
     sorter: true,
@@ -117,12 +112,7 @@ export const columns: BasicColumn[] = [
    {
     title: '指派操作员id',
     align:"center",
-    dataIndex: 'assignedOperatorId'
-   },
-   {
-    title: '指派操作员',
-    align:"center",
-    dataIndex: 'assignedOperatorName_dictText'
+    dataIndex: 'assignedOperatorId_dictText'
    },
    {
     title: '状态',
@@ -201,10 +191,11 @@ export const searchFormSchema: FormSchema[] = [
       //colProps: {span: 6},
  	},
 	{
-      label: "指派操作员",
-      field: 'assignedOperatorName',
-      component: 'JSelectUser',
+      label: "指派操作员id",
+      field: 'assignedOperatorId',
+      component: 'JSelectMultiple',
       componentProps:{
+          dictCode:"sys_user where del_flag='0' and status='1',realname,id"
       },
       //colProps: {span: 6},
  	},
@@ -244,11 +235,6 @@ export const formSchema: FormSchema[] = [
     component: 'InputTextArea',
   },
   {
-    label: '工艺步骤id',
-    field: 'routingDetailId',
-    component: 'Input',
-  },
-  {
     label: '批次号',
     field: 'batchNo',
     component: 'Input',
@@ -258,6 +244,7 @@ export const formSchema: FormSchema[] = [
     label: '生产订单号',
     field: 'orderNo',
     component: 'Input',
+    dynamicDisabled:true
   },
   {
     label: '产品编号',
@@ -287,7 +274,7 @@ export const formSchema: FormSchema[] = [
                 { source: 'model', target: 'model' },
                 { source: 'equipment_type', target: 'equipmentType' },
             ],
-            multi:true
+            multi:false
         }
     },
 
@@ -339,10 +326,91 @@ export const formSchema: FormSchema[] = [
     label: '实际设备编码',
     field: 'actualEquipmentCode',
     component: 'JPopup',
-    componentProps: ({ formActionType }) => {
-        const {setFieldsValue} = formActionType;
-        return{
-            setFieldsValue:setFieldsValue,
-            code:"mdm_equipment_select",
-            fieldConfig: [
-                { source: 'id', tar
+    componentProps: ({formActionType}) => {
+      const {setFieldsValue} = formActionType;
+      return {
+        setFieldsValue: setFieldsValue,
+        code: "mdm_equipment_select",
+        fieldConfig: [
+          {source: 'id', target: 'actualEquipmentId'},
+          {source: 'equipment_code', target: 'actualEquipmentCode'},
+          {source: 'equipment_name', target: 'actualEquipmentName'},
+          {source: 'model', target: 'actualModel'},
+          {source: 'equipment_type', target: 'equipmentType'},
+        ],
+        multi: true
+      }
+    },
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入实际设备编码!'},
+      ];
+    },
+  },
+  {
+    label: '实际设备名称',
+    field: 'actualEquipmentName',
+    component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入实际设备名称!'},
+      ];
+    },
+  },
+  {
+    label: '实际设备型号',
+    field: 'actualModel',
+    component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入实际设备型号!'},
+      ];
+    },
+  },
+  {
+    label: '实际设备类型',
+    field: 'actualEquipmentType',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"mdm_equipment_type"
+    },
+  },
+  {
+    label: '实际耗时（单位分钟））',
+    field: 'actualDuration',
+    component: 'InputNumber',
+  },
+  {
+    label: '实际设备设置',
+    field: 'actualEquipmentSettings',
+    component: 'InputTextArea',
+  },
+  {
+    label: '指派操作员',
+    field: 'assignedOperatorId',
+    component:'JDictSelectTag',
+  },
+  {
+    label: '状态',
+    field: 'status',
+    component:'JDictSelectTag',
+  },
+  ]
+// // 高级查询数据
+export const superQuerySchema = {
+  orderNo: {title: '生产编号',order: 0,view: 'text', type: 'string',},
+  // productCode: {title: '产品编码',order: 1,view: 'popup', type: 'string',code: 'mdm_product_select', orgFields: 'product_code', destFields: 'productCode', popupMulti: false,},
+  // productName: {title: '产品名称',order: 2,view: 'text', type: 'string',},
+
+  status: {title: '状态',order: 16,view: 'list', type: 'string',dictCode: 'mes_step_status',},
+
+};
+
+/**
+ * 流程表单调用这个方法获取formSchema
+ * @param param
+ */
+export function getBpmFormSchema(_formData): FormSchema[]{
+// 默认和原始表单保持一致 如果流程中配置了权限数据，这里需要单独处理formSchema
+  return formSchema;
+}

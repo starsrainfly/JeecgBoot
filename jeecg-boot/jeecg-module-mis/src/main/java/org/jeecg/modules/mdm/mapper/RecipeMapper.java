@@ -1,5 +1,6 @@
 package org.jeecg.modules.mdm.mapper;
 
+import org.apache.ibatis.annotations.Param;
 import org.jeecg.modules.mdm.entity.Recipe;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
@@ -11,4 +12,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface RecipeMapper extends BaseMapper<Recipe> {
 
+    int publishRecipe(@Param("id") String id, @Param("publishBy") String publishBy);
 }

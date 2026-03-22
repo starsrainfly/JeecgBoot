@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 /**
  * @Description: 工序表
  * @Author: jeecg-boot
- * @Date:   2026-03-11
+ * @Date:   2026-03-17
  * @Version: V1.0
  */
 public interface ProductionTaskMapper extends BaseMapper<ProductionTask> {

@@ -13,9 +13,13 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.common.utils.SerialNoUtils;
+import org.jeecg.modules.mdm.entity.Product;
+import org.jeecg.modules.mdm.service.IProductService;
+import org.jeecg.modules.mdm.service.IRecipeService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -67,6 +71,8 @@ public class ProductionOrderController {
 
 	 @Autowired
 	 private ISerialNoService serialNoService;
+	 @Autowired
+	 private IProductService productService;
 	/**
 	 * 分页列表查询
 	 *
@@ -99,10 +105,23 @@ public class ProductionOrderController {
 	 @Operation(summary="生产订单-下达")
 	 @RequiresPermissions("mes:mis_production_order:release")
 	 @PostMapping(value = "/release")
-	public Result<String> release(@RequestParam String ids){
-
+	public Result<String> release(@RequestParam String id){
+		 ProductionOrder productionOrder = productionOrderService.getById(id);
+		 if(productionOrder==null) {
+			 return Result.error("未找到对应数据");
+		 }
+		productionOrderService.releaseOrder(id);
 		return Result.OK("添加成功！");
 	}
+
+	 @AutoLog(value = "生产订单-批量下达")
+	 @Operation(summary="生产订单-批量下达")
+	 @RequiresPermissions("mes:mis_production_order:release")
+	 @PostMapping(value = "/batchRelease")
+	 public Result<String> batchRelease(@RequestParam String ids){
+
+		 return Result.OK("添加成功！");
+	 }
 
 	/**
 	 *   添加
@@ -118,6 +137,16 @@ public class ProductionOrderController {
 		ProductionOrder productionOrder = new ProductionOrder();
 		BeanUtils.copyProperties(productionOrderPage, productionOrder);
 		productionOrder.setOrderNo(serialNoService.generateSerialNo(SerialNoPrefixEnum.PRODUCTION_ORDER.getPrefix()));
+		//通过产品信息 获取配方信息，并更新订单表
+		Product productEntity = productService.getById(productionOrder.getProductId());
+		if(productEntity==null) {
+			return Result.error("未找到对应产品数据");
+		}
+		productionOrder.setRecipeId(productEntity.getRecipeId());
+		productionOrder.setRecipeCode(productEntity.getRecipeCode());
+		productionOrder.setRecipeName(productEntity.getRecipeName());
+		productionOrder.setRecipeVersion(productEntity.getRecipeVersion());
+
 		productionOrderService.saveMain(productionOrder, productionOrderPage.getProductionOrderDetailList());
 		return Result.OK("添加成功！");
 	}

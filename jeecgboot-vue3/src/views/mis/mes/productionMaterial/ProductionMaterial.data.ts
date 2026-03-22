@@ -17,6 +17,13 @@ export const columns: BasicColumn[] = [
     sorter: true,
     dataIndex: 'orderNo'
    },
+  {
+    title:'生产批号',
+    align:"center",
+    sorter:true,
+    dataIndex:'batchNo',
+    width:160
+  },
    {
     title: '物料编码',
     align:"center",

@@ -32,7 +32,8 @@
           :disabled="formDisabled"
           :toolbar="true"
           @value-change="handleDetailChange"
-        />
+        >
+        </JVxeTable>
       </a-tab-pane>
     </a-tabs>
   </BasicModal>
@@ -98,43 +99,43 @@
   });
 
   // ===== 关键：启动表单监听 =====
-  function startFormWatch() {
-    // 先停止之前的监听
-    stopFormWatch();
-
-    console.log('启动表单字段监听...');
-
-    // 延迟启动，确保表单完全初始化
-    setTimeout(() => {
-      console.log('开始监听 outerPackageId 变化...');
-
-      formWatchTimer.value = setInterval(() => {
-        try {
-          const formData = getFieldsValue();
-          const currentOuterPackageId = formData?.outerPackageId;
-
-          // 1、监听外包装变化 有值且与上次不同，触发计算
-
-          if (currentOuterPackageId && currentOuterPackageId !== lastOuterPackageId.value) {
-            console.log('检测到外包装变化:', lastOuterPackageId.value, '->', currentOuterPackageId);
-            lastOuterPackageId.value = currentOuterPackageId;
-
-            // 延迟执行，避免频繁变更
-            nextTick(() => {
-              handleOuterPackageChange(currentOuterPackageId);
-            });
-          }
-
-          // 2. 监听产量相关字段变化（新增）
-          handleQtyFieldsChange(formData);
-
-        } catch (e) {
-          // 表单可能还未初始化，忽略错误
-          console.log('监听检查失败:', e);
-        }
-      }, 500); // 每500ms检查一次
-    }, 1000); // 延迟1秒启动，确保表单已渲染
-  }
+  // function startFormWatch() {
+  //   // 先停止之前的监听
+  //   stopFormWatch();
+  //
+  //   console.log('启动表单字段监听...');
+  //
+  //   // 延迟启动，确保表单完全初始化
+  //   setTimeout(() => {
+  //     console.log('开始监听 outerPackageId 变化...');
+  //
+  //     formWatchTimer.value = setInterval(() => {
+  //       try {
+  //         const formData = getFieldsValue();
+  //         const currentOuterPackageId = formData?.outerPackageId;
+  //
+  //         // 1、监听外包装变化 有值且与上次不同，触发计算
+  //
+  //         if (currentOuterPackageId && currentOuterPackageId !== lastOuterPackageId.value) {
+  //           console.log('检测到外包装变化:', lastOuterPackageId.value, '->', currentOuterPackageId);
+  //           lastOuterPackageId.value = currentOuterPackageId;
+  //
+  //           // 延迟执行，避免频繁变更
+  //           nextTick(() => {
+  //             handleOuterPackageChange(currentOuterPackageId);
+  //           });
+  //         }
+  //
+  //         // 2. 监听产量相关字段变化（新增）
+  //         handleQtyFieldsChange(formData);
+  //
+  //       } catch (e) {
+  //         // 表单可能还未初始化，忽略错误
+  //         console.log('监听检查失败:', e);
+  //       }
+  //     }, 500); // 每500ms检查一次
+  //   }, 1000); // 延迟1秒启动，确保表单已渲染
+  // }
 
   // ===== 新增：处理产量字段变化 =====
   function handleQtyFieldsChange(formData: any) {
@@ -293,6 +294,32 @@
     }
   }
 
+  // 新增：重新计算包装数量
+  function recalculatePackageQty(row) {
+    const allocatedQty = Number(row.allocatedQty) || 0;
+    const innerPackageCapacity = Number(row.innerPackageCapacity) || 1;
+    const innerPerOuter = Number(row.innerPerOuter) || 1;
+
+    if (allocatedQty <= 0 || innerPackageCapacity <= 0) {
+      console.warn('参数不足，无法计算:', { allocatedQty, innerPackageCapacity });
+      return;
+    }
+
+    // 计算内包数量 向上取整
+    const innerPackageQty = Math.ceil(allocatedQty / innerPackageCapacity);
+    // 计算外包数量
+    const outerPackageQty = Math.ceil(innerPackageQty / innerPerOuter);
+
+    // 使用 setValues 更新当前行 [^20^]
+    productionOrderDetail.value.setValues([{
+      rowKey: row.id,
+      values: {
+        innerPackageQty: innerPackageQty,
+        outerPackageQty: outerPackageQty
+      }
+    }]);
+  }
+
   // 组件卸载时清理
   onUnmounted(() => {
     stopFormWatch();
@@ -310,7 +337,7 @@
     console.log('已选择的计划明细 ID:', alreadySelectedIds);
     openSelectModal(true, {
       restrictProductId: currentProduct,  // 限制同一产品
-      restrictPackageId: getFieldsValue().innerPackageId, // 限制同一包装
+      // restrictPackageId: getFieldsValue().innerPackageId, // 限制同一包装
       alreadySelectedIds: alreadySelectedIds, // 传给弹窗用于禁用
     });
   }
@@ -391,21 +418,33 @@
       //包装
       innerPackageId: row.packageId,
       innerPackageCapacity: row.packageCapacity,
-
+      innerPackageSpec: row.packageSpec,
 
       // 数量（关键：使用剩余可分配数量）
       planAllocatedQty: row.remainingQty,
       allocatedQty: row.remainingQty,
+      innerPackageQty: Math.ceil(row.remainingQty / row.packageCapacity),
 
+      innerPackageUnit:'个',
+      outerPackageUnit:'个',
       // 其他
       deliverDate: row.deliveryDate,
       priorityLevel: '3',
       remark: row.planRemark || '',
+      plannedStartDate: row.plannedStartDate,
+      plannedEndDate: row.plannedEndDate,
 
       sortNo: startIndex + index + 1
     }));
     console.log('formattedRows:', formattedRows);
-
+// 添加完数据后，如果有 innerPackageCapacity，立即计算内包数量
+    nextTick(() => {
+      productionOrderDetailTable.dataSource.forEach(row => {
+        if (row.packageCapacity && row.remainingQty) {
+          recalculatePackageQty(row);
+        }
+      });
+    });
     // 追加到现有数据
     const newDataSource = [...productionOrderDetailTable.dataSource, ...formattedRows];
     productionOrderDetailTable.dataSource = newDataSource;
@@ -453,6 +492,14 @@
       .filter(Boolean)
       .sort()[0];
 
+    const earliestPlannedStartDate = allRows
+      .map(r => r.plannedStartDate)
+      .filter(Boolean)
+      .sort()[0];
+    const earliestPlannedEndDate = allRows
+      .map(r => r.plannedEndDate)
+      .filter(Boolean)
+      .sort()[0];
     // 关键：设置计划产量时，检查是否需要计算批次数量
     const currentBatchSize = getFieldsValue().batchSize || 50; // 默认50
     const newBatchCount = Math.ceil(totalQty / currentBatchSize);
@@ -474,6 +521,8 @@
       batchSize: currentBatchSize,
       batchCount: newBatchCount, // 自动计算
       deliveryDate: earliestDate,
+      plannedStartDate: earliestPlannedStartDate,
+      plannedEndDate: earliestPlannedEndDate,
     });
     console.log('已设置主表值:', {
       productId: firstOriginalRow.productId,
@@ -487,12 +536,13 @@
     createMessage.success(`订单计划数量已更新：${totalQty} kg，共 ${allRows.length} 条明细`);
   }
   // 监听明细变化，同步更新主表数量
-  function handleDetailChange({ row, column }) {
+  function handleDetailChange(event) {
+    const { row, column, value, type } = event;
     if (column.key === 'allocatedQty') {
       // 校验：本次执行 ≤ 原始数量
       const original = Number(row.planAllocatedQty) || 0;
       const current = Number(row.allocatedQty) || 0;
-console.log("handleDetailChange original:", original)
+      console.log("handleDetailChange original:", original)
       if (current > original) {
         createMessage.warning(`本次执行数量(${current})不能大于计划数量(${original})`);
         // 重置为原始数量
@@ -503,6 +553,46 @@ console.log("handleDetailChange original:", original)
       // 关键：自动重新计算主表总数量
       nextTick(() => {
         recalculateTotalQty();
+        //包装数量
+        recalculatePackageQty(row);
+      });
+    }
+    if (column.key === 'innerPackageSpec') {
+      // 弹窗选择后会自动映射 innerPerOuter，这里触发计算
+      nextTick(() => {
+        recalculatePackageQty(row);
+      });
+    }
+    // 2. 处理外包装选择变化
+    if (column.key === 'outerPackageSpec') {
+      // 弹窗选择后会自动映射 innerPerOuter，这里触发计算
+      nextTick(() => {
+        recalculatePackageQty(row);
+      });
+    }
+
+    // 3. 处理每箱数量变化（用户手动修改）
+    if (column.key === 'innerPerOuter') {
+      nextTick(() => {
+        recalculatePackageQty(row);
+      });
+    }
+
+    // 4. 处理内包数量变化（用户手动修改）
+    if (column.key === 'innerPackageQty') {
+      nextTick(() => {
+        // 根据内包数量重新计算外包数量
+        const innerPackageQty = Number(value) || 0;
+        const innerPerOuter = Number(row.innerPerOuter) || 1;
+        const outerPackageQty = Math.ceil(innerPackageQty / innerPerOuter);
+
+        // 使用 setValues 更新当前行
+        productionOrderDetail.value.setValues([{
+          rowKey: row.id,
+          values: {
+            outerPackageQty: outerPackageQty
+          }
+        }]);
       });
     }
   }
@@ -525,68 +615,68 @@ console.log("handleDetailChange original:", original)
   }
 
   // 外包装变化，自动计算包装数量
-  async function handleOuterPackageChange(outerPackageId: string) {
-    if (!outerPackageId || isCalculating.value) return;
-
-    isCalculating.value = true;
-    console.log('开始处理外包装变化:', outerPackageId);
-
-    try {
-      const formData = getFieldsValue();
-      const innerPackageId = formData.innerPackageId;
-      const totalQty = formData.plannedQty;
-      const innerCapacity = formData.innerPackageCapacity || 10; // 默认10kg
-
-      console.log('当前表单数据:', { innerPackageId, totalQty, innerCapacity });
-
-      if (!innerPackageId) {
-        createMessage.warning('请先选择内包装（通过"选择计划明细"按钮选择）');
-        return;
-      }
-
-      if (!totalQty || totalQty <= 0) {
-        createMessage.warning('计划数量必须大于0');
-        return;
-      }
-
-      console.log('调用 getPackageMapping API:', { innerPackageId, outerPackageId });
-
-      // 查询包装映射关系
-      const mapping = await getPackageMapping({
-        innerPackageId,
-        outerPackageId
-      });
-
-      console.log('API 返回结果:', mapping);
-
-      if (!mapping) {
-        createMessage.warning('未找到该内外包装的映射关系，请先维护包装映射');
-        return;
-      }
-
-      const innerPerOuter = mapping?.innerPerOuter || 1;  // 一箱几个内包
-
-      // 计算
-      const innerPackageQty = Math.ceil(totalQty / innerCapacity);
-      const outerPackageQty = Math.ceil(innerPackageQty / innerPerOuter);
-
-      console.log('计算结果:', { innerPackageQty, outerPackageQty, innerPerOuter });
-
-      // 自动填充表单
-      setFieldsValue({
-        innerPackageQty: innerPackageQty,
-        outerPackageQty: outerPackageQty,
-        outerInnerPerOuter: innerPerOuter
-      });
-
-      createMessage.success(`包装数量已自动计算：内包${innerPackageQty}个，外包${outerPackageQty}个（每箱${innerPerOuter}个内包）`);
-    } catch (error: any) {
-      console.error('查询包装映射失败', error);
-      createMessage.error('计算包装数量失败：' + (error.message || '网络错误'));
-    } finally {
-      isCalculating.value = false;
-    }
-  }
+  // async function handleOuterPackageChange(outerPackageId: string) {
+  //   if (!outerPackageId || isCalculating.value) return;
+  //
+  //   isCalculating.value = true;
+  //   console.log('开始处理外包装变化:', outerPackageId);
+  //
+  //   try {
+  //     const formData = getFieldsValue();
+  //     const innerPackageId = formData.innerPackageId;
+  //     const totalQty = formData.plannedQty;
+  //     const innerCapacity = formData.innerPackageCapacity || 10; // 默认10kg
+  //
+  //     console.log('当前表单数据:', { innerPackageId, totalQty, innerCapacity });
+  //
+  //     if (!innerPackageId) {
+  //       createMessage.warning('请先选择内包装（通过"选择计划明细"按钮选择）');
+  //       return;
+  //     }
+  //
+  //     if (!totalQty || totalQty <= 0) {
+  //       createMessage.warning('计划数量必须大于0');
+  //       return;
+  //     }
+  //
+  //     console.log('调用 getPackageMapping API:', { innerPackageId, outerPackageId });
+  //
+  //     // 查询包装映射关系
+  //     const mapping = await getPackageMapping({
+  //       innerPackageId,
+  //       outerPackageId
+  //     });
+  //
+  //     console.log('API 返回结果:', mapping);
+  //
+  //     if (!mapping) {
+  //       createMessage.warning('未找到该内外包装的映射关系，请先维护包装映射');
+  //       return;
+  //     }
+  //
+  //     const innerPerOuter = mapping?.innerPerOuter || 1;  // 一箱几个内包
+  //
+  //     // 计算
+  //     const innerPackageQty = Math.ceil(totalQty / innerCapacity);
+  //     const outerPackageQty = Math.ceil(innerPackageQty / innerPerOuter);
+  //
+  //     console.log('计算结果:', { innerPackageQty, outerPackageQty, innerPerOuter });
+  //
+  //     // 自动填充表单
+  //     setFieldsValue({
+  //       innerPackageQty: innerPackageQty,
+  //       outerPackageQty: outerPackageQty,
+  //       outerInnerPerOuter: innerPerOuter
+  //     });
+  //
+  //     createMessage.success(`包装数量已自动计算：内包${innerPackageQty}个，外包${outerPackageQty}个（每箱${innerPerOuter}个内包）`);
+  //   } catch (error: any) {
+  //     console.error('查询包装映射失败', error);
+  //     createMessage.error('计算包装数量失败：' + (error.message || '网络错误'));
+  //   } finally {
+  //     isCalculating.value = false;
+  //   }
+  // }
 
   // 提交前校验
   async function validateBeforeSubmit() {
@@ -649,8 +739,7 @@ console.log("handleDetailChange original:", original)
     isUpdate.value = !!data?.isUpdate;
     formDisabled.value = !data?.showFooter;
 
-    // 重置监听状态
-    lastOuterPackageId.value = null;
+
 
     if (unref(isUpdate)) {
       //表单赋值
@@ -658,10 +747,7 @@ console.log("handleDetailChange original:", original)
         ...data.record,
       });
 
-      // 编辑模式：如果有外包装，记录当前值避免重复触发
-      if (data.record?.outerPackageId) {
-        lastOuterPackageId.value = data.record.outerPackageId;
-      }
+
 
       requestSubTableData(productionOrderDetailList, {id:data?.record?.id}, productionOrderDetailTable)
     }
@@ -673,7 +759,6 @@ console.log("handleDetailChange original:", original)
     if (data?.showFooter) {
       console.log('准备启动表单监听，data.showFooter=', data.showFooter);
       nextTick(() => {
-        startFormWatch();
         startQtyWatch(); // 启动产量字段监听
       });
     } else {
@@ -691,8 +776,7 @@ console.log("handleDetailChange original:", original)
     await resetFields();
     activeKey.value = 'productionOrderDetail';
     productionOrderDetailTable.dataSource = [];
-    // 重置监听状态
-    lastOuterPackageId.value = null;
+
     // 停止监听
     stopFormWatch();
     stopFormWatch();

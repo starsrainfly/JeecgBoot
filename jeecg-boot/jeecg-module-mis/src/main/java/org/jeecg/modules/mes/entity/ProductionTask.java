@@ -53,6 +53,21 @@ public class ProductionTask implements Serializable {
 	@Excel(name = "操作说明", width = 15)
     @Schema(description = "操作说明")
     private String taskDesc;
+    /**工单类型*/
+    @Excel(name = "工单类型", width = 15, dicCode = "mes_task_type")
+    @Dict(dicCode = "mes_task_type")
+    @Schema(description = "工单类型")
+    private String taskType;
+    /**是否需要质检*/
+    @Excel(name = "是否需要质检", width = 15, dicCode = "yn")
+    @Dict(dicCode = "yn")
+    @Schema(description = "是否需要质检")
+    private String qcRequired;
+    /**质检状态*/
+    @Excel(name = "质检状态", width = 15, dicCode = "mes_qc_status")
+    @Dict(dicCode = "mes_qc_status")
+    @Schema(description = "质检状态")
+    private String qcStatus;
 	/**工艺步骤id*/
 	@Excel(name = "工艺步骤id", width = 15)
     @Schema(description = "工艺步骤id")
@@ -148,6 +163,18 @@ public class ProductionTask implements Serializable {
 	@Excel(name = "指派操作员", width = 15)
     @Schema(description = "指派操作员")
     private String assignedOperatorName;
+    /**实际操作员id*/
+    @Excel(name = "实际操作员id", width = 15)
+    @Schema(description = "实际操作员id")
+    private String actualOperatorId;
+    /**实际操作员*/
+    @Excel(name = "实际操作员", width = 15)
+    @Schema(description = "实际操作员")
+    private String actualOperatorName;
+    /**质检来源工单id*/
+    @Excel(name = "质检来源工单id", width = 15)
+    @Schema(description = "质检来源工单id")
+    private String sourceTaskId;
 	/**状态*/
 	@Excel(name = "状态", width = 15, dicCode = "mes_step_status")
 	@Dict(dicCode = "mes_step_status")

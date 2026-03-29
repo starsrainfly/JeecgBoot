@@ -1,20 +1,26 @@
 package org.jeecg.modules.mes.controller;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.apache.shiro.SecurityUtils;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
+import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.util.oConvertUtils;
+import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
+import org.jeecg.modules.common.service.ISerialNoService;
+import org.jeecg.modules.mes.entity.ProductionBatchMaterialActual;
 import org.jeecg.modules.mes.entity.ProductionTask;
+import org.jeecg.modules.mes.service.IProductionBatchMaterialActualService;
 import org.jeecg.modules.mes.service.IProductionTaskService;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -22,6 +28,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jeecg.modules.system.entity.SysUser;
+import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -52,7 +60,22 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 public class ProductionTaskController extends JeecgController<ProductionTask, IProductionTaskService> {
 	@Autowired
 	private IProductionTaskService productionTaskService;
-	
+
+	 @Autowired
+	 private IProductionBatchMaterialActualService materialActualService;
+
+	 @Autowired
+	 private ISerialNoService serialNoService;
+
+	 @Autowired
+	 private ISysUserService sysUserService;
+
+	/*// 查询包装物料（内包+外包）
+List<ProductionMaterial> packageMaterials = productionMaterialService.list(
+    new LambdaQueryWrapper<ProductionMaterial>()
+        .eq(ProductionMaterial::getBatchId, batch.getId())
+        .in(ProductionMaterial::getMaterialType, "1", "2") // 1=内包, 2=外包
+);*/
 	/**
 	 * 分页列表查询
 	 *
@@ -105,6 +128,13 @@ public class ProductionTaskController extends JeecgController<ProductionTask, IP
 	@RequiresPermissions("mes:mis_production_task:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody ProductionTask productionTask) {
+		if(!oConvertUtils.isEmpty(productionTask.getAssignedOperatorId())){
+			SysUser user = sysUserService.getById(productionTask.getAssignedOperatorId());
+			if(user!=null ){
+				productionTask.setAssignedOperatorName(user.getRealname());
+			}
+		}
+
 		productionTaskService.updateById(productionTask);
 		return Result.OK("编辑成功!");
 	}
@@ -181,4 +211,179 @@ public class ProductionTaskController extends JeecgController<ProductionTask, IP
         return super.importExcel(request, response, ProductionTask.class);
     }
 
+	 /**
+	  * 我的工单列表（当前登录操作员）
+	  */
+	 @AutoLog(value = "我的工单-列表查询")
+	 @Operation(summary="我的工单-列表查询")
+	 @GetMapping(value = "/myTaskList")
+	 public Result<IPage<ProductionTask>> myTaskList(
+			 @RequestParam(name="taskType", required=false) String taskType,
+			 @RequestParam(name="status", required=false) String status,
+			 @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
+			 @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
+			 HttpServletRequest req) {
+
+		 // 获取当前登录用户
+		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+		 String operatorId = loginUser.getId();
+
+		 LambdaQueryWrapper<ProductionTask> queryWrapper = new LambdaQueryWrapper<>();
+		 queryWrapper.eq(ProductionTask::getAssignedOperatorId, operatorId);
+
+		 // 按类型筛选
+		 if (StrUtil.isNotEmpty(taskType)) {
+			 queryWrapper.eq(ProductionTask::getTaskType, taskType);
+		 }
+
+		 // 按状态筛选
+		 if (StrUtil.isNotEmpty(status)) {
+			 queryWrapper.eq(ProductionTask::getStatus, status);
+		 } else {
+			 // 默认排除已完成的
+			 queryWrapper.notIn(ProductionTask::getStatus, Arrays.asList("completed", "cancelled"));
+		 }
+
+		 queryWrapper.orderByAsc(ProductionTask::getSequence)
+				 .orderByAsc(ProductionTask::getCreateTime);
+
+		 Page<ProductionTask> page = new Page<>(pageNo, pageSize);
+		 IPage<ProductionTask> pageList = productionTaskService.page(page, queryWrapper);
+
+		 return Result.OK(pageList);
+	 }
+
+	 /**
+	  * 开始任务
+	  */
+	 @AutoLog(value = "我的工单-开始任务")
+	 @Operation(summary="我的工单-开始任务")
+	 @RequestMapping(value = "/start", method = {RequestMethod.PUT,RequestMethod.POST})
+	 public Result<String> startTask(@RequestBody ProductionTask productionTask) {
+		 String taskId = productionTask.getId();
+		 ProductionTask task = productionTaskService.getById(taskId);
+
+		 if (task == null) {
+			 return Result.error("工单不存在");
+		 }
+
+		 // 更新状态为执行中
+		 task.setStatus("PROCESSING");
+		 task.setActualStartTime(new Date());
+		 task.setActualEquipmentId(productionTask.getActualEquipmentId());
+		 task.setActualEquipmentName(productionTask.getActualEquipmentName());
+		 task.setActualEquipmentSettings(productionTask.getActualEquipmentSettings());
+		 task.setActualEquipmentType(productionTask.getActualEquipmentType());
+		 task.setActualEquipmentCode(productionTask.getActualEquipmentCode());
+		 task.setActualModel(productionTask.getActualModel());
+
+		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+		 task.setActualOperatorId(loginUser.getId());  // 记录实际执行人
+		 task.setActualOperatorName(loginUser.getRealname());
+
+		 productionTaskService.updateById(task);
+		 return Result.OK("任务已开始");
+	 }
+
+	 /**
+	  * 完成任务
+	  */
+	 @AutoLog(value = "我的工单-完成任务")
+	 @Operation(summary="我的工单-完成任务")
+	 @RequestMapping(value = "/complete", method = {RequestMethod.PUT,RequestMethod.POST})
+	 public Result<String> completeTask(@RequestBody ProductionTask productionTask) {
+		 String taskId = productionTask.getId();
+		 ProductionTask task = productionTaskService.getById(taskId);
+
+		 if (task == null) {
+			 return Result.error("工单不存在");
+		 }
+
+		 task.setStatus("COMPLETED");
+		 task.setActualEndTime(new Date());
+
+		 // 计算实际耗时（分钟）
+		 if (task.getActualStartTime() != null) {
+			 long duration = (task.getActualEndTime().getTime() - task.getActualStartTime().getTime()) / (1000 * 60);
+			 task.setActualDuration((int) duration);
+		 }
+
+		 productionTaskService.updateById(task);
+
+		 return Result.OK("任务已完成");
+	 }
+
+	 /**
+	  * 报检（生成质检工单）
+	  */
+	 @AutoLog(value = "我的工单-报检")
+	 @Operation(summary="我的工单-报检")
+	 @PostMapping(value = "/reportQc")
+	 public Result<String> reportQc(@RequestBody Map<String, String> params) {
+		 String taskId = params.get("taskId");
+		 ProductionTask sourceTask = productionTaskService.getById(taskId);
+
+		 if (sourceTask == null) {
+			 return Result.error("工单不存在");
+		 }
+
+		 // 1. 先完成当前任务
+		 sourceTask.setStatus("COMPLETED");
+		 sourceTask.setActualEndTime(new Date());
+
+		 // 计算实际耗时（分钟）
+		 if (sourceTask.getActualStartTime() != null) {
+			 long duration = (sourceTask.getActualEndTime().getTime() - sourceTask.getActualStartTime().getTime()) / (1000 * 60);
+			 sourceTask.setActualDuration((int) duration);
+		 }
+		 sourceTask.setQcStatus("1");  // 已报检
+		 productionTaskService.updateById(sourceTask);
+
+		 // 2. 生成质检工单
+		 ProductionTask qcTask = new ProductionTask();
+		 qcTask.setTaskType("qc");  // 质检类型
+		 qcTask.setBatchId(sourceTask.getBatchId());
+		 qcTask.setBatchNo(sourceTask.getBatchNo());
+		 qcTask.setOrderNo(sourceTask.getOrderNo());
+		 qcTask.setProductId(sourceTask.getProductId());
+		 qcTask.setProductCode(sourceTask.getProductCode());
+		 qcTask.setProductName(sourceTask.getProductName());
+		 qcTask.setSequence(sourceTask.getSequence());
+		 String taskNo =serialNoService.generateSerialNo(SerialNoPrefixEnum.PRODUCTION_WORK_ORDER.getPrefix());
+		 qcTask.setTaskNo(taskNo);
+		 qcTask.setTaskName(sourceTask.getProductName() + "-质检");
+		 qcTask.setSourceTaskId(sourceTask.getId());  // 关联来源工单
+		 qcTask.setStatus("PENDING");
+
+		 // 质检员从质检组分配（这里简化处理，实际可配置）
+		 // qcTask.setAssignedOperatorId(...);
+
+		 productionTaskService.save(qcTask);
+
+
+
+		 return Result.OK("报检成功，质检工单已生成");
+	 }
+
+	 /**
+	  * 查询物料称重记录
+	  */
+	 @GetMapping(value = "/queryMaterialActual")
+	 public Result<List<ProductionBatchMaterialActual>> queryMaterialActual(
+			 @RequestParam String batchId,
+			 @RequestParam(required = false) String batchBomId) {
+
+		 LambdaQueryWrapper<ProductionBatchMaterialActual> wrapper = new LambdaQueryWrapper<>();
+		 wrapper.eq(ProductionBatchMaterialActual::getBatchId, batchId);
+		// wrapper.eq(ProductionBatchMaterialActual::getDelFlag, "0");
+
+		 if (StrUtil.isNotEmpty(batchBomId)) {
+			 wrapper.eq(ProductionBatchMaterialActual::getBatchBomId, batchBomId);
+		 }
+
+		 wrapper.orderByDesc(ProductionBatchMaterialActual::getCreateTime);
+		 List<ProductionBatchMaterialActual> list = materialActualService.list(wrapper);
+
+		 return Result.OK(list);
+	 }
 }

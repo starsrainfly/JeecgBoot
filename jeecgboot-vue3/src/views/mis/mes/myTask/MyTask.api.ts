@@ -4,6 +4,7 @@ import { useMessage } from "/@/hooks/web/useMessage";
 const { createConfirm } = useMessage();
 
 enum Api {
+  // 原有工单接口
   list = '/mes/productionTask/list',
   save='/mes/productionTask/add',
   edit='/mes/productionTask/edit',
@@ -16,25 +17,27 @@ enum Api {
   myTaskList = '/mes/productionTask/myTaskList',
   startTask = '/mes/productionTask/start',
   completeTask = '/mes/productionTask/complete',
-  reportQc = '/mes/productionTask/reportQc',  // 报检
+  reportQc = '/mes/productionTask/reportQc',
 
-  // 配料相关（复用已有接口）
+  // 新增：配料相关接口（从 productionBatch 复制）
+  productionBatchBomList = '/mes/productionBatch/queryProductionBatchBomByMainId',
   queryMaterialActual = '/mes/productionBatchMaterialActual/list',
   addMaterialActual = '/mes/productionBatchMaterialActual/add',
   deleteMaterialActual = '/mes/productionBatchMaterialActual/delete',
 }
+
 /**
  * 导出api
- * @param params
  */
 export const getExportUrl = Api.exportXls;
+
 /**
  * 导入api
  */
 export const getImportUrl = Api.importExcel;
+
 /**
  * 列表接口
- * @param params
  */
 export const list = (params) =>
   defHttp.get({url: Api.list, params});
@@ -47,9 +50,9 @@ export const deleteOne = (params,handleSuccess) => {
     handleSuccess();
   });
 }
+
 /**
  * 批量删除
- * @param params
  */
 export const batchDelete = (params, handleSuccess) => {
   createConfirm({
@@ -65,14 +68,16 @@ export const batchDelete = (params, handleSuccess) => {
     }
   });
 }
+
 /**
  * 保存或者更新
- * @param params
  */
 export const saveOrUpdate = (params, isUpdate) => {
   let url = isUpdate ? Api.edit : Api.save;
   return defHttp.post({url: url, params});
 }
+
+// ==================== 我的工单专用接口 ====================
 
 /**
  * 我的工单列表（当前操作员）
@@ -97,6 +102,14 @@ export const completeTask = (params) =>
  */
 export const reportQc = (params) =>
   defHttp.post({url: Api.reportQc, params});
+
+// ==================== 配料执行专用接口 ====================
+
+/**
+ * 查询批次BOM清单
+ */
+export const productionBatchBomList = (params) =>
+  defHttp.get({url: Api.productionBatchBomList, params});
 
 /**
  * 查询物料称重记录

@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.util.List;
 
 /**
@@ -32,43 +34,10 @@ public class ProductionTaskServiceImpl extends ServiceImpl<ProductionTaskMapper,
     @Autowired
     private ISerialNoService serialNoService;
 
-    @Override
-    @Transactional
-    public void generateTasks(String batchId, String routingId) {
-        // 获取工艺路线明细（按顺序）
-        List<ProcessRoutingStep> steps = routingStepService.selectByMainId(routingId);
-        if (CollectionUtils.isEmpty(steps)) {
-            throw new JeecgBootException("工艺路线明细为空");
-        }
-
-        for (ProcessRoutingStep step : steps) {
-            ProductionTask task = new ProductionTask();
-
-            String taskNo = serialNoService.generateSerialNo(SerialNoPrefixEnum.PRODUCTION_WORK_ORDER.getPrefix());
-            task.setTaskNo(taskNo);  // WO20250311001
-            task.setTaskName(taskNo + "-" + step.getStepName());
-            task.setBatchId(batchId);
-
-            task.setRoutingDetailId(step.getId());  // 关联工艺工序
-            task.setSequence(step.getStepSeq());
-            task.setTaskDesc(step.getStepDesc());
-            // 计划信息
-            task.setPlanEquipmentId(step.getEquipmentId());
-            task.setPlanEquipmentCode(step.getEquipmentCode());
-            task.setPlanEquipmentName(step.getEquipmentName());
-            task.setPlanModel(step.getModel());
-            task.setPlanEquipmentType(step.getEquipmentType());
-            task.setPlanDuration(step.getDuration());
-            task.setPlanEquipmentSettings(step.getEquipmentSettings());
-
-            task.setStatus("0");
-            this.save(task);
-        }
-    }
 
     @Override
     @Transactional
-    public void generateTasks(ProductionBatch batch, String routingId) {
+    public void generateTasks(ProductionBatch batch, String routingId, String packageInfo) {
         // 获取工艺路线明细（按顺序）
         List<ProcessRoutingStep> steps = routingStepService.selectByMainId(routingId);
         if (CollectionUtils.isEmpty(steps)) {
@@ -98,8 +67,24 @@ public class ProductionTaskServiceImpl extends ServiceImpl<ProductionTaskMapper,
             task.setProductId(batch.getProductId());
             task.setProductCode(batch.getProductCode());
             task.setProductName(batch.getProductName());
+            task.setQcRequired(step.getQcRequired());
+            task.setStatus("PENDING");
+            if("1".equals(step.getIsMaterialStep())){
+                task.setTaskType("weighing");
+            }
+            else if("1".equals(step.getIsPackageStep())){
+                task.setTaskType("package");
+            }
+            else {
+                task.setTaskType("production");
+            }
 
-            task.setStatus("0");
+            // 如果是包装工序，追加包装信息
+            if ("1".equals(step.getIsPackageStep()) && StringUtils.isNotBlank(packageInfo)) {
+                String originalDesc = task.getTaskDesc();
+                task.setTaskDesc((StringUtils.isNotBlank(originalDesc) ? originalDesc + "\n" : "") + packageInfo);
+            }
+
             this.save(task);
         }
     }

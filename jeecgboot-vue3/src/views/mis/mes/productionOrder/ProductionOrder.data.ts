@@ -39,31 +39,31 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'batchCount'
    },
-   {
-    title: '内包装',
-    align:"center",
-    dataIndex: 'innerPackageId_dictText'
-   },
-   {
-    title: '内包装数量',
-    align:"center",
-    dataIndex: 'innerPackageQty'
-   },
-   {
-    title: '外包装',
-    align:"center",
-    dataIndex: 'outerPackageId_dictText'
-   },
-   {
-    title: '外包装数量',
-    align:"center",
-    dataIndex: 'outerPackageQty'
-   },
-   {
-    title: '每外包含内包数量',
-    align:"center",
-    dataIndex: 'outerInnerPerOuter'
-   },
+   // {
+   //  title: '内包装',
+   //  align:"center",
+   //  dataIndex: 'innerPackageId_dictText'
+   // },
+   // {
+   //  title: '内包装数量',
+   //  align:"center",
+   //  dataIndex: 'innerPackageQty'
+   // },
+   // {
+   //  title: '外包装',
+   //  align:"center",
+   //  dataIndex: 'outerPackageId_dictText'
+   // },
+   // {
+   //  title: '外包装数量',
+   //  align:"center",
+   //  dataIndex: 'outerPackageQty'
+   // },
+   // {
+   //  title: '每外包含内包数量',
+   //  align:"center",
+   //  dataIndex: 'outerInnerPerOuter'
+   // },
    {
     title: '计划开工',
     align:"center",
@@ -136,24 +136,24 @@ export const searchFormSchema: FormSchema[] = [
       component: 'Input',
       //colProps: {span: 6},
  	},
-	{
-      label: "内包装",
-      field: "innerPackageId",
-      component: 'JSelectMultiple',
-      componentProps:{
-          dictCode:"mis_material where is_package='1' and package_type='0',description,id"
-      },
-      //colProps: {span: 6},
- 	},
-	{
-      label: "外包装",
-      field: "outerPackageId",
-      component: 'JSelectMultiple',
-      componentProps:{
-          dictCode:"mis_material where is_package='1' and package_type='1',description,id"
-      },
-      //colProps: {span: 6},
- 	},
+	// {
+  //     label: "内包装",
+  //     field: "innerPackageId",
+  //     component: 'JSelectMultiple',
+  //     componentProps:{
+  //         dictCode:"mis_material where is_package='1' and package_type='0',description,id"
+  //     },
+  //     //colProps: {span: 6},
+ 	// },
+	// {
+  //     label: "外包装",
+  //     field: "outerPackageId",
+  //     component: 'JSelectMultiple',
+  //     componentProps:{
+  //         dictCode:"mis_material where is_package='1' and package_type='1',description,id"
+  //     },
+  //     //colProps: {span: 6},
+ 	// },
 	{
       label: "状态",
       field: "status",
@@ -237,46 +237,62 @@ export const formSchema: FormSchema[] = [
     defaultValue: 1,
     component: 'InputNumber',
   },
-  {
-    label: '内包装',
-    field: 'innerPackageId',
-    component: 'JDictSelectTag',
+  // {
+  //   label: '内包装',
+  //   field: 'innerPackageId',
+  //   component: 'JDictSelectTag',
+  //   componentProps:{
+  //       dictCode:"mis_material where is_package='1' and package_type='0',description,id"
+  //    },
+  //   dynamicRules: ({model,schema}) => {
+  //         return [
+  //                { required: true, message: '请输入内包装!'},
+  //         ];
+  //    },
+  // },
+  // {
+  //   label: '内包数量',
+  //   field: 'innerPackageQty',
+  //   component: 'InputNumber',
+  // },
+  // {
+  //   label:'内包容量',
+  //   field:'innerPackageCapacity',
+  //   component:'InputNumber',
+  // },
+  // {
+  //   label: '外包装',
+  //   field: 'outerPackageId',
+  //   component: 'JDictSelectTag',
+  //   componentProps:{
+  //       dictCode:"mis_material where is_package='1' and package_type='1',description,id"
+  //    },
+  // },
+  // {
+  //   label: '外包数量',
+  //   field: 'outerPackageQty',
+  //   component: 'InputNumber',
+  // },
+  // {
+  //   label: '每外包含内包量',
+  //   field: 'outerInnerPerOuter',
+  //   component: 'InputNumber',
+  // },
+    {
+    label: '计划开工',
+    field: 'plannedStartDate',
+    component: 'DatePicker',
     componentProps:{
-        dictCode:"mis_material where is_package='1' and package_type='0',description,id"
-     },
-    dynamicRules: ({model,schema}) => {
-          return [
-                 { required: true, message: '请输入内包装!'},
-          ];
-     },
+      valueFormat: 'YYYY-MM-DD'
+    },
   },
   {
-    label: '内包数量',
-    field: 'innerPackageQty',
-    component: 'InputNumber',
-  },
-  {
-    label:'内包容量',
-    field:'innerPackageCapacity',
-    component:'InputNumber',
-  },
-  {
-    label: '外包装',
-    field: 'outerPackageId',
-    component: 'JDictSelectTag',
+    label: '计划完工',
+    field: 'plannedEndDate',
+    component: 'DatePicker',
     componentProps:{
-        dictCode:"mis_material where is_package='1' and package_type='1',description,id"
-     },
-  },
-  {
-    label: '外包数量',
-    field: 'outerPackageQty',
-    component: 'InputNumber',
-  },
-  {
-    label: '每外包含内包量',
-    field: 'outerInnerPerOuter',
-    component: 'InputNumber',
+      valueFormat: 'YYYY-MM-DD'
+    },
   },
   {
     label: '交货日期',
@@ -321,6 +337,7 @@ export const productionOrderDetailColumns: JVxeColumn[] = [
     width:"200px",
     placeholder: '请输入${title}',
     defaultValue:'',
+    visible:false
   },
   {
     title:'产品编码',
@@ -352,24 +369,6 @@ export const productionOrderDetailColumns: JVxeColumn[] = [
       type: JVxeTypes.select,
       options:[],
       dictCode:"mes_plan_type",
-      disabled:true,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-    },
-    {
-      title: '客户编码',
-      key: 'customerCode',
-      type: JVxeTypes.input,
-      disabled:true,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-    },
-    {
-      title: '客户名称',
-      key: 'customerName',
-      type: JVxeTypes.input,
       disabled:true,
       width:"200px",
       placeholder: '请输入${title}',
@@ -417,6 +416,134 @@ export const productionOrderDetailColumns: JVxeColumn[] = [
       ]
     },
     {
+      title:'内包id',
+      key:'innerPackageId',
+      type: JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+      visible:false
+    },
+    {
+      title:'内包容量',
+      key:'innerPackageCapacity',
+      type: JVxeTypes.inputNumber,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'0',
+      visible:false
+    },
+    {
+      title:'容量单位',
+      key:'innerPackageCapacityUnit',
+      type: JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+      visible:false
+    },
+    {
+      title: '内包规格',
+      key: 'innerPackageSpec',
+      type: JVxeTypes.popup,
+      popupCode:"mdm_package_select",
+      param: {
+        packageType: "'0'",
+      },
+      fieldConfig: [
+        { source: 'id', target: 'innerPackageId' },
+        { source: 'description', target: 'innerPackageSpec'},
+        { source: 'package_capacity', target: 'innerPackageCapacity'},
+        { source: 'package_capacity_unit', target: 'innerPackageCapacityUnit'},
+      ],
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
+    },
+    {
+      title:'内包数量',
+      key:'innerPackageQty',
+      type: JVxeTypes.inputNumber,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
+    {
+      title:'内包单位',
+      key:'innerPackageUnit',
+      type:JVxeTypes.select,
+      options:[],
+      dictCode:"mis_unit,unit,unit ",
+      width:"100px",
+      placeholder: '请输入${title}',
+      defaultValue:"个",
+    },
+
+    {
+      title:'外包id',
+      key:'outerPackageId',
+      type: JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+      visible:false
+    },
+    {
+      title:'外包规格',
+      key:'outerPackageSpec',
+      type: JVxeTypes.popup,
+      popupCode:"mdm_inner_outer_mapping",
+      // param: {
+      //
+      //     innerPackageId: '2018621301291814914' //row.innerPackageId
+      //
+      //
+      // },
+      fieldConfig: [
+        { source: 'outer_package_id', target: 'outerPackageId' },
+        { source: 'outer_package_spec', target: 'outerPackageSpec'},
+        { source: 'inner_per_outer', target:'innerPerOuter'},
+      ],
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+      validateRules: [
+        { required: true, message: '${title}不能为空' ,
+
+        },
+      ],
+    },
+    {
+      title:'外包数量',
+      key:'outerPackageQty',
+      type: JVxeTypes.inputNumber,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
+    {
+      title:'每包包含内包数量',
+      key:'innerPerOuter',
+      type: JVxeTypes.inputNumber,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+      disabled:true
+    },
+    {
+      title:'外包单位',
+      key:'outerPackageUnit',
+      type:JVxeTypes.select,
+      options:[],
+      dictCode:"mis_unit,unit,unit ",
+      width:"100px",
+      placeholder: '请输入${title}',
+      defaultValue:"个",
+    },
+    {
       title: '交货日期',
       key: 'deliverDate',
       type: JVxeTypes.date,
@@ -425,6 +552,25 @@ export const productionOrderDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
+    {
+      title: '客户编码',
+      key: 'customerCode',
+      type: JVxeTypes.input,
+      disabled:true,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
+    {
+      title: '客户名称',
+      key: 'customerName',
+      type: JVxeTypes.input,
+      disabled:true,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
+
     {
       title: '优化级',
       key: 'priorityLevel',
@@ -454,11 +600,7 @@ export const superQuerySchema = {
   plannedQty: {title: '计划产量(Kg)',order: 3,view: 'number', type: 'number',},
   batchSize: {title: '单釜产量(Kg)',order: 4,view: 'number', type: 'number',},
   batchCount: {title: '批次数量',order: 5,view: 'number', type: 'number',},
-  innerPackageId: {title: '内包装',order: 6,view: 'list', type: 'string',dictTable: "mis_material where is_package='1' and package_type='0'", dictCode: 'id', dictText: 'description',},
-  innerPackageQty: {title: '内包装数量',order: 7,view: 'number', type: 'number',},
-  outerPackageId: {title: '外包装',order: 8,view: 'list', type: 'string',dictTable: "mis_material where is_package='1' and package_type='1'", dictCode: 'id', dictText: 'description',},
-  outerPackageQty: {title: '外包装数量',order: 9,view: 'number', type: 'number',},
-  outerInnerPerOuter: {title: '每外包含内包数量',order: 10,view: 'number', type: 'number',},
+
   plannedStartDate: {title: '计划开工',order: 11,view: 'date', type: 'string',},
   plannedEndDate: {title: '计划完工',order: 12,view: 'date', type: 'string',},
   actualStartTime: {title: '实际开工',order: 13,view: 'datetime', type: 'string',},
@@ -481,6 +623,11 @@ export const superQuerySchema = {
         deliverDate: {title: '交货日期',order: 7,view: 'date', type: 'string',},
         priorityLevel: {title: '优化级',order: 8,view: 'list', type: 'string',dictCode: 'mes_priority_level',},
         remark: {title: '备注',order: 9,view: 'textarea', type: 'string',},
+        innerPackageId: {title: '内包装',order: 6,view: 'list', type: 'string',dictTable: "mis_material where is_package='1' and package_type='0'", dictCode: 'id', dictText: 'description',},
+        innerPackageQty: {title: '内包装数量',order: 7,view: 'number', type: 'number',},
+        outerPackageId: {title: '外包装',order: 8,view: 'list', type: 'string',dictTable: "mis_material where is_package='1' and package_type='1'", dictCode: 'id', dictText: 'description',},
+        outerPackageQty: {title: '外包装数量',order: 9,view: 'number', type: 'number',},
+        outerInnerPerOuter: {title: '每外包含内包数量',order: 10,view: 'number', type: 'number',},
     }
   },
 };

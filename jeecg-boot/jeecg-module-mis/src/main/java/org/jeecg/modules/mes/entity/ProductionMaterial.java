@@ -37,6 +37,9 @@ public class ProductionMaterial implements Serializable {
 	@Excel(name = "订单id", width = 15)
     @Schema(description = "订单id")
     private String orderId;
+    /**生产订单明细id*/
+    @Schema(description = "生产订单明细id")
+    private String orderDetailId;
 	/**生产单号*/
 	@Excel(name = "生产单号", width = 15)
     @Schema(description = "生产单号")
@@ -65,6 +68,10 @@ public class ProductionMaterial implements Serializable {
 	@Excel(name = "规格型号", width = 15)
     @Schema(description = "规格型号")
     private String materialSpec;
+    /**物料类型 源材料-RAW，内包-package_inner，外包 package_outer*/
+    @Excel(name = "物料类型", width = 15)
+    @Schema(description = "物料类型")
+    private String materialType;
 	/**单位*/
 	@Excel(name = "单位", width = 15)
     @Schema(description = "单位")
@@ -96,6 +103,10 @@ public class ProductionMaterial implements Serializable {
 	@Dict(dicCode = "mes_production_material_status")
     @Schema(description = "状态")
     private String status;
+    /**备注*/
+    @Excel(name = "备注", width = 15)
+    @Schema(description = "备注")
+    private String remark;
 	/**目标仓库*/
 	@Excel(name = "目标仓库", width = 15)
     @Schema(description = "目标仓库")

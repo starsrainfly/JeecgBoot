@@ -14,11 +14,9 @@ public interface IProductionTaskService extends IService<ProductionTask> {
 
     /**
      * 生成任务记录
-     * @param batchId
+     * @param batch
      * @param routingId
-
+     * @param packageInfo
      */
-    public void generateTasks(String batchId, String routingId);
-
-    public void generateTasks(ProductionBatch batch, String routingId);
+    public void generateTasks(ProductionBatch batch, String routingId, String packageInfo);
 }

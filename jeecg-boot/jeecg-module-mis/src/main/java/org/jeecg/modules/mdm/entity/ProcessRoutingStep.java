@@ -83,9 +83,13 @@ public class ProcessRoutingStep implements Serializable {
     @Schema(description = "所需设备数量")
     private Integer requiredEquipmentCount;
 	/**是否涉及物料*/
-	@Excel(name = "是否涉及物料", width = 15)
-    @Schema(description = "是否涉及物料")
+	@Excel(name = "是否配料", width = 15, dicCode = "yn")
+    @Schema(description = "是否配料")
     private String isMaterialStep;
+    /**是否涉及物料*/
+    @Excel(name = "是否包装", width = 15, dicCode = "yn")
+    @Schema(description = "是否包装")
+    private String isPackageStep;
 	/**是否需要质检*/
 	@Excel(name = "是否需要质检", width = 15, dicCode = "yn")
     @Schema(description = "是否需要质检")

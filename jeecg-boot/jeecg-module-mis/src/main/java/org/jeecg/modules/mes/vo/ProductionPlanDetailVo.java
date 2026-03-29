@@ -40,4 +40,34 @@ public class ProductionPlanDetailVo extends ProductionPlanDetail {
     @Dict(dicCode = "mes_plan_type")
     @Schema(description = "计划类型")
     private String planType;
+
+    /**计划开工日期*/
+    @Excel(name = "计划开工日期", width = 15, format = "yyyy-MM-dd")
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")
+    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @Schema(description = "计划开工日期")
+    private Date plannedStartDate;
+    /**计划完工日期*/
+    @Excel(name = "计划完工日期", width = 15, format = "yyyy-MM-dd")
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")
+    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @Schema(description = "计划完工日期")
+    private Date plannedEndDate;
+    /**实际开工时间*/
+    @Excel(name = "实际开工时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "实际开工时间")
+    private Date actualStartTime;
+    /**实际完工时间*/
+    @Excel(name = "实际完工时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "实际完工时间")
+    private Date actualEndTime;
+    /**计划状态*/
+    @Excel(name = "计划状态", width = 15, dicCode = "mes_plan_status")
+    @Dict(dicCode = "mes_plan_status")
+    @Schema(description = "计划状态")
+    private String planStatus;
 }

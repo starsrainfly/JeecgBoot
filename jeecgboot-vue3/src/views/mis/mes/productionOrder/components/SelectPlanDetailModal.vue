@@ -67,10 +67,10 @@
       <span v-if="selectedRows.length > 0">
         已选 <strong>{{ selectedRows.length }}</strong> 条明细，
         产品：<strong>{{ selectedProduct }}</strong>，
-        内包装：<strong>{{ selectedPackage }}</strong>，
+<!--        内包装：<strong>{{ selectedPackage }}</strong>，-->
         总数量：<strong>{{ selectedTotalQty }} kg</strong>
       </span>
-      <span v-else style="color: #999;">请选择同产品、同内包装的计划明细（已发布且未全部分配）</span>
+      <span v-else style="color: #999;">请选择同产品计划明细（已发布且未全部分配）</span>
     </div>
   </BasicModal>
 </template>
@@ -145,16 +145,27 @@
         return remaining.toFixed(2);
       }
     },
+    {
+      title:'计划开工',
+      dataIndex:'plannedStartDate',
+      width:100,
+    },
+    {
+      title:'计划完工',
+      dataIndex: 'plannedEndDate',
+      width:100,
+    },
     { title: '客户', dataIndex: 'customerName', width: 120,
       customRender: ({ text }) => text || '-'
     },
     { title: '交期', dataIndex: 'deliveryDate', width: 100 },
-    { title: '计划类型', dataIndex: 'planType_dictText', width: 80 }
+    { title: '计划类型', dataIndex: 'planType_dictText', width: 80 },
+    { title: '计划状态', dataIndex: 'planStatus_dictText', width: 80 }
   ];
 
   // 计算属性
   const selectedProduct = computed(() => selectedRows.value[0]?.productName || '');
-  const selectedPackage = computed(() => selectedRows.value[0]?.packageName || '');
+  //const selectedPackage = computed(() => selectedRows.value[0]?.packageName || '');
   const selectedTotalQty = computed(() =>
     selectedRows.value.reduce((sum, r) => {
       const total = Number(r.allocatedQty) || 0;
@@ -188,10 +199,10 @@
       const disabled = record.productId !== restrictProductId.value;
       if (disabled) return { disabled: true };
     }
-    if (restrictPackageId.value) {
-      const disabled = record.packageId !== restrictPackageId.value;
-      if (disabled) return { disabled: true };
-    }
+    // if (restrictPackageId.value) {
+    //   const disabled = record.packageId !== restrictPackageId.value;
+    //   if (disabled) return { disabled: true };
+    // }
 
     // 校验：剩余数量必须大于0
     const total = Number(record.allocatedQty) || 0;
@@ -213,12 +224,11 @@
     const validRows = rows.filter(row => {
       if (selectedRows.value.length === 0) return true;
       const first = selectedRows.value[0];
-      return row.productId === first.productId &&
-        row.packageId === first.packageId;
+      return row.productId === first.productId ; //&&  row.packageId === first.packageId
     });
 
     if (validRows.length < rows.length) {
-      createMessage.warning('已自动过滤不符合同产品同包装的明细');
+      createMessage.warning('已自动过滤不符合同产品的明细');
       selectedKeys.value = validRows.map(r => r.id);
       selectedRows.value = validRows;
     } else {

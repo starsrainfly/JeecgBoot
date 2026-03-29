@@ -1,9 +1,5 @@
-import {BasicColumn} from '/@/components/Table';
-import {FormSchema} from '/@/components/Table';
-import { rules} from '/@/utils/helper/validator';
-import { render } from '/@/utils/common/renderUtils';
-import {JVxeTypes,JVxeColumn} from '/@/components/jeecg/JVxeTable/types'
-import { getWeekMonthQuarterYear } from '/@/utils';
+import {BasicColumn, FormSchema} from '/@/components/Table';
+import {JVxeColumn, JVxeTypes} from '/@/components/jeecg/JVxeTable/types'
 //列表数据
 export const columns: BasicColumn[] = [
    {
@@ -280,7 +276,7 @@ export const recipeDetailColumns: JVxeColumn[] = [
       title: '序号',
       key: 'serialNo',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
     },
@@ -296,7 +292,7 @@ export const recipeDetailColumns: JVxeColumn[] = [
         { source: 'material_spec', target: 'materialSpec' },
       ],
 
-      width:"200px",
+      width:"150px",
       placeholder: '请输入${title}',
       defaultValue:'',
         validateRules: [
@@ -326,12 +322,22 @@ export const recipeDetailColumns: JVxeColumn[] = [
       title: '配比',
       key: 'proportion',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
         validateRules: [
           { required: true, message: '${title}不能为空' },
         ],
+    },
+    {
+      title:'单位',
+      key:'unit',
+      type:JVxeTypes.select,
+      options:[],
+      dictCode:"mis_unit,unit,unit ",
+      width:"100px",
+      placeholder: '请输入${title}',
+      defaultValue:"kg",
     },
     {
       title: '备注',
@@ -361,7 +367,7 @@ export const superQuerySchema = {
   formulatorSecond: {title: '副配人',order: 4,view: 'text', type: 'string',},
   remark: {title: '备注',order: 5,view: 'textarea', type: 'string',},
   notes: {title: '注意事项',order: 6,view: 'textarea', type: 'string',},
-  status: {title: '状态',order: 7,view: 'list', type: 'string',dictCode: 'status',},
+  status: {title: '状态',order: 7,view: 'list', type: 'string',dictCode: 'mdm_recipe_status',},
   version:{title: '版本',order: 8,view: 'list', type: 'string',},
   publishStatus:{title: '是否发布',order: 9,view: 'list', type: 'string',dictCode: 'yn',},
   //子表高级查询

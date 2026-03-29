@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableLogic;
+import org.jeecg.common.aspect.annotation.Dict;
 import org.jeecg.common.constant.ProvinceCityArea;
 import org.jeecg.common.util.SpringContextUtils;
 import lombok.Data;
@@ -92,6 +93,54 @@ public class ProductionOrderDetail implements Serializable {
 	@Excel(name = "备注", width = 15)
     @Schema(description = "备注")
     private String remark;
+
+    /**内包装*/
+    @Excel(name = "内包装", width = 15, dictTable = "mis_material where is_package='1' and package_type='0'", dicText = "description", dicCode = "id")
+    @Dict(dictTable = "mis_material where is_package='1' and package_type='0'", dicText = "description", dicCode = "id")
+    @Schema(description = "内包装")
+    private String innerPackageId;
+    /**内包装名称*/
+    @Excel(name = "内包规格", width = 15)
+    @Schema(description = "内包规格")
+    private String innerPackageSpec;
+    /**内包装容量*/
+    @Excel(name = "内包容量", width = 15)
+    @Schema(description = "内包容量")
+    private java.math.BigDecimal innerPackageCapacity;
+    /**内包装单位*/
+    @Excel(name = "内包装容量单位", width = 15)
+    @Schema(description = "内包装容量单位")
+    private String innerPackageCapacityUnit;
+    /**内包装数量*/
+    @Excel(name = "内包装数量", width = 15)
+    @Schema(description = "内包装数量")
+    private java.math.BigDecimal innerPackageQty;
+    /**外包装单位*/
+    @Excel(name = "内包装单位", width = 15)
+    @Schema(description = "内包装单位")
+    private String innerPackageUnit;
+    /**外包装*/
+    @Excel(name = "外包装", width = 15, dictTable = "mis_material where is_package='1' and package_type='1'", dicText = "description", dicCode = "id")
+    @Dict(dictTable = "mis_material where is_package='1' and package_type='1'", dicText = "description", dicCode = "id")
+    @Schema(description = "外包装")
+    private String outerPackageId;
+    /**外包装单位*/
+    @Excel(name = "外包装单位", width = 15)
+    @Schema(description = "外包装单位")
+    private String outerPackageUnit;
+    /**外包装数量*/
+    @Excel(name = "外包装数量", width = 15)
+    @Schema(description = "外包装数量")
+    private java.math.BigDecimal outerPackageQty;
+    /**外包装规格*/
+    @Excel(name = "外包装规格", width = 15)
+    @Schema(description = "外包装规格")
+    private String outerPackageSpec;
+    /**每外包含内包数量*/
+    @Excel(name = "每外包含内包数量", width = 15)
+    @Schema(description = "每外包含内包数量")
+    private Integer innerPerOuter;
+
 	/**创建人*/
     @Schema(description = "创建人")
     private String createBy;

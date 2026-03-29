@@ -212,6 +212,12 @@ export const searchFormSchema: FormSchema[] = [
 //表单数据
 export const formSchema: FormSchema[] = [
   {
+    label:'id',
+    field:'id',
+    component: 'Input',
+    show:false
+  },
+  {
     label: '工单编号',
     field: 'taskNo',
     component: 'Input',
@@ -235,10 +241,22 @@ export const formSchema: FormSchema[] = [
     component: 'InputTextArea',
   },
   {
+    label: '批次id',
+    field: 'batchId',
+    component: 'Input',
+    show:false
+  },
+  {
     label: '批次号',
     field: 'batchNo',
     component: 'Input',
     dynamicDisabled:true
+  },
+  {
+    label: '产品id',
+    field: 'productId',
+    component: 'Input',
+    show:false
   },
   {
     label: '生产订单号',
@@ -257,6 +275,34 @@ export const formSchema: FormSchema[] = [
     field: 'productName',
     component: 'Input',
     dynamicDisabled:true
+  },
+  {
+    label: '计划设备id',
+    field: 'planEquipmentId',
+    component: 'Input',
+    show:false
+  },
+  {
+    label: '任务类型',
+    field: 'taskType',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"mes_task_type"
+    },
+  },
+  {
+    label: '工艺明细id',
+    field: 'routingDetailId',
+    component: 'Input',
+    show:false
+  },
+  {
+    label: '是否需要质检',
+    field: 'qcRequired',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"yn"
+    },
   },
   {
     label: '计划设备编码',
@@ -323,6 +369,12 @@ export const formSchema: FormSchema[] = [
     component: 'InputTextArea',
   },
   {
+    label: '实际设备id',
+    field: 'actualEquipmentId',
+    component: 'Input',
+    show:false
+  },
+  {
     label: '实际设备编码',
     field: 'actualEquipmentCode',
     component: 'JPopup',
@@ -338,34 +390,34 @@ export const formSchema: FormSchema[] = [
           {source: 'model', target: 'actualModel'},
           {source: 'equipment_type', target: 'equipmentType'},
         ],
-        multi: true
+        multi: false
       }
     },
-    dynamicRules: ({model,schema}) => {
-      return [
-        { required: true, message: '请输入实际设备编码!'},
-      ];
-    },
+    // dynamicRules: ({model,schema}) => {
+    //   return [
+    //     { required: true, message: '请输入实际设备编码!'},
+    //   ];
+    // },
   },
   {
     label: '实际设备名称',
     field: 'actualEquipmentName',
     component: 'Input',
-    dynamicRules: ({model,schema}) => {
-      return [
-        { required: true, message: '请输入实际设备名称!'},
-      ];
-    },
+    // dynamicRules: ({model,schema}) => {
+    //   return [
+    //     { required: true, message: '请输入实际设备名称!'},
+    //   ];
+    // },
   },
   {
     label: '实际设备型号',
     field: 'actualModel',
     component: 'Input',
-    dynamicRules: ({model,schema}) => {
-      return [
-        { required: true, message: '请输入实际设备型号!'},
-      ];
-    },
+    // dynamicRules: ({model,schema}) => {
+    //   return [
+    //     { required: true, message: '请输入实际设备型号!'},
+    //   ];
+    // },
   },
   {
     label: '实际设备类型',
@@ -389,12 +441,24 @@ export const formSchema: FormSchema[] = [
     label: '指派操作员',
     field: 'assignedOperatorId',
     component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"sys_user where del_flag='0' and status='1',realname,id"
+    },
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请选择指派操作员!'},
+      ];
+    },
   },
   {
     label: '状态',
     field: 'status',
     component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"mes_step_status"
+    },
   },
+
   ]
 // // 高级查询数据
 export const superQuerySchema = {

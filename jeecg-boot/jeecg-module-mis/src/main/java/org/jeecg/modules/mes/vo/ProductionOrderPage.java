@@ -69,48 +69,7 @@ public class ProductionOrderPage {
 	@Excel(name = "批次数量", width = 15)
 	@Schema(description = "批次数量")
     private Integer batchCount;
-	/**内包装*/
-	@Excel(name = "内包装", width = 15, dictTable = "mis_material where is_package='1' and package_type='0'", dicText = "description", dicCode = "id")
-    @Dict(dictTable = "mis_material where is_package='1' and package_type='0'", dicText = "description", dicCode = "id")
-	@Schema(description = "内包装")
-    private String innerPackageId;
-	/**内包装名称*/
-	@Excel(name = "内包装名称", width = 15)
-	@Schema(description = "内包装名称")
-    private String innerPackageName;
-	/**内包装容量*/
-	@Excel(name = "内包装容量", width = 15)
-	@Schema(description = "内包装容量")
-    private java.math.BigDecimal innerPackageCapacity;
-	/**内包装单位*/
-	@Excel(name = "内包装单位", width = 15)
-	@Schema(description = "内包装单位")
-    private String innerPackageCapacityUnit;
-	/**内包装数量*/
-	@Excel(name = "内包装数量", width = 15)
-	@Schema(description = "内包装数量")
-    private java.math.BigDecimal innerPackageQty;
-	/**外包装*/
-	@Excel(name = "外包装", width = 15, dictTable = "mis_material where is_package='1' and package_type='1'", dicText = "description", dicCode = "id")
-    @Dict(dictTable = "mis_material where is_package='1' and package_type='1'", dicText = "description", dicCode = "id")
-	@Schema(description = "外包装")
-    private String outerPackageId;
-	/**外包装名称*/
-	@Excel(name = "外包装名称", width = 15)
-	@Schema(description = "外包装名称")
-    private String outPackageName;
-	/**外包装数量*/
-	@Excel(name = "外包装数量", width = 15)
-	@Schema(description = "外包装数量")
-    private java.math.BigDecimal outerPackageQty;
-	/**外包装规格*/
-	@Excel(name = "外包装规格", width = 15)
-	@Schema(description = "外包装规格")
-    private String outerPackageSpec;
-	/**每外包含内包数量*/
-	@Excel(name = "每外包含内包数量", width = 15)
-	@Schema(description = "每外包含内包数量")
-    private Integer outerInnerPerOuter;
+
 	/**计划开工*/
 	@Excel(name = "计划开工", width = 15, format = "yyyy-MM-dd")
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")

@@ -22,7 +22,7 @@ import lombok.experimental.Accessors;
 /**
  * @Description: 内外包装映射表
  * @Author: jeecg-boot
- * @Date:   2026-03-03
+ * @Date:   2026-03-24
  * @Version: V1.0
  */
 @Data
@@ -33,69 +33,53 @@ import lombok.experimental.Accessors;
 public class PackageMapping implements Serializable {
     private static final long serialVersionUID = 1L;
 
-	/**主键*/
-	@TableId(type = IdType.ASSIGN_ID)
+    /**主键*/
+    @TableId(type = IdType.ASSIGN_ID)
     @Schema(description = "主键")
-    private String id;
-	/**产品id*/
-	@Excel(name = "产品id", width = 15)
-    @Schema(description = "产品id")
-    private String productId;
-	/**产品编码*/
-	@Excel(name = "产品编码", width = 15)
-    @Schema(description = "产品编码")
-    private String productCode;
-	/**产品名称*/
-	@Excel(name = "产品名称", width = 15)
-    @Schema(description = "产品名称")
-    private String productName;
-	/**内包装*/
-	@Excel(name = "内包装", width = 15, dictTable = "mis_material where is_package='1' and package_type='0'", dicText = "material_spec", dicCode = "id")
-	@Dict(dictTable = "mis_material where is_package='1' and package_type='0'", dicText = "material_spec", dicCode = "id")
+    private java.lang.String id;
+    /**内包装*/
+    @Excel(name = "内包装", width = 15)
     @Schema(description = "内包装")
-    private String innerPackageId;
-	/**内包装名称*/
-	@Excel(name = "内包装名称", width = 15)
-    @Schema(description = "内包装名称")
-    private String innerPackageName;
-	/**内包装规格*/
-	@Excel(name = "内包装规格", width = 15)
+    private java.lang.String innerPackageId;
+    /**内包装规格*/
+    @Excel(name = "内包装规格", width = 15)
     @Schema(description = "内包装规格")
-    private String innerPackageSpec;
-	/**外包装*/
-	@Excel(name = "外包装", width = 15, dictTable = "mis_material where is_package='1' and package_type='1'", dicText = "material_spec", dicCode = "id")
-	@Dict(dictTable = "mis_material where is_package='1' and package_type='1'", dicText = "material_spec", dicCode = "id")
+    private java.lang.String innerPackageSpec;
+    /**外包装*/
+    @Excel(name = "外包装", width = 15)
     @Schema(description = "外包装")
-    private String outerPackageId;
-	/**外包装名称*/
-	@Excel(name = "外包装名称", width = 15)
-    @Schema(description = "外包装名称")
-    private String outerPackageName;
-	/**外包装规格*/
-	@Excel(name = "外包装规格", width = 15)
+    private java.lang.String outerPackageId;
+    /**外包装规格*/
+    @Excel(name = "外包装规格", width = 15)
     @Schema(description = "外包装规格")
-    private String outerPackageSpec;
-	/**每箱几桶*/
-	@Excel(name = "每箱几桶", width = 15)
+    private java.lang.String outerPackageSpec;
+    /**每箱几桶*/
+    @Excel(name = "每箱几桶", width = 15)
     @Schema(description = "每箱几桶")
-    private Integer innerPerOuter;
-	/**创建人*/
+    private java.lang.Integer innerPerOuter;
+    /**删除标识*/
+    @Excel(name = "删除标识", width = 15, dicCode = "del_flag")
+    @Dict(dicCode = "del_flag")
+    @Schema(description = "删除标识")
+    @TableLogic
+    private java.lang.String delFlag;
+    /**创建人*/
     @Schema(description = "创建人")
-    private String createBy;
-	/**创建日期*/
-	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    private java.lang.String createBy;
+    /**创建日期*/
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     @Schema(description = "创建日期")
-    private Date createTime;
-	/**更新人*/
+    private java.util.Date createTime;
+    /**更新人*/
     @Schema(description = "更新人")
-    private String updateBy;
-	/**更新日期*/
-	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    private java.lang.String updateBy;
+    /**更新日期*/
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
     @Schema(description = "更新日期")
-    private Date updateTime;
-	/**所属部门*/
+    private java.util.Date updateTime;
+    /**所属部门*/
     @Schema(description = "所属部门")
-    private String sysOrgCode;
+    private java.lang.String sysOrgCode;
 }

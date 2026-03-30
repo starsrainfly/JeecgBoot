@@ -20,6 +20,15 @@
                 <Icon icon="mdi:chevron-down"></Icon>
               </a-button>
         </a-dropdown>
+        <!-- 批量操作按钮（选中多条时显示） -->
+        <a-button
+          v-if="selectedRowKeys.length > 0"
+          type="primary"
+          @click="handleBatchApply"
+        >
+          <Icon icon="ant-design:export-outlined" />
+          批量申请出库 ({{ selectedRowKeys.length }})
+        </a-button>
         <!-- 高级查询 -->
         <super-query :config="superQueryConfig" @search="handleSuperQuery" />
       </template>
@@ -27,12 +36,25 @@
       <template #action="{ record }">
         <TableAction :actions="getTableAction(record)" :dropDownActions="getDropDownAction(record)"/>
       </template>
+
       <!--字段回显插槽-->
       <template v-slot:bodyCell="{ column, record, index, text }">
       </template>
+
+     <!-- 订单号渲染为可点击链接 -->
+     <template #bodyCell="{ column, record }">
+       <template v-if="column.dataIndex === 'sourceNo'">
+         <a @click="handleOrderApply(record.sourceId, record.sourceNo)">
+           {{ record.sourceNo }}
+         </a>
+       </template>
+     </template>
+
     </BasicTable>
     <!-- 表单区域 -->
     <MaterialRequirementModal @register="registerModal" @success="handleSuccess"></MaterialRequirementModal>
+    <!-- 申请弹窗 -->
+    <IssueApplyModal  @register="registerApplyModal"     @success="handleApplySuccess" />
   </div>
 </template>
 
@@ -91,6 +113,42 @@
 
   // 高级查询配置
   const superQueryConfig = reactive(superQuerySchema);
+
+  const [registerApplyModal, { openModal: openApplyModal }] = useModal();
+
+  // 单条申请
+  function handleSingleApply(record) {
+    openApplyModal(true, {
+      mode: 'single',           // 单条模式
+      materialReqId: record.id,  // 当前记录ID
+      record: record
+    });
+  }
+
+  // 批量申请（选中多条）
+  function handleBatchApply() {
+    const selectedRows = getSelectedRows();
+
+    // 检查是否属于同一订单（建议同一订单才能批量）
+    const orderIds = [...new Set(selectedRows.map(r => r.sourceId))];
+
+    openApplyModal(true, {
+      mode: 'batch',            // 批量模式
+      orderId: orderIds.length === 1 ? orderIds[0] : null,
+      orderNo: orderIds.length === 1 ? selectedRows[0].sourceNo : null,
+      materialReqIds: selectedRows.map(r => r.id),
+      records: selectedRows
+    });
+  }
+
+  // 按订单申请（点击订单号）
+  function handleOrderApply(orderId, orderNo) {
+    openApplyModal(true, {
+      mode: 'order',            // 按订单模式
+      orderId: orderId,
+      orderNo: orderNo
+    });
+  }
 
   /**
    * 高级查询事件
@@ -164,7 +222,18 @@
         * 下拉操作栏
         */
   function getDropDownAction(record){
+       const remainingQty = record.requiredQty - record.issuedQty;
+
+       if (remainingQty <= 0) {
+         return [{ label: '已完成', disabled: true }];
+       }
        return [
+         {
+           label: '申请出库',
+           color: 'primary',
+           onClick: () => handleSingleApply(record),
+           auth: 'mes:material_requirement:apply_issue'
+         },
          {
            label: '详情',
            onClick: handleDetail.bind(null, record),

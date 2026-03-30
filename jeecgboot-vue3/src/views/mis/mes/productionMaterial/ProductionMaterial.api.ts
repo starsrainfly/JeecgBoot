@@ -11,6 +11,9 @@ enum Api {
   deleteBatch = '/mes/productionMaterial/deleteBatch',
   importExcel = '/mes/productionMaterial/importExcel',
   exportXls = '/mes/productionMaterial/exportXls',
+  getBatchesByOrder = '/mes/productionMaterial/getBatchesByOrder',
+  getMaterialSummary = '/mes/productionMaterial/getMaterialSummary',
+  submitStockOutApply = '/mes/misStockOut/submitApply',
 }
 /**
  * 导出api
@@ -62,3 +65,31 @@ export const saveOrUpdate = (params, isUpdate) => {
   let url = isUpdate ? Api.edit : Api.save;
   return defHttp.post({url: url, params});
 }
+
+/**
+ * 根据订单ID获取批次列表
+ */
+export const getBatchesByOrder = (orderId: string) => {
+  // 使用 params 对象，让 axios 自动处理 URL 参数
+  return defHttp.get({
+    url: Api.getBatchesByOrder,
+    params: { orderId: orderId }  // 明确指定参数名
+  }, {
+    // 确保不拼接 URL
+    joinParamsToUrl: false
+  });
+};
+
+
+// 根据批次ID获取物料汇总（真实数据）
+export const getMaterialSummary = (params: { batchIds?: string[], orderId?: string, materialReqIds?: string[] }) => {
+  return defHttp.post({ url: Api.getMaterialSummary, data: params });
+};
+
+/**
+ * 提交出库申请（统一接口，支持单条/批量/按订单）
+ */
+// 提交出库申请
+export const submitStockOutApply = (data: any) => {
+  return defHttp.post({ url: Api.submitStockOutApply, data });
+};

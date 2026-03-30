@@ -1,9 +1,6 @@
 package org.jeecg.modules.mes.controller;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -83,9 +80,10 @@ public class ProductionBatchMaterialActualController extends JeecgController<Pro
 	 */
 	@AutoLog(value = "生产实际投料明细-添加")
 	@Operation(summary="生产实际投料明细-添加")
-	@RequiresPermissions("mes:mis_production_batch_material_actual:add")
+	//@RequiresPermissions("mes:mis_production_batch_material_actual:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody ProductionBatchMaterialActual productionBatchMaterialActual) {
+		productionBatchMaterialActual.setCompleteTime(new Date());
 		productionBatchMaterialActualService.save(productionBatchMaterialActual);
 		return Result.OK("添加成功！");
 	}
@@ -98,7 +96,7 @@ public class ProductionBatchMaterialActualController extends JeecgController<Pro
 	 */
 	@AutoLog(value = "生产实际投料明细-编辑")
 	@Operation(summary="生产实际投料明细-编辑")
-	@RequiresPermissions("mes:mis_production_batch_material_actual:edit")
+	//@RequiresPermissions("mes:mis_production_batch_material_actual:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody ProductionBatchMaterialActual productionBatchMaterialActual) {
 		productionBatchMaterialActualService.updateById(productionBatchMaterialActual);
@@ -113,7 +111,7 @@ public class ProductionBatchMaterialActualController extends JeecgController<Pro
 	 */
 	@AutoLog(value = "生产实际投料明细-通过id删除")
 	@Operation(summary="生产实际投料明细-通过id删除")
-	@RequiresPermissions("mes:mis_production_batch_material_actual:delete")
+	//@RequiresPermissions("mes:mis_production_batch_material_actual:delete")
 	@DeleteMapping(value = "/delete")
 	public Result<String> delete(@RequestParam(name="id",required=true) String id) {
 		productionBatchMaterialActualService.removeById(id);
@@ -128,7 +126,7 @@ public class ProductionBatchMaterialActualController extends JeecgController<Pro
 	 */
 	@AutoLog(value = "生产实际投料明细-批量删除")
 	@Operation(summary="生产实际投料明细-批量删除")
-	@RequiresPermissions("mes:mis_production_batch_material_actual:deleteBatch")
+	//@RequiresPermissions("mes:mis_production_batch_material_actual:deleteBatch")
 	@DeleteMapping(value = "/deleteBatch")
 	public Result<String> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
 		this.productionBatchMaterialActualService.removeByIds(Arrays.asList(ids.split(",")));
@@ -158,7 +156,7 @@ public class ProductionBatchMaterialActualController extends JeecgController<Pro
     * @param request
     * @param productionBatchMaterialActual
     */
-    @RequiresPermissions("mes:mis_production_batch_material_actual:exportXls")
+    //@RequiresPermissions("mes:mis_production_batch_material_actual:exportXls")
     @RequestMapping(value = "/exportXls")
     public ModelAndView exportXls(HttpServletRequest request, ProductionBatchMaterialActual productionBatchMaterialActual) {
         return super.exportXls(request, productionBatchMaterialActual, ProductionBatchMaterialActual.class, "生产实际投料明细");
@@ -171,7 +169,7 @@ public class ProductionBatchMaterialActualController extends JeecgController<Pro
     * @param response
     * @return
     */
-    @RequiresPermissions("mes:mis_production_batch_material_actual:importExcel")
+    //@RequiresPermissions("mes:mis_production_batch_material_actual:importExcel")
     @RequestMapping(value = "/importExcel", method = RequestMethod.POST)
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, ProductionBatchMaterialActual.class);

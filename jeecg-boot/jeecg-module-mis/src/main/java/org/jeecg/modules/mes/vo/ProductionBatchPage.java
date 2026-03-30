@@ -83,6 +83,55 @@ public class ProductionBatchPage {
 	@Schema(description = "所属部门")
     private String sysOrgCode;
 
+	// ==================== 新增配料汇总信息字段 ====================
+
+	/**物料总数*/
+	@Excel(name = "物料总数", width = 10)
+	@Schema(description = "该批次物料清单总数")
+	private Integer totalBom;
+
+	/**已完成配料的物料数*/
+	@Excel(name = "已完成物料数", width = 12)
+	@Schema(description = "已完成配料的物料数量")
+	private Integer completedBom;
+
+	/**配料完成百分比*/
+	@Excel(name = "配料进度%", width = 12)
+	@Schema(description = "配料完成百分比")
+	private Integer percent;
+
+	/**实际总投料量(Kg) - 所有物料称重总和*/
+	@Excel(name = "实际总投料量(Kg)", width = 15)
+	@Schema(description = "所有物料实际称重总和")
+	private java.math.BigDecimal totalActualWeight;
+
+	/**配料状态 - 更细粒度的状态*/
+	@Excel(name = "配料状态", width = 12, dicCode = "mes_weighing_status")
+	@Dict(dicCode = "mes_weighing_status")
+	@Schema(description = "配料状态：PENDING-待配料，WEIGHING-配料中，WEIGHED-配料完成")
+	private String weighingStatus;
+
+	/**配料开始时间*/
+	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+	@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+	@Excel(name = "配料开始时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
+	@Schema(description = "第一次称重时间")
+	private Date weighingStartTime;
+
+	/**配料完成时间*/
+	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+	@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+	@Excel(name = "配料完成时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
+	@Schema(description = "所有物料配料完成时间")
+	private Date weighingEndTime;
+
+	/**主要配料操作员*/
+	@Excel(name = "配料操作员", width = 15)
+	@Schema(description = "主要配料操作员")
+	private String weighingOperator;
+
+	// =========================================================
+
 	@ExcelCollection(name="生产批次物料清单")
 	@Schema(description = "生产批次物料清单")
 	private List<ProductionBatchBom> productionBatchBomList;

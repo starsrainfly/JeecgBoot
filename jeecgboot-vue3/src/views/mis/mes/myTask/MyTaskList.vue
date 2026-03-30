@@ -104,7 +104,7 @@
   import { useModal } from '/@/components/Modal';
   import { useListPage } from '/@/hooks/system/useListPage';
   import MyTaskModal from './components/MyTaskModal.vue'
-  import { myTaskList,startTask,completeTask,reportQc } from './MyTask.api'; // 请确保这个文件存在
+  import {myTaskList, startTask, completeTask, reportQc, setBatchStatus, startWeighing, completeWeighing} from './MyTask.api'; // 请确保这个文件存在
   import { columns, searchFormSchema,ProductionExecuteformSchema  } from './MyTask.data';
   import { downloadFile } from '/@/utils/common/renderUtils';
   import {useMessage} from "@/hooks/web/useMessage";
@@ -226,6 +226,10 @@
     openExecuteModal(record,'START');
     reload();
   }
+
+  async function handleStartPackage(record){
+    await startTask(record);
+  }
   async function handleWeighing(record) {
     openWeighing(true, record);
     reload();
@@ -254,6 +258,7 @@
 
         break;
       case 'package':
+        handleStartPackage(record);//只更新操作人员及开始时间
        // openPackage(true, record);
         break;
       case 'qc':
@@ -265,6 +270,12 @@
 
   async function handleComplete(record) {
     await completeTask(record);
+    if(record.taskType === 'weighing'){
+      await setBatchStatus({id:record.batchId,status:'PRODUCING'});
+    }
+    else if(record.taskType === 'package'){
+      await setBatchStatus({id:record.batchId,status:'COMPLETED'});
+    }
     createMessage.success('任务已完成');
     reload();
   }
@@ -281,7 +292,7 @@
       'PENDING': 'default',
       'PROCESSING': 'processing',
       'COMPLETED': 'success',
-      'qc_reported': 'warning',
+      'qc': 'warning',
     };
     return map[status] || 'default';
   }

@@ -33,6 +33,7 @@
     </BasicTable>
     <!-- 表单区域 -->
     <ProductionBatchModal @register="registerModal" @success="handleSuccess"></ProductionBatchModal>
+    <WeighingDetailModal @register="registerWeighingDetailModal" @success="handleSuccess"></WeighingDetailModal>
   </div>
 </template>
 
@@ -46,6 +47,8 @@
   import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './ProductionBatch.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
+  import WeighingDetailModal from './components/WeighingDetailModal.vue' ;
+
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
@@ -69,7 +72,7 @@
                 ],
             },
            actionColumn: {
-               width: 120,
+               width: 240,
                fixed:'right'
            },
            beforeFetch: (params) => {
@@ -91,6 +94,13 @@
 
   // 高级查询配置
   const superQueryConfig = reactive(superQuerySchema);
+
+  // 打开配料详情弹窗
+  const [registerWeighingDetailModal, { openModal: openWeighingDetail }] = useModal();
+
+  function handleWeighingDetail(record) {
+    openWeighingDetail(true, record);
+  }
 
   /**
    * 高级查询事件
@@ -154,11 +164,20 @@
       */
   function getTableAction(record){
        return [
+         // {
+         //   label: '编辑',
+         //   onClick: handleEdit.bind(null, record),
+         //   auth: 'mes:mis_production_batch:edit'
+         // },
          {
-           label: '编辑',
-           onClick: handleEdit.bind(null, record),
-           auth: 'mes:mis_production_batch:edit'
-         }
+           label: '配料详情',
+           color: 'success',
+           onClick: () => handleWeighingDetail(record),
+         },
+         {
+           label: '详情',
+           onClick: handleDetail.bind(null, record),
+         },
        ]
    }
 
@@ -168,18 +187,20 @@
    */
   function getDropDownAction(record){
     return [
-      {
-        label: '详情',
-        onClick: handleDetail.bind(null, record),
-      }, {
-        label: '删除',
-        popConfirm: {
-          title: '是否确认删除',
-          confirm: handleDelete.bind(null, record),
-          placement: 'topLeft'
-        },
-        auth: 'mes:mis_production_batch:delete'
-      }
+      // {
+      //   label: '详情',
+      //   onClick: handleDetail.bind(null, record),
+      // },
+      // {
+      //   label: '删除',
+      //   popConfirm: {
+      //     title: '是否确认删除',
+      //     confirm: handleDelete.bind(null, record),
+      //     placement: 'topLeft'
+      //   },
+      //   auth: 'mes:mis_production_batch:delete'
+      // }
+
     ]
   }
 

@@ -1,8 +1,11 @@
 package org.jeecg.modules.mes.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.jeecg.modules.mes.entity.ProductionBatchBom;
 import org.jeecg.modules.mes.entity.ProductionBatch;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.mes.vo.ProductionBatchPage;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -44,5 +47,24 @@ public interface IProductionBatchService extends IService<ProductionBatch> {
 	 * @param idList
 	 */
 	public void delBatchMain (Collection<? extends Serializable> idList);
-	
+
+	/**
+	 * 设置当前批次状态
+	 * @param id
+	 * @param status
+	 */
+	public void setStatus(String id, String status);
+
+	/**
+	 * 更新状态同时更新生产数量，称重开始时间及称重完成
+	 * @param batchId
+	 */
+	public void updateBatchStatus(String batchId);
+
+	/**
+	 * 查询实时计算配料进度列表
+	 * @param queryWrapper
+	 * @return
+	 */
+	public List<ProductionBatchPage> queryPageWeighingProgressList(QueryWrapper<ProductionBatch> queryWrapper);
 }

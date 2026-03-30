@@ -19,7 +19,12 @@
   import { BasicForm, useForm } from '/@/components/Form';
   import { FormSchema } from '/@/components/Form';
   import {saveOrUpdate} from "@/views/mis/mes/productionTask/ProductionTask.api";
-  import {completeTask, startTask} from "@/views/mis/mes/myTask/MyTask.api";
+  import {
+    completeTask,
+    setBatchStatus,
+    startTask,
+    startWeighing
+  } from "@/views/mis/mes/myTask/MyTask.api";
 
   // 定义 Props 接口
   // 这里的 Props 用于接收父组件传来的控制参数
@@ -152,6 +157,10 @@
       // -------------------
       // await completeTask(values);
       await startTask(values);
+      if(values.taskType === 'weighing'){
+        await startWeighing({id:values.batchId});
+      }
+
       //if(props.mode == 'START'){
       //  await startTask(values);
      // }

@@ -4,6 +4,8 @@ import { rules} from '/@/utils/helper/validator';
 import { render } from '/@/utils/common/renderUtils';
 import {JVxeTypes,JVxeColumn} from '/@/components/jeecg/JVxeTable/types'
 import { getWeekMonthQuarterYear } from '/@/utils';
+import {h} from 'vue';
+import { Progress } from 'ant-design-vue';
 //列表数据
 export const columns: BasicColumn[] = [
    {
@@ -31,6 +33,38 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'actualQty'
    },
+  // ========== 新增配料状态列 ==========
+  {
+    title: '配料进度',
+    align: "center",
+    dataIndex: 'percent',  // 后端返回的百分比字段
+    width: 180,
+    customRender: ({ record }) => {
+      const completed = record.completedBom || 0;  // 后端返回的已完成数
+      const total = record.totalBom || 0;          // 后端返回的总数
+
+      if (!total) return h('span', '-');
+
+      const percent = record.percent || 0;  // 后端返回的百分比
+
+      return h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center' } }, [
+        h('span', { style: { marginRight: '8px', whiteSpace: 'nowrap' } }, `${completed}/${total}`),
+        h(Progress, {
+          percent: percent,
+          size: 'small',
+          style: { width: '80px' }
+        })
+      ]);
+    }
+  },
+
+  {
+    title: '实际投料量(Kg)',
+    align: "center",
+    dataIndex: 'totalActualWeight',
+    customRender: ({ text }) => text || '-'
+  },
+  // ===================================
    {
     title: '状态',
     align:"center",

@@ -198,7 +198,14 @@
   import { useMessage } from '/@/hooks/web/useMessage';
   import { useUserStore } from '/@/store/modules/user';
   import { PlusOutlined } from '@ant-design/icons-vue';
-  import { productionBatchBomList, queryMaterialActual, addMaterialActual, deleteMaterialActual, completeTask } from '../MyTask.api';
+  import {
+    productionBatchBomList,
+    queryMaterialActual,
+    addMaterialActual,
+    deleteMaterialActual,
+    completeTask,
+    completeWeighing
+  } from '../MyTask.api';
 
   // Emits
   const emit = defineEmits(['success', 'register']);
@@ -542,6 +549,7 @@
     try {
 
       await completeTask({id:taskInfo.value.id});
+      await completeWeighing({id:taskInfo.value.batchId});
       emit('success');
       closeModal();
     } finally {

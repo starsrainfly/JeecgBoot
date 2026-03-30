@@ -4,7 +4,7 @@ import { useMessage } from "/@/hooks/web/useMessage";
 const { createConfirm } = useMessage();
 
 enum Api {
-  list = '/mes/productionBatch/list',
+  list = '/mes/productionBatch/listNew',
   save='/mes/productionBatch/add',
   edit='/mes/productionBatch/edit',
   deleteOne = '/mes/productionBatch/delete',
@@ -12,6 +12,8 @@ enum Api {
   importExcel = '/mes/productionBatch/importExcel',
   exportXls = '/mes/productionBatch/exportXls',
   productionBatchBomList = '/mes/productionBatch/queryProductionBatchBomByMainId',
+  getWeighingSummary = '/mes/productionBatch/getWeighingSummary',
+  getWeighingDetail = '/mes/productionBatch/getWeighingDetail',
 }
 /**
  * 导出api
@@ -69,3 +71,14 @@ export const saveOrUpdate = (params, isUpdate) => {
   let url = isUpdate ? Api.edit : Api.save;
   return defHttp.post({url: url, params});
 }
+/**
+ * 获取批次配料汇总信息
+ */
+export const getWeighingSummary = (batchId: string) =>
+  defHttp.get({ url: Api.getWeighingSummary, params: { batchId } });
+
+/**
+ * 获取批次配料详细记录
+ */
+export const getWeighingDetail = (batchId: string) =>
+  defHttp.get({ url: Api.getWeighingDetail, params: { batchId } });

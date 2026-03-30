@@ -108,4 +108,14 @@ public class ProductionBatch implements Serializable {
 	/**所属部门*/
     @Schema(description = "所属部门")
     private String sysOrgCode;
+
+    // 配料时间记录（用于审计和追溯）
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "配料开始时间")
+    private Date weighingStartTime;   // 第一次称重时间
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "配料完成时间")
+    private Date weighingEndTime;     // 配料完成时间
 }

@@ -60,26 +60,24 @@ export const columns: BasicColumn[] = [
     title: '状态',
     dataIndex: 'status_dictText',
     width: 90,
-    // customRender: ({ text }) => {
-    //   const config = statusMap[text] || { label: text, color: 'default' };
-    //   return h('span', {}, [
-    //     h('a-badge', { status: config.color, text: config.label }),
-    //   ]);
-    // },
+
   },
   {
     title: '计划开始',
     dataIndex: 'planStartTime',
     width: 140,
   },
-  // {
-  //   title: '操作',
-  //   key: 'action',
-  //   width: 280,
-  //   fixed: 'right',
-  //   // 注意：这里不能写 slot，因为是配置项，需要在 template 里用 #action 实现
-  //   // 但在配置项里，我们只需要声明这个列存在即可
-  // },
+  {
+    title: '实际开始',
+    dataIndex: 'actualStartTime',
+    width: 140,
+  },
+  {
+    title: '实际完工',
+    dataIndex: 'actualEndTime',
+    width: 140,
+  },
+
 ];
 
 //表单数据

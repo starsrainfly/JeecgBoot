@@ -157,6 +157,7 @@
          {
            label: '编辑',
            onClick: handleEdit.bind(null, record),
+           disabled: !(record.status === 'PENDING'),
            auth: 'mes:mis_production_batch:edit'
          }
        ]
@@ -173,6 +174,7 @@
         onClick: handleDetail.bind(null, record),
       }, {
         label: '删除',
+        disabled: !(record.status === 'PENDING'),
         popConfirm: {
           title: '是否确认删除',
           confirm: handleDelete.bind(null, record),

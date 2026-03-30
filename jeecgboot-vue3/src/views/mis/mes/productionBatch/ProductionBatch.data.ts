@@ -118,19 +118,26 @@ export const productionBatchBomColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
-    // {
-    //   title: '物料id',
-    //   key: 'materialId',
-    //   type: JVxeTypes.input,
-    //   width:"200px",
-    //   placeholder: '请输入${title}',
-    //   defaultValue:'',
-    //   show:false
-    // },
+    {
+      title: '物料id',
+      key: 'materialId',
+      type: JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+      visible:false
+    },
     {
       title: '物料编码',
       key: 'materialCode',
-      type: JVxeTypes.textarea,
+      type: JVxeTypes.popup,
+      popupCode:"mdm_material_select",
+      fieldConfig: [
+        { source: 'id', target: 'materialId' },
+        { source: 'material_code', target: 'materialCode' },
+        { source: 'material_name', target: 'materialName' },
+        { source: 'material_spec', target: 'materialSpec' },
+      ],
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',

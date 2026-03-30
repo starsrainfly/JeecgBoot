@@ -24,6 +24,9 @@ enum Api {
   queryMaterialActual = '/mes/productionBatchMaterialActual/list',
   addMaterialActual = '/mes/productionBatchMaterialActual/add',
   deleteMaterialActual = '/mes/productionBatchMaterialActual/delete',
+  startWeighing ='/mes/productionBatch/startWeighing',
+  completeWeighing ='/mes/productionBatch/completeWeighing',
+  setBatchStatus ='/mes/productionBatch/setBatchStatus',
 }
 
 /**
@@ -104,6 +107,22 @@ export const reportQc = (params) =>
   defHttp.post({url: Api.reportQc, params});
 
 // ==================== 配料执行专用接口 ====================
+/**
+ * 设置批次开始配料
+ * @param params -> batchId
+ */
+export const startWeighing =(params) =>
+  defHttp.post({url:Api.startWeighing, params});
+/**
+ * 设置 完成配料
+ * @param params -> batchId
+ */
+export const completeWeighing = (params) =>
+  defHttp.post({url:Api.completeWeighing,params})
+
+
+export const setBatchStatus = (params) =>
+  defHttp.post({url:Api.completeWeighing,params})
 
 /**
  * 查询批次BOM清单

@@ -1,9 +1,6 @@
 package org.jeecg.modules.mes.controller;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -15,6 +12,7 @@ import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
 import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.mes.entity.ProductionMaterial;
+import org.jeecg.modules.mes.mapper.ProductionMaterialMapper;
 import org.jeecg.modules.mes.service.IProductionMaterialService;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -22,6 +20,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jeecg.modules.mes.vo.ProductionMaterialVo;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -38,7 +37,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
-
+import org.springframework.jdbc.core.JdbcTemplate;
  /**
  * @Description: 物料需求表
  * @Author: jeecg-boot
@@ -52,7 +51,9 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 public class ProductionMaterialController extends JeecgController<ProductionMaterial, IProductionMaterialService> {
 	@Autowired
 	private IProductionMaterialService productionMaterialService;
-	
+	 @Autowired
+	 private JdbcTemplate jdbcTemplate;  // 添加注入
+
 	/**
 	 * 分页列表查询
 	 *
@@ -180,5 +181,43 @@ public class ProductionMaterialController extends JeecgController<ProductionMate
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, ProductionMaterial.class);
     }
+
+	 /**
+	  * 根据订单获取批次列表
+	  */
+	 @GetMapping("/getBatchesByOrder")
+	 public Result<List<ProductionMaterialVo>> getBatchesByOrder(@RequestParam String orderId) {
+		 List<ProductionMaterialVo> list = productionMaterialService.getBatchesByOrder(orderId);
+		 return Result.OK(list);
+	 }
+
+	 /**
+	  * 获取物料汇总（按物料合并）用于显示
+	  */
+	 @PostMapping("/getMaterialSummary")
+	 public Result<List<ProductionMaterialVo>> getMaterialSummary(@RequestBody Map<String, Object> params) {
+		 List<String> batchIds = (List<String>) params.get("batchIds");
+		 List<String> materialReqIds = (List<String>) params.get("materialReqIds");
+		 String orderId = (String) params.get("orderId");
+
+		 List<ProductionMaterialVo> list = productionMaterialService.getMaterialSummary(batchIds, materialReqIds, orderId);
+		 return Result.OK(list);
+	 }
+
+	 /**
+	  * 获取物料明细（按批次展开，不合并）
+	  */
+	 @PostMapping("/getMaterialDetailByBatches")
+	 public Result<List<ProductionMaterialVo>> getMaterialDetailByBatches(@RequestBody Map<String, Object> params) {
+		 List<String> batchIds = (List<String>) params.get("batchIds");
+		 String orderId = (String) params.get("orderId");
+
+		 if (batchIds == null || batchIds.isEmpty()) {
+			 return Result.OK(new ArrayList<>());
+		 }
+
+		 List<ProductionMaterialVo> list = productionMaterialService.getMaterialDetailByBatches(batchIds, orderId);
+		 return Result.OK(list);
+	 }
 
 }

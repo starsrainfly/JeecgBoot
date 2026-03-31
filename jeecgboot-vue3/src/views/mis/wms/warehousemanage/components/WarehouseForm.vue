@@ -40,7 +40,7 @@
             });
 
             let formData = {};
-            const queryByIdUrl = '/warehouse/warehouse/queryById';
+            const queryByIdUrl = '/wms/wms/queryById';
             async function initFormData(){
                 let params = {id: props.formData.dataId};
                 const data = await defHttp.get({url: queryByIdUrl, params});

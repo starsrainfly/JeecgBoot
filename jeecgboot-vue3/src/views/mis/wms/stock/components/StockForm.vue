@@ -12,11 +12,11 @@
     import {computed, defineComponent} from 'vue';
     import {defHttp} from '/@/utils/http/axios';
     import { propTypes } from '/@/utils/propTypes';
-    import {getBpmFormSchema} from '../Warehouse.data';
-    import {saveOrUpdate} from '../Warehouse.api';
+    import {getBpmFormSchema} from '../Stock.data';
+    import {saveOrUpdate} from '../Stock.api';
     
     export default defineComponent({
-        name: "WarehouseForm",
+        name: "StockForm",
         components:{
             BasicForm
         },
@@ -40,7 +40,7 @@
             });
 
             let formData = {};
-            const queryByIdUrl = '/warehouse/warehouse/queryById';
+            const queryByIdUrl = '/wms/stock/queryById';
             async function initFormData(){
                 let params = {id: props.formData.dataId};
                 const data = await defHttp.get({url: queryByIdUrl, params});

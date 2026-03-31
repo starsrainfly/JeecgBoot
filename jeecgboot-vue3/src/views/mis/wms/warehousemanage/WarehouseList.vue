@@ -4,9 +4,9 @@
    <BasicTable @register="registerTable" :rowSelection="rowSelection">
      <!--插槽:table标题-->
       <template #tableTitle>
-          <a-button type="primary" v-auth="'warehouse:mis_warehouse:add'" @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
-          <a-button  type="primary" v-auth="'warehouse:mis_warehouse:exportXls'" preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
-          <j-upload-button type="primary" v-auth="'warehouse:mis_warehouse:importExcel'" preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
+          <a-button type="primary" v-auth="'wms:mis_warehouse:add'" @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
+          <a-button  type="primary" v-auth="'wms:mis_warehouse:exportXls'" preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
+          <j-upload-button type="primary" v-auth="'wms:mis_warehouse:importExcel'" preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
           <a-dropdown v-if="selectedRowKeys.length > 0">
               <template #overlay>
                 <a-menu>
@@ -16,7 +16,7 @@
                   </a-menu-item>
                 </a-menu>
               </template>
-              <a-button v-auth="'warehouse:mis_warehouse:deleteBatch'">批量操作
+              <a-button v-auth="'wms:mis_warehouse:deleteBatch'">批量操作
                 <Icon icon="mdi:chevron-down"></Icon>
               </a-button>
         </a-dropdown>
@@ -156,7 +156,7 @@
          {
            label: '编辑',
            onClick: handleEdit.bind(null, record),
-           auth: 'warehouse:mis_warehouse:edit'
+           auth: 'wms:mis_warehouse:edit'
          }
        ]
    }
@@ -175,7 +175,7 @@
              confirm: handleDelete.bind(null, record),
              placement: 'topLeft',
            },
-           auth: 'warehouse:mis_warehouse:delete'
+           auth: 'wms:mis_warehouse:delete'
          }
        ]
    }

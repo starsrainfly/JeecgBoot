@@ -106,181 +106,7 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 			productionOrderMapper.deleteById(id);
 		}
 	}
-/*
-	@Override
-	@Transactional(rollbackFor = Exception.class)
-	public void releaseOrder1(String id) {
-		//1、获得生产订单
-		ProductionOrder order = this.getById(id);
-		if (order == null || !"0".equals(order.getStatus())) {
-			throw new JeecgBootException("订单不存在或状态不正确");
-		}
 
-		String recipeId = order.getRecipeId();
-		BigDecimal plannedQty = order.getPlannedQty();
-		String orderNo = order.getOrderNo();
-		String orderId = order.getId();
-
-		//2、获取配方明细（BOM）和配方总占比
-		List<RecipeDetail> recipeDetails = recipeDetailService.selectByMainId(recipeId);
-		if (CollectionUtils.isEmpty(recipeDetails)) {
-			throw new JeecgBootException("配方明细为空");
-		}
-		// 获取配方主表得到 routing_id
-		Recipe recipe = recipeService.getById(recipeId);
-		String routingId = recipe.getRoutingId();  // 工艺路线ID
-		BigDecimal proportionTotal = recipe.getProportionTotal();//获取配方的总配比
-
-		if (proportionTotal == null || proportionTotal.compareTo(BigDecimal.ZERO) <= 0) {
-			proportionTotal = BigDecimal.valueOf(100);
-		}
-		int batchCount = order.getBatchCount();
-		BigDecimal batchSize = order.getBatchSize();
-		// 3. 获取订单明细并按内包容量从大到小排序
-		List<ProductionOrderDetail> orderDetails = productionOrderDetailService.selectByMainId(orderId);
-
-		List<ProductionOrderDetail> packageDetails = orderDetails.stream()
-				.filter(d -> StringUtils.isNotBlank(d.getInnerPackageId())
-						&& d.getInnerPackageCapacity() != null
-						&& d.getInnerPackageCapacity().compareTo(BigDecimal.ZERO) > 0
-						&& d.getAllocatedQty() != null
-						&& d.getAllocatedQty().compareTo(BigDecimal.ZERO) > 0)
-				.sorted((d1, d2) -> d2.getInnerPackageCapacity().compareTo(d1.getInnerPackageCapacity()))
-				.collect(Collectors.toList());
-
-		if (CollectionUtils.isEmpty(packageDetails)) {
-			throw new JeecgBootException("订单未配置包装信息");
-		}
-
-		// 4. 预计算每个批次的包装分配方案（大规格优先，允许混装）
-		Map<Integer, List<BatchPackageAllocation>> batchPackagePlan = calculatePackageAllocation(
-				packageDetails, batchCount, batchSize, plannedQty
-		);
-		// 5. 循环生成批次
-		List<ProductionMaterial> allMaterials = new ArrayList<>();
-
-		for (int i = 1; i <= batchCount; i++) {
-			String batchNo = orderNo + "-" + String.format("%02d", i);
-
-			// 5.1 创建批次主表
-			ProductionBatch batch = new ProductionBatch();
-			batch.setBatchSeq(i);
-			batch.setBatchNo(batchNo);
-			batch.setOrderId(orderId);
-			batch.setOrderNo(orderNo);
-			batch.setRecipeId(recipeId);
-			batch.setRecipeCode(order.getRecipeCode());
-			batch.setRecipeName(order.getRecipeName());
-			batch.setRecipeVersion(order.getRecipeVersion());
-			batch.setProductId(order.getProductId());
-			batch.setProductCode(order.getProductCode());
-			batch.setProductName(order.getProductName());
-
-			// 记录包装规格信息
-			List<BatchPackageAllocation> allocations = batchPackagePlan.getOrDefault(i, Collections.emptyList());
-
-
-			// 计算该批次计划数量（最后一批次处理余数）
-			BigDecimal batchPlannedQty = (i == batchCount)
-					? plannedQty.subtract(batchSize.multiply(BigDecimal.valueOf(batchCount - 1)))
-					: batchSize;
-			batch.setPlannedQty(batchPlannedQty);
-			batch.setStatus("0");
-
-			// 5.2 创建批次BOM子表
-			List<ProductionBatchBom> batchBomList = new ArrayList<>();
-			for (RecipeDetail recipeDetail : recipeDetails) {
-				ProductionBatchBom bom = new ProductionBatchBom();
-				bom.setSerialNo(recipeDetail.getSerialNo());
-				bom.setMaterialId(recipeDetail.getMaterialId());
-				bom.setMaterialCode(recipeDetail.getMaterialCode());
-				bom.setMaterialName(recipeDetail.getMaterialName());
-				bom.setMaterialSpec(recipeDetail.getMaterialSpec());
-				bom.setProportion(recipeDetail.getProportion());
-                bom.setUnit(recipeDetail.getUnit());
-				// 计算该批次物料需求 = 批次计划数量 * 配方占比/总占比
-				BigDecimal materialQty = batchPlannedQty.multiply(recipeDetail.getProportion())
-						.divide(proportionTotal, 6, RoundingMode.HALF_UP);
-				bom.setPlannedQty(materialQty);
-				bom.setUnit(recipeDetail.getUnit());
-				batchBomList.add(bom);
-			}
-			// 保存批次主子表
-			batchService.saveMain(batch, batchBomList);
-
-			// 5.3 明细物料 添加到物料需求表中，用于采购或仓库出库
-			for(ProductionBatchBom bom:batchBomList) {
-				ProductionMaterial material = new ProductionMaterial();
-				material.setOrderId(orderId);
-				material.setOrderNo(orderNo);
-				material.setBatchId(bom.getBatchId());
-				material.setBatchNo(batchNo);
-				material.setMaterialId(bom.getMaterialId());
-				material.setMaterialCode(bom.getMaterialCode());
-				material.setMaterialName(bom.getMaterialName());
-				material.setMaterialSpec(bom.getMaterialSpec());
-				material.setRequiredQty(bom.getPlannedQty());
-				material.setUnit(bom.getUnit());
-				material.setStatus("0");
-				material.setMaterialType("0");
-
-				allMaterials.add(material);
-				productionMaterialService.save(material);
-			}
-
-			// 5.4 添加包装物料需求（支持混装）
-			for (BatchPackageAllocation alloc : allocations) {
-				// 内包装
-				ProductionMaterial innerMaterial = new ProductionMaterial();
-				innerMaterial.setOrderId(orderId);
-				innerMaterial.setOrderNo(orderNo);
-				innerMaterial.setBatchId(batch.getId());
-				innerMaterial.setBatchNo(batchNo);
-				innerMaterial.setMaterialId(alloc.getInnerPackageId());
-				Material materialEntity = materialService.getById(alloc.getInnerPackageId());
-				innerMaterial.setMaterialCode(materialEntity.getMaterialCode());
-
-				innerMaterial.setMaterialName(materialEntity.getMaterialName());
-				innerMaterial.setMaterialSpec(alloc.getInnerPackageSpec());
-				innerMaterial.setRequiredQty(BigDecimal.valueOf(alloc.getAllocatedInnerQty()));
-				innerMaterial.setUnit(alloc.getInnerPackageUnit());
-				innerMaterial.setStatus("0");
-				innerMaterial.setMaterialType("1");
-				innerMaterial.setOrderDetailId(alloc.getOrderDetailId());
-				innerMaterial.setRemark("容量:" + alloc.getInnerPackageCapacity() + "kg/个");
-				productionMaterialService.save(innerMaterial);
-
-				// 外包装
-				if (StringUtils.isNotBlank(alloc.getOuterPackageId()) && alloc.getCalculatedOuterQty() > 0) {
-					ProductionMaterial outerMaterial = new ProductionMaterial();
-					outerMaterial.setOrderId(orderId);
-					outerMaterial.setOrderNo(orderNo);
-					outerMaterial.setBatchId(batch.getId());
-					outerMaterial.setBatchNo(batchNo);
-					outerMaterial.setMaterialId(alloc.getOuterPackageId());
-					Material material = materialService.getById(alloc.getOuterPackageId());
-					outerMaterial.setMaterialCode(material.getMaterialCode());
-					outerMaterial.setMaterialName(alloc.getOuterPackageSpec());
-					outerMaterial.setRequiredQty(BigDecimal.valueOf(alloc.getCalculatedOuterQty()));
-					outerMaterial.setUnit(alloc.getOuterPackageUnit());
-					outerMaterial.setStatus("0");
-					outerMaterial.setMaterialType("2");
-					outerMaterial.setOrderDetailId(alloc.getOrderDetailId());
-					outerMaterial.setRemark("每外包含" + alloc.getInnerPerOuter() + "个内包");
-					productionMaterialService.save(outerMaterial);
-				}
-			}
-
-			// 5.5 生成工序任务（工单）
-			taskService.generateTasks(batch, routingId, "");
-		}
-
-		// 5. 更新订单状态
-		order.setStatus("1");
-		order.setReleaseTime(new Date());
-		this.updateById(order);
-	}
-*/
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void BatchReleaseOrder(String ids) {
@@ -592,6 +418,7 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 			material.setMaterialName(bom.getMaterialName());
 			material.setMaterialSpec(bom.getMaterialSpec());
 			material.setRequiredQty(bom.getPlannedQty());
+			material.setRemainingQty(bom.getPlannedQty());
 			material.setUnit(bom.getUnit());
 			material.setMaterialType("0");
 			material.setStatus("0");
@@ -635,6 +462,7 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 		innerMaterial.setMaterialName(materialEntity.getMaterialName());
 		innerMaterial.setMaterialSpec(alloc.getInnerPackageSpec());
 		innerMaterial.setRequiredQty(BigDecimal.valueOf(alloc.getAllocatedInnerQty()));
+		innerMaterial.setRemainingQty(BigDecimal.valueOf(alloc.getAllocatedInnerQty()));
 		innerMaterial.setUnit(alloc.getInnerPackageUnit());
 		innerMaterial.setMaterialType("1");
 		innerMaterial.setStatus("0");
@@ -662,6 +490,7 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 		outerMaterial.setMaterialName(materialEntity.getMaterialName());
 		outerMaterial.setMaterialSpec(alloc.getInnerPackageSpec());
 		outerMaterial.setRequiredQty(BigDecimal.valueOf(alloc.getCalculatedOuterQty()));
+		outerMaterial.setRemainingQty(BigDecimal.valueOf(alloc.getCalculatedOuterQty()));
 		outerMaterial.setUnit(alloc.getOuterPackageUnit());
 		outerMaterial.setMaterialType("2");
 		outerMaterial.setStatus("0");
@@ -711,8 +540,9 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 
 	/**
 	 * 核心算法：大规格优先分配，允许混装
+	 * 存在平分后进位多包装的问题
 	 */
-	private Map<Integer, List<BatchPackageAllocation>> calculatePackageAllocation(
+	private Map<Integer, List<BatchPackageAllocation>> calculatePackageAllocation1(
 			List<ProductionOrderDetail> sortedDetails,
 			int batchCount,
 			BigDecimal batchSize,
@@ -807,6 +637,229 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 		return result;
 	}
 
+	/**
+	 * 核心算法：大规格优先分配，允许混装
+	 * 策略：余数前置 - 外包装总数先算好，余数放在前面批次
+	 */
+	private Map<Integer, List<BatchPackageAllocation>> calculatePackageAllocation(
+			List<ProductionOrderDetail> sortedDetails,
+			int batchCount,
+			BigDecimal batchSize,
+			BigDecimal totalQty) {
+
+		Map<Integer, List<BatchPackageAllocation>> result = new HashMap<>();
+		Map<Integer, BigDecimal> batchRemaining = new HashMap<>();
+
+		// 初始化批次容量
+		BigDecimal remaining = totalQty;
+		for (int i = 1; i <= batchCount; i++) {
+			BigDecimal currentBatchSize = (i == batchCount)
+					? remaining
+					: batchSize.min(remaining);
+			batchRemaining.put(i, currentBatchSize);
+			remaining = remaining.subtract(currentBatchSize);
+			result.put(i, new ArrayList<>());
+		}
+
+		// 按规格从大到小处理（大规格优先）
+		for (ProductionOrderDetail detail : sortedDetails) {
+			BigDecimal capacity = detail.getInnerPackageCapacity();
+			BigDecimal detailQty = detail.getAllocatedQty();
+			Integer innerPerOuter = detail.getInnerPerOuter();
+
+			if (capacity == null || capacity.compareTo(BigDecimal.ZERO) <= 0
+					|| innerPerOuter == null || innerPerOuter <= 0) continue;
+
+			// ========== 步骤1：计算该规格总量 ==========
+			// 总内包数（向上取整）
+			int totalInnerPackages = detailQty.divide(capacity, 0, RoundingMode.CEILING).intValue();
+			// 总外包数（向上取整）- 这是正确的总量！
+			int totalOuterPackages = (int) Math.ceil((double) totalInnerPackages / innerPerOuter);
+
+			// ========== 步骤2：按批次分配内包（贪心策略）==========
+			// 记录每个批次分配的内包数
+			Map<Integer, Integer> batchInnerCount = new HashMap<>();
+			int remainingPackages = totalInnerPackages;
+
+			for (int batchSeq = 1; batchSeq <= batchCount && remainingPackages > 0; batchSeq++) {
+				BigDecimal space = batchRemaining.getOrDefault(batchSeq, BigDecimal.ZERO);
+
+				if (space.compareTo(capacity) < 0) continue;
+
+				int maxFit = space.divide(capacity, 0, RoundingMode.FLOOR).intValue();
+				int allocate = Math.min(maxFit, remainingPackages);
+
+				if (allocate > 0) {
+					batchInnerCount.put(batchSeq, allocate);
+					remainingPackages -= allocate;
+					BigDecimal used = capacity.multiply(BigDecimal.valueOf(allocate));
+					batchRemaining.put(batchSeq, space.subtract(used));
+				}
+			}
+
+			// 强制放到最后一个批次（如果有剩余）
+			if (remainingPackages > 0) {
+				int lastBatch = batchCount;
+				batchInnerCount.put(lastBatch,
+						batchInnerCount.getOrDefault(lastBatch, 0) + remainingPackages);
+
+				BigDecimal lastSpace = batchRemaining.getOrDefault(lastBatch, BigDecimal.ZERO);
+				BigDecimal used = capacity.multiply(BigDecimal.valueOf(remainingPackages));
+				batchRemaining.put(lastBatch, lastSpace.subtract(used));
+			}
+
+			// ========== 步骤3：余数前置策略分配外包 ==========
+			// 计算基础分配和余数
+			int baseOuter = totalOuterPackages / batchInnerCount.size();  // 每个批次基础数量
+			int remainder = totalOuterPackages % batchInnerCount.size();  // 余数（给前面批次）
+
+			// 按批次顺序排序
+			List<Integer> batchSeqs = new ArrayList<>(batchInnerCount.keySet());
+			Collections.sort(batchSeqs);
+
+			// 分配外包（前remainder个批次多分1个）
+			for (int i = 0; i < batchSeqs.size(); i++) {
+				int batchSeq = batchSeqs.get(i);
+				int innerCount = batchInnerCount.get(batchSeq);
+
+				// 前 remainder 个批次：baseOuter + 1，其余：baseOuter
+				int outerCount = baseOuter + (i < remainder ? 1 : 0);
+
+				// 创建分配记录
+				BatchPackageAllocation alloc = new BatchPackageAllocation();
+				alloc.setOrderDetailId(detail.getId());
+				alloc.setInnerPackageId(detail.getInnerPackageId());
+				alloc.setInnerPackageSpec(detail.getInnerPackageSpec());
+				alloc.setInnerPackageCapacity(detail.getInnerPackageCapacity());
+				alloc.setInnerPackageUnit(detail.getInnerPackageUnit());
+				alloc.setOuterPackageId(detail.getOuterPackageId());
+				alloc.setOuterPackageSpec(detail.getOuterPackageSpec());
+				alloc.setOuterPackageUnit(detail.getOuterPackageUnit());
+				alloc.setInnerPerOuter(innerPerOuter);
+				alloc.setAllocatedInnerQty(innerCount);
+				alloc.setCalculatedOuterQty(outerCount);
+
+				result.get(batchSeq).add(alloc);
+			}
+		}
+
+		return result;
+	}
+	/**
+	 * 核心算法：大规格优先分配，允许混装
+	 * 修复：外包装按总量计算，避免重复进位 余数后置
+	 */
+	private Map<Integer, List<BatchPackageAllocation>> calculatePackageAllocation_after(
+			List<ProductionOrderDetail> sortedDetails,
+			int batchCount,
+			BigDecimal batchSize,
+			BigDecimal totalQty) {
+
+		Map<Integer, List<BatchPackageAllocation>> result = new HashMap<>();
+		Map<Integer, BigDecimal> batchRemaining = new HashMap<>();
+
+		// 初始化批次容量
+		BigDecimal remaining = totalQty;
+		for (int i = 1; i <= batchCount; i++) {
+			BigDecimal currentBatchSize = (i == batchCount)
+					? remaining
+					: batchSize.min(remaining);
+			batchRemaining.put(i, currentBatchSize);
+			remaining = remaining.subtract(currentBatchSize);
+			result.put(i, new ArrayList<>());
+		}
+
+		// 按规格从大到小处理（大规格优先）
+		for (ProductionOrderDetail detail : sortedDetails) {
+			BigDecimal capacity = detail.getInnerPackageCapacity();
+			BigDecimal detailQty = detail.getAllocatedQty();
+			Integer innerPerOuter = detail.getInnerPerOuter();
+
+			if (capacity == null || capacity.compareTo(BigDecimal.ZERO) <= 0
+					|| innerPerOuter == null || innerPerOuter <= 0) continue;
+
+			// ========== 关键修复：先算该规格总量 ==========
+			// 总内包数（向上取整）
+			int totalInnerPackages = detailQty.divide(capacity, 0, RoundingMode.CEILING).intValue();
+			// 总外包数（向上取整）- 这是正确的总量！
+			int totalOuterPackages = (int) Math.ceil((double) totalInnerPackages / innerPerOuter);
+
+			// 记录每个批次分配的内包数，用于后续分配外包
+			Map<Integer, Integer> batchInnerCount = new HashMap<>();
+			int allocatedInnerTotal = 0;
+
+			// 从第1个批次开始，能装就装（贪心分配内包）
+			int remainingPackages = totalInnerPackages;
+			for (int batchSeq = 1; batchSeq <= batchCount && remainingPackages > 0; batchSeq++) {
+				BigDecimal space = batchRemaining.getOrDefault(batchSeq, BigDecimal.ZERO);
+
+				if (space.compareTo(capacity) < 0) continue;
+
+				int maxFit = space.divide(capacity, 0, RoundingMode.FLOOR).intValue();
+				int allocate = Math.min(maxFit, remainingPackages);
+
+				if (allocate > 0) {
+					batchInnerCount.put(batchSeq, allocate);
+					allocatedInnerTotal += allocate;
+
+					remainingPackages -= allocate;
+					BigDecimal used = capacity.multiply(BigDecimal.valueOf(allocate));
+					batchRemaining.put(batchSeq, space.subtract(used));
+				}
+			}
+
+			// 强制放到最后一个批次（如果有剩余）
+			if (remainingPackages > 0) {
+				int lastBatch = batchCount;
+				batchInnerCount.put(lastBatch,
+						batchInnerCount.getOrDefault(lastBatch, 0) + remainingPackages);
+				allocatedInnerTotal += remainingPackages;
+
+				BigDecimal lastSpace = batchRemaining.getOrDefault(lastBatch, BigDecimal.ZERO);
+				BigDecimal used = capacity.multiply(BigDecimal.valueOf(remainingPackages));
+				batchRemaining.put(lastBatch, lastSpace.subtract(used));
+				remainingPackages = 0;
+			}
+
+			// ========== 关键修复：分配外包（只有最后一个批次进位）==========
+			int allocatedOuterTotal = 0;
+			List<Integer> batchSeqs = new ArrayList<>(batchInnerCount.keySet());
+			Collections.sort(batchSeqs); // 确保按批次顺序处理
+
+			for (int i = 0; i < batchSeqs.size(); i++) {
+				int batchSeq = batchSeqs.get(i);
+				int innerCount = batchInnerCount.get(batchSeq);
+				int outerCount;
+
+				if (i == batchSeqs.size() - 1) {
+					// 最后一个批次：用总量减去前面已分配的（确保不超额）
+					outerCount = totalOuterPackages - allocatedOuterTotal;
+				} else {
+					// 前面的批次：按内包数比例分配，不进位（向下取整）
+					outerCount = innerCount / innerPerOuter;
+					allocatedOuterTotal += outerCount;
+				}
+
+				// 创建分配记录
+				BatchPackageAllocation alloc = new BatchPackageAllocation();
+				alloc.setOrderDetailId(detail.getId());
+				alloc.setInnerPackageId(detail.getInnerPackageId());
+				alloc.setInnerPackageSpec(detail.getInnerPackageSpec());
+				alloc.setInnerPackageCapacity(detail.getInnerPackageCapacity());
+				alloc.setInnerPackageUnit(detail.getInnerPackageUnit());
+				alloc.setOuterPackageId(detail.getOuterPackageId());
+				alloc.setOuterPackageSpec(detail.getOuterPackageSpec());
+				alloc.setOuterPackageUnit(detail.getOuterPackageUnit());
+				alloc.setInnerPerOuter(innerPerOuter);
+				alloc.setAllocatedInnerQty(innerCount);
+				alloc.setCalculatedOuterQty(outerCount);
+
+				result.get(batchSeq).add(alloc);
+			}
+		}
+
+		return result;
+	}
 	/**
 	 * 创建包装分配对象
 	 */

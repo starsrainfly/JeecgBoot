@@ -1,6 +1,6 @@
 <template>
   <BasicModal v-bind="$attrs" @register="registerModal" destroyOnClose :title="title" :width="800" @ok="handleSubmit">
-      <BasicForm @register="registerForm" name="WarehouseForm" />
+      <BasicForm @register="registerForm" name="StockForm" />
   </BasicModal>
 </template>
 
@@ -8,8 +8,8 @@
     import {ref, computed, unref} from 'vue';
     import {BasicModal, useModalInner} from '/@/components/Modal';
     import {BasicForm, useForm} from '/@/components/Form/index';
-    import {formSchema} from '../Warehouse.data';
-    import {saveOrUpdate} from '../Warehouse.api';
+    import {formSchema} from '../Stock.data';
+    import {saveOrUpdate} from '../Stock.api';
     // Emits声明
     const emit = defineEmits(['register','success']);
     const isUpdate = ref(true);

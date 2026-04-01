@@ -43,7 +43,8 @@ export const columns: BasicColumn[] = [
    {
     title: '单位',
     align:"center",
-    dataIndex: 'unit'
+    dataIndex: 'unit',
+     width:'80'
    },
    {
     title: '需求数量',
@@ -60,6 +61,11 @@ export const columns: BasicColumn[] = [
     title: '剩余待发',
     align:"center",
     dataIndex: 'remainingQty'
+   },
+   {
+    title:'可用库存',
+     align:"center",
+     dataIndex:'availableStockQty'
    },
    {
     title: '需求日期',

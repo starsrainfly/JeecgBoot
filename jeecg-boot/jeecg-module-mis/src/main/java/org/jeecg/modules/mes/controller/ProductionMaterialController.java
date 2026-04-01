@@ -66,17 +66,19 @@ public class ProductionMaterialController extends JeecgController<ProductionMate
 	//@AutoLog(value = "物料需求表-分页列表查询")
 	@Operation(summary="物料需求表-分页列表查询")
 	@GetMapping(value = "/list")
-	public Result<IPage<ProductionMaterial>> queryPageList(ProductionMaterial productionMaterial,
+	public Result<IPage<ProductionMaterialVo>> queryPageList(ProductionMaterial productionMaterial,
 								   @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
 								   @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
 								   HttpServletRequest req) {
-        // 自定义查询规则
-        Map<String, QueryRuleEnum> customeRuleMap = new HashMap<>();
-        // 自定义多选的查询规则为：LIKE_WITH_OR
-        customeRuleMap.put("status", QueryRuleEnum.LIKE_WITH_OR);
-        QueryWrapper<ProductionMaterial> queryWrapper = QueryGenerator.initQueryWrapper(productionMaterial, req.getParameterMap(),customeRuleMap);
-		Page<ProductionMaterial> page = new Page<ProductionMaterial>(pageNo, pageSize);
-		IPage<ProductionMaterial> pageList = productionMaterialService.page(page, queryWrapper);
+//        // 自定义查询规则
+//        Map<String, QueryRuleEnum> customeRuleMap = new HashMap<>();
+//        // 自定义多选的查询规则为：LIKE_WITH_OR
+//        customeRuleMap.put("status", QueryRuleEnum.LIKE_WITH_OR);
+//        QueryWrapper<ProductionMaterial> queryWrapper = QueryGenerator.initQueryWrapper(productionMaterial, req.getParameterMap(),customeRuleMap);
+//		Page<ProductionMaterial> page = new Page<ProductionMaterial>(pageNo, pageSize);
+//		IPage<ProductionMaterial> pageList = productionMaterialService.page(page, queryWrapper);
+		Page<ProductionMaterialVo> page = new Page<>(pageNo, pageSize);
+		IPage<ProductionMaterialVo> pageList = productionMaterialService.getPageList(page, productionMaterial);
 		return Result.OK(pageList);
 	}
 	

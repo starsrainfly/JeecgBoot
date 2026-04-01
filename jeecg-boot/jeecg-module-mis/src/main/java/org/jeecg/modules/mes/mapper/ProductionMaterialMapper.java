@@ -2,6 +2,8 @@ package org.jeecg.modules.mes.mapper;
 
 import java.util.List;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Param;
 import org.jeecg.modules.mes.entity.ProductionMaterial;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -31,4 +33,7 @@ public interface ProductionMaterialMapper extends BaseMapper<ProductionMaterial>
      */
     List<ProductionMaterialVo> getMaterialDetailByBatches(@Param("batchIds") List<String> batchIds,
                                                           @Param("orderId") String orderId);
+
+    IPage<ProductionMaterialVo> getPageList(@Param("page") Page<ProductionMaterialVo> page,
+                                            @Param("productionMaterial") ProductionMaterial productionMaterial);
 }

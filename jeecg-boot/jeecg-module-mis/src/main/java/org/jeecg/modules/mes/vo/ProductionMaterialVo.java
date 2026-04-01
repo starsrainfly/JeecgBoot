@@ -42,4 +42,6 @@ public class ProductionMaterialVo extends ProductionMaterial {
     private String batchIds;
 
     // 继承的 remainingQty 用于存储汇总后的剩余数量
+   //可用库存
+    private BigDecimal availableStockQty;
 }

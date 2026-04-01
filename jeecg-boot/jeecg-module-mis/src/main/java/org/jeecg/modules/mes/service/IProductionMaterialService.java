@@ -1,5 +1,7 @@
 package org.jeecg.modules.mes.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.modules.mes.entity.ProductionMaterial;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.mes.vo.ProductionMaterialVo;
@@ -27,4 +29,6 @@ public interface IProductionMaterialService extends IService<ProductionMaterial>
      * 获取物料明细（按批次展开，不合并）
      */
     List<ProductionMaterialVo> getMaterialDetailByBatches(List<String> batchIds, String orderId);
+
+    IPage<ProductionMaterialVo> getPageList(Page<ProductionMaterialVo> page, ProductionMaterial productionMaterial);
 }

@@ -5,6 +5,7 @@ import java.util.Date;
 import java.math.BigDecimal;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -111,6 +112,14 @@ public class ProductionMaterial implements Serializable {
 	@Excel(name = "目标仓库", width = 15)
     @Schema(description = "目标仓库")
     private String warehouseId;
+
+    /**是否删除*/
+    @Excel(name = "是否删除", width = 15, dicCode = "del_flag")
+    @Dict(dicCode = "del_flag")
+    @Schema(description = "是否删除")
+    @TableLogic
+    private String delFlag;
+
 	/**创建人*/
     @Schema(description = "创建人")
     private String createBy;

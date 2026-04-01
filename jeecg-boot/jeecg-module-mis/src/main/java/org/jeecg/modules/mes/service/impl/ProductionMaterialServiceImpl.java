@@ -1,5 +1,7 @@
 package org.jeecg.modules.mes.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.modules.mes.entity.ProductionMaterial;
 import org.jeecg.modules.mes.mapper.ProductionMaterialMapper;
 import org.jeecg.modules.mes.service.IProductionMaterialService;
@@ -40,5 +42,10 @@ public class ProductionMaterialServiceImpl extends ServiceImpl<ProductionMateria
             return new ArrayList<>();
         }
         return productionMaterialMapper.getMaterialDetailByBatches(batchIds, orderId);
+    }
+
+    @Override
+    public IPage<ProductionMaterialVo> getPageList(Page<ProductionMaterialVo> page, ProductionMaterial productionMaterial) {
+        return productionMaterialMapper.getPageList(page,productionMaterial);
     }
 }

@@ -65,4 +65,48 @@
         </if>
         ORDER BY material_code, batch_no
     </select>
+
+    <select id="getPageList" resultType="org.jeecg.modules.mes.vo.ProductionMaterialVo">
+        SELECT PM.*,COALESCE(SUM(s.quantity - s.locked_qty), 0) AS availableStockQty
+
+        FROM mis_production_material pm
+        <!-- 关联库存表，只关联物料ID，不要在这里加查询条件 -->
+        LEFT JOIN mis_stock s ON pm.material_id = s.item_id
+        <where>
+            AND pm.del_flag='0'
+            <!-- 1. 生产订单/单号 -->
+            <if test="productionMaterial.orderNo != null and productionMaterial.orderNo != ''">
+                AND pm.order_no LIKE CONCAT('%', #{productionMaterial.orderNo}, '%')
+            </if>
+
+            <!-- 2. 批次单号 -->
+            <if test="productionMaterial.batchNo != null and productionMaterial.batchNo != ''">
+                AND pm.batch_no LIKE CONCAT('%', #{productionMaterial.batchNo}, '%')
+            </if>
+
+            <!-- 3. 仓库ID (注意：这是筛选需求单的目标仓库，不是库存表的仓库) -->
+            <if test="productionMaterial.warehouseId != null and productionMaterial.warehouseId != ''">
+                AND pm.warehouse_id = #{productionMaterial.warehouseId}
+            </if>
+
+            <!-- 4. 物料编码 -->
+            <if test="productionMaterial.materialCode != null and productionMaterial.materialCode != ''">
+                AND pm.material_code LIKE CONCAT('%', #{productionMaterial.materialCode}, '%')
+            </if>
+
+            <!-- 5. 物料名称 -->
+            <if test="productionMaterial.materialName != null and productionMaterial.materialName != ''">
+                AND pm.material_name LIKE CONCAT('%', #{productionMaterial.materialName}, '%')
+            </if>
+
+            <!-- 6. 状态 -->
+            <if test="productionMaterial.status != null and productionMaterial.status != ''">
+                AND pm.status = #{productionMaterial.status}
+            </if>
+        </where>
+
+        <!-- 分组：确保需求单是一行一行显示的，库存是汇总的 -->
+        GROUP BY pm.id
+        ORDER BY pm.id DESC
+    </select>
 </mapper>

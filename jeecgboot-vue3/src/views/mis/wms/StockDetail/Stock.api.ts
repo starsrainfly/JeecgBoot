@@ -4,16 +4,13 @@ import { useMessage } from "/@/hooks/web/useMessage";
 const { createConfirm } = useMessage();
 
 enum Api {
-  list = '/wms/warehouseLocation/list',
-  save='/wms/warehouseLocation/add',
-  edit='/wms/warehouseLocation/edit',
-  deleteOne = '/wms/warehouseLocation/delete',
-  deleteBatch = '/wms/warehouseLocation/deleteBatch',
-  importExcel = '/wms/warehouseLocation/importExcel',
-  exportXls = '/wms/warehouseLocation/exportXls',
-  warehouse ='/wms/warehouse/queryById',
-  area = '/wms/warehouseArea/queryById',
-  shelf ='/wms/warehouseShelf/queryById',
+  list = '/wms/stock/list',
+  save='/wms/stock/add',
+  edit='/wms/stock/edit',
+  deleteOne = '/wms/stock/delete',
+  deleteBatch = '/wms/stock/deleteBatch',
+  importExcel = '/wms/stock/importExcel',
+  exportXls = '/wms/stock/exportXls',
 }
 /**
  * 导出api
@@ -30,24 +27,7 @@ export const getImportUrl = Api.importExcel;
  */
 export const list = (params) =>
   defHttp.get({url: Api.list, params});
-/**
- * 通过id得到仓库信息
- * @param params
- */
-export const getWarehouseById = (params)=>
-  defHttp.get({url:Api.warehouse,params});
-/**
- * 通过id得到区域信息
- * @param params
- */
-export const getAreaById = (params) =>
-  defHttp.get({url:Api.area, params});
-/**
- * 通过id 得到货架信息
- * @param params
- */
-export const getShelfById = (params) =>
-  defHttp.get({url:Api.shelf, params});
+
 /**
  * 删除单个
  */

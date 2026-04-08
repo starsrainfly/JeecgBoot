@@ -22,6 +22,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jeecg.modules.wms.vo.StockSummaryVo;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -42,7 +43,7 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
  /**
  * @Description: 库存记录表
  * @Author: jeecg-boot
- * @Date:   2026-03-31
+ * @Date:   2026-04-08
  * @Version: V1.0
  */
 @Tag(name="库存记录表")
@@ -69,12 +70,75 @@ public class StockController extends JeecgController<Stock, IStockService> {
 								   @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
 								   @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
 								   HttpServletRequest req) {
-        QueryWrapper<Stock> queryWrapper = QueryGenerator.initQueryWrapper(stock, req.getParameterMap());
+        // 自定义查询规则
+        Map<String, QueryRuleEnum> customeRuleMap = new HashMap<>();
+        // 自定义多选的查询规则为：LIKE_WITH_OR
+        customeRuleMap.put("goodsType", QueryRuleEnum.LIKE_WITH_OR);
+        customeRuleMap.put("warehouseId", QueryRuleEnum.LIKE_WITH_OR);
+        customeRuleMap.put("areaId", QueryRuleEnum.LIKE_WITH_OR);
+        customeRuleMap.put("shelfId", QueryRuleEnum.LIKE_WITH_OR);
+        customeRuleMap.put("locationId", QueryRuleEnum.LIKE_WITH_OR);
+        QueryWrapper<Stock> queryWrapper = QueryGenerator.initQueryWrapper(stock, req.getParameterMap(),customeRuleMap);
 		Page<Stock> page = new Page<Stock>(pageNo, pageSize);
 		IPage<Stock> pageList = stockService.page(page, queryWrapper);
 		return Result.OK(pageList);
 	}
-	
+	 /**
+	  * 库存汇总查询 - 按物料+仓库汇总
+	  *
+	  * @param stock
+	  * @param pageNo
+	  * @param pageSize
+	  * @param req
+	  * @return
+	  */
+	 @Operation(summary="库存记录表-汇总查询")
+	 @GetMapping(value = "/summary")
+	 public Result<IPage<StockSummaryVo>> querySummaryList(Stock stock,
+														   @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
+														   @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
+														   HttpServletRequest req) {
+		 Map<String, QueryRuleEnum> customeRuleMap = new HashMap<>();
+		 customeRuleMap.put("goodsType", QueryRuleEnum.LIKE_WITH_OR);
+		 customeRuleMap.put("warehouseId", QueryRuleEnum.LIKE_WITH_OR);
+
+		 // 汇总查询不需要货位条件，移除避免干扰
+		// QueryWrapper<Stock> queryWrapper = QueryGenerator.initQueryWrapper(stock, req.getParameterMap(),customeRuleMap);
+
+		 Page<StockSummaryVo> page = new Page<>(pageNo, pageSize);
+		 IPage<StockSummaryVo> pageList = stockService.querySummaryPage(page, stock);
+		 return Result.OK(pageList);
+	 }
+
+	 /**
+	  * 查询指定物料的批次明细（用于弹窗）
+	  *
+	  * @param goodsId
+	  * @param warehouseId
+	  * @param pageNo
+	  * @param pageSize
+	  * @return
+	  */
+	 @Operation(summary="库存记录表-查询物料批次明细")
+	 @GetMapping(value = "/detailByGoods")
+	 public Result<IPage<Stock>> queryDetailByGoods(
+			 @RequestParam(name="goodsId") String goodsId,
+			 @RequestParam(name="warehouseId", required = false) String warehouseId,
+			 @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
+			 @RequestParam(name="pageSize", defaultValue="10") Integer pageSize) {
+		 QueryWrapper<Stock> queryWrapper = new QueryWrapper<>();
+		 queryWrapper.eq("goods_id", goodsId);
+		 if (oConvertUtils.isNotEmpty(warehouseId)) {
+			 queryWrapper.eq("warehouse_id", warehouseId);
+		 }
+		 queryWrapper.gt("quantity", 0); // 只查有库存的
+		 queryWrapper.orderByDesc("stock_in_time");
+
+		 Page<Stock> page = new Page<>(pageNo, pageSize);
+		 IPage<Stock> pageList = stockService.page(page, queryWrapper);
+		 return Result.OK(pageList);
+	 }
+
 	/**
 	 *   添加
 	 *

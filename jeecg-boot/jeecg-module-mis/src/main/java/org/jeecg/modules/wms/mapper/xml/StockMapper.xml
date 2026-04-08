@@ -59,4 +59,44 @@
         </foreach>
 
     </insert>
+    <select id="querySummaryPage" resultType="org.jeecg.modules.wms.vo.StockSummaryVo">
+        SELECT
+        s.goods_id as goodsId,
+        s.goods_code as goodsCode,
+        s.goods_name as goodsName,
+        s.goods_spec as goodsSpec,
+        s.unit as unit,
+        s.goods_type as goodsType,
+        s.warehouse_id as warehouseId,
+        MAX(w.name) as warehouseName,
+        SUM(s.quantity) as totalQty,
+        SUM(s.locked_qty) as totalLockedQty,
+        SUM(s.quantity - s.locked_qty) as availableQty,
+        COUNT(DISTINCT s.batch_no) as batchCount,
+        MIN(s.stock_in_time) as firstInTime,
+        MAX(s.stock_in_time) as lastInTime,
+        MIN(s.expiry_date) as nearestExpiryDate,
+        SUM(CASE WHEN s.expiry_date &lt; CURDATE() THEN 1 ELSE 0 END) as expiredBatchCount,
+        SUM(CASE WHEN s.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as nearExpiryBatchCount
+        FROM mis_stock s
+        LEFT JOIN mis_warehouse w ON s.warehouse_id = w.id AND w.del_flag = '0'
+        <where>
+            s.quantity > 0
+            <if test="stock.goodsCode != null and stock.goodsCode != ''">
+                AND s.goods_code LIKE CONCAT('%', #{stock.goodsCode}, '%')
+            </if>
+            <if test="stock.goodsName != null and stock.goodsName != ''">
+                AND s.goods_name LIKE CONCAT('%', #{stock.goodsName}, '%')
+            </if>
+            <if test="stock.goodsType != null and stock.goodsType != ''">
+                AND s.goods_type = #{stock.goodsType}
+            </if>
+            <if test="stock.warehouseId != null and stock.warehouseId != ''">
+                AND s.warehouse_id = #{stock.warehouseId}
+            </if>
+        </where>
+        GROUP BY s.goods_id, s.goods_code, s.goods_name, s.goods_spec,
+        s.unit, s.goods_type, s.warehouse_id
+        ORDER BY s.goods_code, s.warehouse_id
+    </select>
 </mapper>

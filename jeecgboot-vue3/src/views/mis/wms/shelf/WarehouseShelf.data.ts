@@ -41,7 +41,7 @@ export const searchFormSchema: FormSchema[] = [
 	{
       label: "仓库",
       field: 'warehouseId',
-      component: 'JSelectMultiple',
+      component: 'JDictSelectTag',
       componentProps:{
           dictCode:"mis_warehouse,name,id"
       },
@@ -50,11 +50,28 @@ export const searchFormSchema: FormSchema[] = [
 	{
       label: "区域",
       field: 'areaId',
-      component: 'JSelectMultiple',
-      componentProps:{
-          dictCode:"mis_warehouse_area,name,id"
-      },
+      component: 'JDictSelectTag',
+      // componentProps:{
+      //     dictCode:"mis_warehouse_area,name,id"
+      // },
       //colProps: {span: 6},
+    componentProps: ({ formModel }) => {
+      // 根据仓库ID动态加载对应区域
+      const warehouseId = formModel?.warehouseId;
+      return {
+        // 使用 warehouseId 作为 key，变化时强制重新渲染
+        key: warehouseId || 'empty',
+
+        // 根据是否有 warehouseId 决定 dictCode
+        dictCode: warehouseId
+          ? `mis_warehouse_area,name,id,warehouse_id='${warehouseId}'`
+          : '',  // 空字符串表示不加载任何数据
+
+        // 未选择仓库时的占位提示
+        placeholder: warehouseId ? "请选择区域" : "请先选择仓库",
+      };
+
+    },
  	},
 	{
       label: "货架编码",
@@ -107,8 +124,18 @@ export const formSchema: FormSchema[] = [
       // 根据仓库ID动态加载对应区域
       const warehouseId = formModel?.warehouseId;
       return {
-        dictCode: warehouseId ? `mis_warehouse_area,name,id,warehouse_id='${warehouseId}'` : "mis_warehouse_area,name,id",
+        // 使用 warehouseId 作为 key，变化时强制重新渲染
+        key: warehouseId || 'empty',
+
+        // 根据是否有 warehouseId 决定 dictCode
+        dictCode: warehouseId
+          ? `mis_warehouse_area,name,id,warehouse_id='${warehouseId}'`
+          : '',  // 空字符串表示不加载任何数据
+
+        // 未选择仓库时的占位提示
+        placeholder: warehouseId ? "请选择区域" : "请先选择仓库",
       };
+
     },
     dynamicRules: ({model,schema}) => {
       return [

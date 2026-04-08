@@ -83,6 +83,36 @@ public class ProductionBatch implements Serializable {
     @Dict(dicCode = "mes_batch_status")
     @Schema(description = "状态")
     private String status;
+    /**生产日期*/
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")
+    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @Schema(description = "生产日期")
+    private Date productionDate;
+    /**质保天数*/
+    @Excel(name = "质保天数", width = 15)
+    @Schema(description = "质保天数")
+    private Integer shelfLife;
+    /**失效日期*/
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")
+    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @Schema(description = "失效日期")
+    private Date expiredDate;
+    /**已入库数量*/
+    @Excel(name = "已入库数量", width = 15)
+    @Schema(description = "已入库数量")
+    private Integer inStockQty;
+    /**剩余可入库数量*/
+    @Excel(name = "剩余可入库数量", width = 15)
+    @Schema(description = "剩余可入库数量")
+    private Integer remainQty;
+    /**入库状态 0未入库，1部分入库，2已入库*/
+    @Excel(name = "入库状态", width = 15)
+    @Schema(description = "入库状态")
+    private String inStockStatus;
+    @Excel(name = "质检状态", width = 15, dicCode = "mes_qc_status")
+    @Dict(dicCode = "mes_qc_status")
+    @Schema(description = "质检状态")
+    private String qcStatus;
 	/**是否删除*/
 	@Excel(name = "是否删除", width = 15, dicCode = "del_flag")
     @Dict(dicCode = "del_flag")

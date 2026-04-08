@@ -24,16 +24,15 @@ export const columns: BasicColumn[] = [
     dataIndex: 'warehouseType_dictText'
    },
    {
-    title: '仓库容量',
+    title: '位置管理粒度',
     align:"center",
-    sorter: true,
-    dataIndex: 'capacity'
+    dataIndex: 'locationLevel_dictText'
    },
    {
-    title: '启用库位',
+    title: '总体积',
     align:"center",
     sorter: true,
-    dataIndex: 'locationEnabled_dictText'
+    dataIndex: 'totalVolume'
    },
    {
     title: '状态',
@@ -60,15 +59,6 @@ export const searchFormSchema: FormSchema[] = [
       component: 'JSelectMultiple',
       componentProps:{
           dictCode:"warehouse_type"
-      },
-      //colProps: {span: 6},
- 	},
-	{
-      label: "启用库位",
-      field: 'locationEnabled',
-      component: 'JSelectMultiple',
-      componentProps:{
-          dictCode:"yn"
       },
       //colProps: {span: 6},
  	},
@@ -118,18 +108,23 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '仓库容量',
-    field: 'capacity',
-    component: 'InputNumber',
-  },
-  {
-    label: '启用库位',
-    field: 'locationEnabled',
-    defaultValue: "0",
+    label: '位置管理粒度',
+    field: 'locationLevel',
     component: 'JDictSelectTag',
     componentProps:{
-        dictCode:"yn"
+        dictCode:"wms_location_level",
+        type: "radio"
      },
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入位置管理粒度!'},
+          ];
+     },
+  },
+  {
+    label: '总体积',
+    field: 'totalVolume',
+    component: 'InputNumber',
   },
   {
     label: '状态',
@@ -154,8 +149,8 @@ export const superQuerySchema = {
   warehouseCode: {title: '仓库编码',order: 0,view: 'text', type: 'string',},
   name: {title: '仓库名称',order: 1,view: 'text', type: 'string',},
   warehouseType: {title: '仓库类型',order: 2,view: 'list', type: 'string',dictCode: 'warehouse_type',},
-  capacity: {title: '仓库容量',order: 3,view: 'number', type: 'number',},
-  locationEnabled: {title: '启用库位',order: 4,view: 'list', type: 'string',dictCode: 'yn',},
+  locationLevel: {title: '位置管理粒度',order: 3,view: 'radio', type: 'string',dictCode: 'wms_location_level',},
+  totalVolume: {title: '总体积',order: 4,view: 'number', type: 'number',},
   status: {title: '状态',order: 5,view: 'list', type: 'string',dictCode: 'status',},
 };
 

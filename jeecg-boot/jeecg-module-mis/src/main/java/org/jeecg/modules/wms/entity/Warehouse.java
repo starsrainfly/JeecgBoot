@@ -22,7 +22,7 @@ import lombok.experimental.Accessors;
 /**
  * @Description: 仓库信息
  * @Author: jeecg-boot
- * @Date:   2026-01-15
+ * @Date:   2026-04-06
  * @Version: V1.0
  */
 @Data
@@ -50,15 +50,15 @@ public class Warehouse implements Serializable {
 	@Dict(dicCode = "warehouse_type")
     @Schema(description = "仓库类型")
     private String warehouseType;
-	/**仓库容量*/
-	@Excel(name = "仓库容量", width = 15)
-    @Schema(description = "仓库容量")
-    private BigDecimal capacity;
-	/**启用库位*/
-	@Excel(name = "启用库位", width = 15, dicCode = "yn")
-	@Dict(dicCode = "yn")
-    @Schema(description = "启用库位")
-    private String locationEnabled;
+	/**位置管理粒度*/
+	@Excel(name = "位置管理粒度", width = 15, dicCode = "wms_location_level")
+	@Dict(dicCode = "wms_location_level")
+    @Schema(description = "位置管理粒度")
+    private String locationLevel;
+	/**总体积*/
+	@Excel(name = "总体积", width = 15)
+    @Schema(description = "总体积")
+    private BigDecimal totalVolume;
 	/**状态*/
 	@Excel(name = "状态", width = 15, dicCode = "status")
 	@Dict(dicCode = "status")

@@ -71,7 +71,7 @@
 
         FROM mis_production_material pm
         <!-- 关联库存表，只关联物料ID，不要在这里加查询条件 -->
-        LEFT JOIN mis_stock s ON pm.material_id = s.item_id
+        LEFT JOIN mis_stock s ON pm.material_id = s.goods_id
         <where>
             AND pm.del_flag='0'
             <!-- 1. 生产订单/单号 -->

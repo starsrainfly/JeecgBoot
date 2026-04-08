@@ -12,11 +12,11 @@
     import {computed, defineComponent} from 'vue';
     import {defHttp} from '/@/utils/http/axios';
     import { propTypes } from '/@/utils/propTypes';
-    import {getBpmFormSchema} from '../Warehouse.data';
-    import {saveOrUpdate} from '../Warehouse.api';
+    import {getBpmFormSchema} from '../WarehouseLocation.data';
+    import {saveOrUpdate} from '../WarehouseLocation.api';
     
     export default defineComponent({
-        name: "WarehouseForm",
+        name: "WarehouseLocationForm",
         components:{
             BasicForm
         },
@@ -29,7 +29,7 @@
                 labelWidth: 150,
                 schemas: getBpmFormSchema(props.formData),
                 showActionButtonGroup: false,
-                baseColProps: {span: 24}
+                baseColProps: {span: 8}
             });
 
             const formDisabled = computed(()=>{
@@ -40,7 +40,7 @@
             });
 
             let formData = {};
-            const queryByIdUrl = '/wms/wms/queryById';
+            const queryByIdUrl = '/wms/warehouseLocation/queryById';
             async function initFormData(){
                 let params = {id: props.formData.dataId};
                 const data = await defHttp.get({url: queryByIdUrl, params});

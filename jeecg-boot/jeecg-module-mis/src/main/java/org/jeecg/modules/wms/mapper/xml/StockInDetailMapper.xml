@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.wms.mapper.StockInDetailMapper">
+
+	<delete id="deleteByMainId" parameterType="java.lang.String">
+		DELETE 
+		FROM  mis_stock_in_detail 
+		WHERE
+			 stock_in_id = #{mainId} 	</delete>
+	
+	<select id="selectByMainId" parameterType="java.lang.String" resultType="org.jeecg.modules.wms.entity.StockInDetail">
+		SELECT * 
+		FROM  mis_stock_in_detail
+		WHERE
+			 stock_in_id = #{mainId} 	</select>
+</mapper>

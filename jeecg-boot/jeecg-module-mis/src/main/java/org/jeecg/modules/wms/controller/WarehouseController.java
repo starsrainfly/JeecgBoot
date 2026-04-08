@@ -2,12 +2,18 @@ package org.jeecg.modules.wms.controller;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
+import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.wms.entity.Warehouse;
 import org.jeecg.modules.wms.service.IWarehouseService;
 
@@ -16,10 +22,18 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jeecgframework.poi.excel.ExcelImportUtil;
+import org.jeecgframework.poi.excel.def.NormalExcelConstants;
+import org.jeecgframework.poi.excel.entity.ExportParams;
+import org.jeecgframework.poi.excel.entity.ImportParams;
+import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 import org.jeecg.common.system.base.controller.JeecgController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
+import com.alibaba.fastjson.JSON;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import org.jeecg.common.aspect.annotation.AutoLog;
@@ -28,12 +42,12 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
  /**
  * @Description: 仓库信息
  * @Author: jeecg-boot
- * @Date:   2026-01-15
+ * @Date:   2026-04-06
  * @Version: V1.0
  */
 @Tag(name="仓库信息")
 @RestController
-@RequestMapping("/warehouse/warehouse")
+@RequestMapping("/wms/warehouse")
 @Slf4j
 public class WarehouseController extends JeecgController<Warehouse, IWarehouseService> {
 	@Autowired
@@ -59,7 +73,6 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
         Map<String, QueryRuleEnum> customeRuleMap = new HashMap<>();
         // 自定义多选的查询规则为：LIKE_WITH_OR
         customeRuleMap.put("warehouseType", QueryRuleEnum.LIKE_WITH_OR);
-        customeRuleMap.put("locationEnabled", QueryRuleEnum.LIKE_WITH_OR);
         customeRuleMap.put("status", QueryRuleEnum.LIKE_WITH_OR);
         QueryWrapper<Warehouse> queryWrapper = QueryGenerator.initQueryWrapper(warehouse, req.getParameterMap(),customeRuleMap);
 		Page<Warehouse> page = new Page<Warehouse>(pageNo, pageSize);
@@ -75,7 +88,7 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
 	 */
 	@AutoLog(value = "仓库信息-添加")
 	@Operation(summary="仓库信息-添加")
-	@RequiresPermissions("warehouse:mis_warehouse:add")
+	//@RequiresPermissions("wms:mis_warehouse:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody Warehouse warehouse) {
 		warehouseService.save(warehouse);
@@ -90,7 +103,7 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
 	 */
 	@AutoLog(value = "仓库信息-编辑")
 	@Operation(summary="仓库信息-编辑")
-	@RequiresPermissions("warehouse:mis_warehouse:edit")
+	//@RequiresPermissions("wms:mis_warehouse:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody Warehouse warehouse) {
 		warehouseService.updateById(warehouse);
@@ -105,7 +118,7 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
 	 */
 	@AutoLog(value = "仓库信息-通过id删除")
 	@Operation(summary="仓库信息-通过id删除")
-	@RequiresPermissions("warehouse:mis_warehouse:delete")
+	//@RequiresPermissions("wms:mis_warehouse:delete")
 	@DeleteMapping(value = "/delete")
 	public Result<String> delete(@RequestParam(name="id",required=true) String id) {
 		warehouseService.removeById(id);
@@ -120,7 +133,7 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
 	 */
 	@AutoLog(value = "仓库信息-批量删除")
 	@Operation(summary="仓库信息-批量删除")
-	@RequiresPermissions("warehouse:mis_warehouse:deleteBatch")
+	//@RequiresPermissions("wms:mis_warehouse:deleteBatch")
 	@DeleteMapping(value = "/deleteBatch")
 	public Result<String> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
 		this.warehouseService.removeByIds(Arrays.asList(ids.split(",")));
@@ -150,7 +163,7 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
     * @param request
     * @param warehouse
     */
-    @RequiresPermissions("warehouse:mis_warehouse:exportXls")
+   // @RequiresPermissions("wms:mis_warehouse:exportXls")
     @RequestMapping(value = "/exportXls")
     public ModelAndView exportXls(HttpServletRequest request, Warehouse warehouse) {
         return super.exportXls(request, warehouse, Warehouse.class, "仓库信息");
@@ -163,7 +176,7 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
     * @param response
     * @return
     */
-    @RequiresPermissions("warehouse:mis_warehouse:importExcel")
+   // @RequiresPermissions("wms:mis_warehouse:importExcel")
     @RequestMapping(value = "/importExcel", method = RequestMethod.POST)
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, Warehouse.class);

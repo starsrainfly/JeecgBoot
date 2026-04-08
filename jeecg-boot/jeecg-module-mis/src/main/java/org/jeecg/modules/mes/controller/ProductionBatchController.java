@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLDecoder;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -184,6 +186,12 @@ public class ProductionBatchController {
 		 if(productionBatch==null) {
 			 return Result.error("该批次不存在");
 		 }
+		 //设置生产日期及失效日期
+		 LocalDate productionDate = LocalDate.now();
+		 LocalDate expiredDate = productionDate.plusDays(productionBatch.getShelfLife());
+		 productionBatch.setProductionDate(Date.from(productionDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()));
+		 productionBatch.setExpiredDate(Date.from(expiredDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()));
+
 		 productionBatch.setWeighingStartTime(new Date());
 		 productionBatch.setStatus("WEIGHING");
 		 productionBatchService.updateById(productionBatch);

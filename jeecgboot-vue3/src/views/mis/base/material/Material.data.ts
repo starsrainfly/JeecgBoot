@@ -50,15 +50,20 @@ export const columns: BasicColumn[] = [
     align: 'center',
     dataIndex: 'status_dictText'
    },
+  //  {
+  //   title: '是否为包装物料',
+  //   align: 'center',
+  //   dataIndex: 'isPackage_dictText'
+  //  },
+  // {
+  //   title: '包装类型',
+  //   align:'center',
+  //   dataIndex:'packageType_dictText'
+  //   },
    {
-    title: '是否为包装物料',
-    align: 'center',
-    dataIndex: 'isPackage_dictText'
-   },
-  {
-    title: '包装类型',
+    title: '材料类型',
     align:'center',
-    dataIndex:'packageType_dictText'
+    dataIndex:'materialType_dictText'
     },
    {
     title: '包装容量数值',
@@ -133,15 +138,23 @@ export const searchFormSchema: FormSchema[] = [
       },
       //colProps: {span: 6},
      },
-	{
-      label: "是否为包装物料",
-      field: "isPackage",
-      component: 'JSelectMultiple',
-      componentProps:{
-          dictCode:"yn"
-      },
-      //colProps: {span: 6},
-     },
+	// {
+  //     label: "是否为包装物料",
+  //     field: "isPackage",
+  //     component: 'JSelectMultiple',
+  //     componentProps:{
+  //         dictCode:"yn"
+  //     },
+  //     //colProps: {span: 6},
+  //    },
+  {
+    label: '材料类型',
+    field: "materialType",
+    component:'JSelectMultiple',
+    componentProps:{
+      dictCode: "mdm_material_type"
+    }
+  },
 
 ];
 //表单数据
@@ -259,48 +272,57 @@ export const formSchema: FormSchema[] = [
           ];
      },
   },
+  // {
+  //   label: '是否为包装物料',
+  //   field: 'isPackage',
+  //   defaultValue: "0",
+  //   component: 'JDictSelectTag',
+  //   componentProps:{
+  //       dictCode:"yn"
+  //    },
+  // },
+  // {
+  //   label: '包装类型',
+  //   field: 'packageType',
+  //   component: 'JDictSelectTag',
+  //   componentProps:{
+  //     dictCode:"mdm_package_type"
+  //   },
+  //
+  //  show: ({ values }) => values.isPackage === '1',
+  //   dynamicRules: ({ model }) => {
+  //     // 当 isPackage 为 "1"（是）时，packageType 必填
+  //     if (model.isPackage === '1') {
+  //       return [{ required: true, message: '请选择包装类型！' }];
+  //     }
+  //     return []; // 否则不校验
+  //   },
+  // },
   {
-    label: '是否为包装物料',
-    field: 'isPackage',
-    defaultValue: "0",
-    component: 'JDictSelectTag',
+    label: '材料类型',
+    field: "materialType",
+    component:'JDictSelectTag',
     componentProps:{
-        dictCode:"yn"
-     },
-  },
-  {
-    label: '包装类型',
-    field: 'packageType',
-    component: 'JDictSelectTag',
-    componentProps:{
-      dictCode:"mdm_package_type"
+      dictCode: "mdm_material_type"
     },
 
-   show: ({ values }) => values.isPackage === '1',
-    dynamicRules: ({ model }) => {
-      // 当 isPackage 为 "1"（是）时，packageType 必填
-      if (model.isPackage === '1') {
-        return [{ required: true, message: '请选择包装类型！' }];
-      }
-      return []; // 否则不校验
-    },
   },
   {
     label: '包装容量数值',
     field: 'packageCapacity',
     component: 'InputNumber',
-   show: ({ values }) => values.isPackage === '1' && values.packageType == '0',
+   show: ({ values }) =>  values.materialType == 'INNER_PACK',
     dynamicRules: ({ model }) => {
-      return model.isPackage === '1' && model.packageType == '0' ? [{ required: true, message: '请输入包装容量数值！' }] : [];
+      return  model.materialType == 'INNER_PACK' ? [{ required: true, message: '请输入包装容量数值！' }] : [];
     },
   },
   {
     label: '包装容量单位',
     field: 'packageCapacityUnit',
     component: 'Input',
-   show: ({ values }) => values.isPackage === '1' && values.packageType == '0',
+   show: ({ values }) =>  values.materialType == 'INNER_PACK',
     dynamicRules: ({ model }) => {
-      return model.isPackage === '1' && model.packageType == '0' ? [{ required: true, message: '请输入包装容量单位！' }] : [];
+      return  model.materialType == 'INNER_PACK' ? [{ required: true, message: '请输入包装容量单位！' }] : [];
     },
   },
 
@@ -324,7 +346,8 @@ export const superQuerySchema = {
   isrohs: {title: '是否符合ROHS',order: 7,view: 'number', type: 'number',dictCode: 'yn',},
   remark: {title: '备注',order: 8,view: 'text', type: 'string',},
   status: {title: '状态',order: 9,view: 'list', type: 'string',dictCode: 'status',},
-  isPackage: {title: '是否为包装物料',order: 10,view: 'list', type: 'string',dictCode: 'yn',},
+  // isPackage: {title: '是否为包装物料',order: 10,view: 'list', type: 'string',dictCode: 'yn',},
+  materialType:{title:'物料类型',order:10,view: 'list', type:'string', dictCode:'mdm_material_type'},
   packageCapacity: {title: '包装容量数值',order: 11,view: 'number', type: 'number',},
   packageCapacityUnit: {title: '包装容量单位',order: 12,view: 'text', type: 'string',},
 };

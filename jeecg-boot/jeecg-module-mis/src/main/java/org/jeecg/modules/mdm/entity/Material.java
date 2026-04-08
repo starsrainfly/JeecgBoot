@@ -122,4 +122,9 @@ public class Material implements Serializable {
     @Dict(dicCode = "mdm_package_type")
     @Schema(description = "包装类型")
     private String packageType;
+    /**材料类型*/
+    @Excel(name = "材料类型", width = 15, dicCode = "mdm_material_type")
+    @Dict(dicCode = "mdm_material_type")
+    @Schema(description = "材料类型")
+    private String materialType;
 }

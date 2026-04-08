@@ -40,27 +40,27 @@ public class Stock implements Serializable {
 	/**项目id*/
 	@Excel(name = "项目id", width = 15)
     @Schema(description = "项目id")
-    private String itemId;
+    private String goodsId;
 	/**项目编码*/
 	@Excel(name = "项目编码", width = 15)
     @Schema(description = "项目编码")
-    private String itemCode;
+    private String goodsCode;
 	/**项目名称*/
 	@Excel(name = "项目名称", width = 15)
     @Schema(description = "项目名称")
-    private String itemName;
+    private String goodsName;
 	/**规格型号*/
 	@Excel(name = "规格型号", width = 15)
     @Schema(description = "规格型号")
-    private String specification;
+    private String goodsSpec;
 	/**单位*/
 	@Excel(name = "单位", width = 15)
     @Schema(description = "单位")
     private String unit;
 	/**项目类型*/
-	@Excel(name = "项目类型", width = 15)
-    @Schema(description = "项目类型")
-    private String itemType;
+	@Excel(name = "物品类型", width = 15)
+    @Schema(description = "物品类型")
+    private String goodsType;
 	/**仓库id*/
 	@Excel(name = "仓库id", width = 15)
     @Schema(description = "仓库id")
@@ -81,6 +81,17 @@ public class Stock implements Serializable {
 	@Excel(name = "批次号", width = 15)
     @Schema(description = "批次号")
     private String batchNo;
+    /**生产日期*/
+    @Excel(name = "生产日期", width = 15, format = "yyyy-MM-dd")
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")
+    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @Schema(description = "生产日期")
+    private Date productionDate;
+    /**质保天数*/
+    @Excel(name = "质保天数", width = 15)
+    @Schema(description = "质保天数")
+    private Integer shelfLife;
+
 	/**过期日（根据shelf_life自动计算）*/
 	@Excel(name = "过期日（根据shelf_life自动计算）", width = 15, format = "yyyy-MM-dd")
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")
@@ -99,25 +110,11 @@ public class Stock implements Serializable {
 	@Excel(name = "入库明细id", width = 15)
     @Schema(description = "入库明细id")
     private String inDetailId;
-	/**创建人*/
-    @Schema(description = "创建人")
-    private String createBy;
-	/**创建日期*/
-	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
-    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
-    @Schema(description = "创建日期")
-    private Date createTime;
-	/**更新人*/
-    @Schema(description = "更新人")
-    private String updateBy;
-	/**更新日期*/
-	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
-    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
-    @Schema(description = "更新日期")
-    private Date updateTime;
-	/**所属部门*/
-    @Schema(description = "所属部门")
-    private String sysOrgCode;
+    /**生产批次id*/
+    @Excel(name = "生产批次id", width = 15)
+    @Schema(description = "生产批次id")
+    private String productionBatchId;
+
 	/**辅助单位*/
 	@Excel(name = "辅助单位", width = 15)
     @Schema(description = "辅助单位")
@@ -148,4 +145,29 @@ public class Stock implements Serializable {
 	@Excel(name = "原始入库数量", width = 15)
     @Schema(description = "原始入库数量")
     private BigDecimal originalQty;
+
+    /**质检状态*/
+    @Excel(name = "质检状态", width = 15, dicCode = "mes_qc_status")
+    @Schema(description = "质检状态")
+    private String qcStatus;
+
+    /**创建人*/
+    @Schema(description = "创建人")
+    private String createBy;
+    /**创建日期*/
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "创建日期")
+    private Date createTime;
+    /**更新人*/
+    @Schema(description = "更新人")
+    private String updateBy;
+    /**更新日期*/
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "更新日期")
+    private Date updateTime;
+    /**所属部门*/
+    @Schema(description = "所属部门")
+    private String sysOrgCode;
 }

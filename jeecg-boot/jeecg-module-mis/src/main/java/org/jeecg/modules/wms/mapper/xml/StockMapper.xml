@@ -2,4 +2,61 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.wms.mapper.StockMapper">
 
+    <insert id="batchInsert">
+        INSERT INTO mis_stock(
+            goods_id,
+            goods_code,
+            goods_name,
+            goods_spec,
+            unit,
+            goods_type,
+            warehouse_id,
+            area_id,
+            shelf_id,
+            location_id,
+            batch_no,
+            production_date,
+            shelf_life,
+            expiry_date,
+            quantity,
+            in_detail_id,
+            production_batch_id,
+            create_by,
+            create_time,
+            sys_org_code,
+            supplier_id,
+            supplier_name,
+            stock_in_time,
+            original_qty
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.goodsId},
+            #{item.goodsCode},
+            #{item.goodsName},
+            #{item.goodsSpec},
+            #{item.unit},
+            #{item.goodsType},
+            #{item.warehouseId},
+            #{item.areaId},
+            #{item.shelfId},
+            #{item.locationId},
+            #{item.batchNo},
+            #{item.productionDate},
+            #{item.shelfLife},
+            #{item.expiryDate},
+            #{item.quantity},
+            #{item.inDetailId},
+            #{item.productionBatchId},
+            #{item.createBy},
+            #{item.createTime},
+            #{item.sysOrgCode},
+            #{item.supplierId},
+            #{item.supplierName},
+            #{item.stockInTime},
+            #{item.originalQty}
+            )
+        </foreach>
+
+    </insert>
 </mapper>

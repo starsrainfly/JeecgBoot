@@ -14,4 +14,10 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface StockMapper extends BaseMapper<Stock> {
 
+    /**
+     * 批量插入库存记录
+     * @param stockList 库存记录列表
+     * @return 插入成功的记录数
+     */
+    int batchInsert(@Param("list") List<Stock> stockList);
 }

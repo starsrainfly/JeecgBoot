@@ -372,6 +372,7 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 		batch.setProductCode(order.getProductCode());
 		batch.setProductName(order.getProductName());
 		batch.setPlannedQty(plannedQty);
+		batch.setShelfLife(order.getShelfLife());
 		batch.setStatus("0");
 		return batch;
 	}
@@ -492,7 +493,7 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 		outerMaterial.setRequiredQty(BigDecimal.valueOf(alloc.getCalculatedOuterQty()));
 		outerMaterial.setRemainingQty(BigDecimal.valueOf(alloc.getCalculatedOuterQty()));
 		outerMaterial.setUnit(alloc.getOuterPackageUnit());
-		outerMaterial.setMaterialType("2");
+		outerMaterial.setMaterialType("OUTER_PACK");
 		outerMaterial.setStatus("0");
 		outerMaterial.setOrderDetailId(alloc.getOrderDetailId());
 		productionMaterialService.save(outerMaterial);

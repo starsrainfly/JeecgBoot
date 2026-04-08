@@ -4,9 +4,9 @@
    <BasicTable @register="registerTable" :rowSelection="rowSelection">
      <!--插槽:table标题-->
       <template #tableTitle>
-          <a-button type="primary" v-auth="'wms:mis_warehouse:add'" @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
-          <a-button  type="primary" v-auth="'wms:mis_warehouse:exportXls'" preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
-          <j-upload-button type="primary" v-auth="'wms:mis_warehouse:importExcel'" preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
+          <a-button type="primary" v-auth="'wms:mis_stock_in:add'"  @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
+          <a-button  type="primary" v-auth="'wms:mis_stock_in:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
+          <j-upload-button  type="primary" v-auth="'wms:mis_stock_in:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
           <a-dropdown v-if="selectedRowKeys.length > 0">
               <template #overlay>
                 <a-menu>
@@ -16,7 +16,7 @@
                   </a-menu-item>
                 </a-menu>
               </template>
-              <a-button v-auth="'wms:mis_warehouse:deleteBatch'">批量操作
+              <a-button v-auth="'wms:mis_stock_in:deleteBatch'">批量操作
                 <Icon icon="mdi:chevron-down"></Icon>
               </a-button>
         </a-dropdown>
@@ -32,60 +32,60 @@
       </template>
     </BasicTable>
     <!-- 表单区域 -->
-    <WarehouseModal @register="registerModal" @success="handleSuccess"></WarehouseModal>
+    <StockInModal @register="registerModal" @success="handleSuccess"></StockInModal>
   </div>
 </template>
 
-<script lang="ts" name="warehouse-warehouse" setup>
+<script lang="ts" name="wms-stockIn" setup>
   import {ref, reactive, computed, unref} from 'vue';
   import {BasicTable, useTable, TableAction} from '/@/components/Table';
-  import {useModal} from '/@/components/Modal';
   import { useListPage } from '/@/hooks/system/useListPage'
-  import WarehouseModal from './components/WarehouseModal.vue'
-  import {columns, searchFormSchema, superQuerySchema} from './Warehouse.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './Warehouse.api';
-  import { downloadFile } from '/@/utils/common/renderUtils';
+  import {useModal} from '/@/components/Modal';
+  import StockInModal from './components/MaterialInApproveModal.vue'
+  import {columns, searchFormSchema, superQuerySchema} from './MaterialInApprove.data';
+  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './MaterialInApprove.api';
+  import {downloadFile} from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
   //注册model
   const [registerModal, {openModal}] = useModal();
-  //注册table数据
+   //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
-           title: '仓库信息',
+           title: '入库表',
            api: list,
            columns,
            canResize:false,
            formConfig: {
-              //labelWidth: 120,
-              schemas: searchFormSchema,
-              autoSubmitOnEnter:true,
-              showAdvancedButton:true,
-              fieldMapToNumber: [
-              ],
-              fieldMapToTime: [
-              ],
+                //labelWidth: 120,
+                schemas: searchFormSchema,
+                autoSubmitOnEnter:true,
+                showAdvancedButton:true,
+                fieldMapToNumber: [
+                ],
+                fieldMapToTime: [
+                ],
             },
            actionColumn: {
-               width: 120,
+               width: 140,
                fixed:'right'
-            },
-            beforeFetch: (params) => {
-              return Object.assign(params, queryParam);
-            },
-      },
-       exportConfig: {
-            name:"仓库信息",
+           },
+           beforeFetch: (params) => {
+             return Object.assign(params, queryParam,{isProduct:'0'});
+           },
+        },
+        exportConfig: {
+            name:"入库表",
             url: getExportUrl,
             params: queryParam,
-          },
-          importConfig: {
+        },
+        importConfig: {
             url: getImportUrl,
             success: handleSuccess
-          },
-  })
+        },
+    })
 
   const [registerTable, {reload},{ rowSelection, selectedRowKeys }] = tableContext
 
@@ -101,6 +101,7 @@
     });
     reload();
   }
+
    /**
     * 新增事件
     */
@@ -140,7 +141,7 @@
     * 批量删除事件
     */
   async function batchHandleDelete() {
-     await batchDelete({ids: selectedRowKeys.value}, handleSuccess);
+     await batchDelete({ids: selectedRowKeys.value},handleSuccess);
    }
    /**
     * 成功回调
@@ -148,38 +149,66 @@
   function handleSuccess() {
       (selectedRowKeys.value = []) && reload();
    }
+
+  // 新增：审核事件
+  function handleAudit(record) {
+    openModal(true, {
+      record,
+      isUpdate: true,
+      showFooter: true,
+      isAudit: true, // 传给 Modal 的关键参数
+      title: '入库审核'
+    });
+  }
+
    /**
       * 操作栏
       */
   function getTableAction(record){
-       return [
+     //  record.approveStatus === '1' 代表已审核，此时不能再审核，也不能删除
+     const isAudited = record.approveStatus === '1';
+     return [
          {
            label: '编辑',
            onClick: handleEdit.bind(null, record),
-           auth: 'wms:mis_warehouse:edit'
-         }
-       ]
-   }
-     /**
-        * 下拉操作栏
-        */
-  function getDropDownAction(record){
-       return [
+           auth: 'wms:mis_stock_in:edit',
+           disabled:record.approveStatus === '1'
+         },
          {
-           label: '详情',
-           onClick: handleDetail.bind(null, record),
-         }, {
-           label: '删除',
+           label: '审核',
            popConfirm: {
-             title: '是否确认删除',
-             confirm: handleDelete.bind(null, record),
-             placement: 'topLeft',
+             title: '确认执行审核操作吗？',
+             confirm: handleAudit.bind(null, record),
+             placement: 'topLeft'
            },
-           auth: 'wms:mis_warehouse:delete'
-         }
+           // 只有未审核的记录才显示审核按钮
+           disabled: isAudited
+         },
        ]
    }
 
+
+  /**
+   * 下拉操作栏
+   */
+  function getDropDownAction(record){
+    return [
+      {
+        label: '详情',
+        onClick: handleDetail.bind(null, record),
+      }, {
+        label: '删除',
+        popConfirm: {
+          title: '是否确认删除',
+          confirm: handleDelete.bind(null, record),
+          placement: 'topLeft'
+        },
+        auth: 'wms:mis_stock_in:delete',
+        disabled:record.approveStatus === '1'
+
+      }
+    ]
+  }
 
 
 </script>

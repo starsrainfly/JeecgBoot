@@ -3,6 +3,8 @@ package org.jeecg.modules.wms.service;
 import org.jeecg.modules.wms.entity.Stock;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
  * @Description: 库存记录表
  * @Author: jeecg-boot
@@ -11,4 +13,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IStockService extends IService<Stock> {
 
+    int batchSaveStock(List<Stock> stockList);
 }

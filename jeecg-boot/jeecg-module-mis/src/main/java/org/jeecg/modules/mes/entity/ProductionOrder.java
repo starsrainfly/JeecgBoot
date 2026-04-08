@@ -77,7 +77,10 @@ public class ProductionOrder implements Serializable {
 	@Excel(name = "批次数量", width = 15)
     @Schema(description = "批次数量")
     private Integer batchCount;
-
+    /**质保天数*/
+    @Excel(name = "质保天数", width = 15)
+    @Schema(description = "质保天数")
+    private Integer shelfLife;
 	/**计划开工*/
 	@Excel(name = "计划开工", width = 15, format = "yyyy-MM-dd")
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")

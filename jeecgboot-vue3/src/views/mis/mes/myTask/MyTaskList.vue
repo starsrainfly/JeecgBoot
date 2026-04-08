@@ -52,7 +52,7 @@
 <!--            </a-button>-->
 
 <!--            &lt;!&ndash; 根据工单类型判断是报检还是完成 &ndash;&gt;-->
-<!--            <template v-if="['weighing', 'production', 'package'].includes(record.taskType)">-->
+<!--            <template v-if="['WEIGHING', 'production', 'PACKAGE'].includes(record.taskType)">-->
 <!--              <a-button-->
 <!--                v-if="record.qcRequired === '1' && record.qcStatus === '0'"-->
 <!--                type="primary"-->
@@ -69,7 +69,7 @@
 
 <!--            &lt;!&ndash; 质检任务 &ndash;&gt;-->
 <!--            <a-button-->
-<!--              v-if="record.taskType === 'qc'"-->
+<!--              v-if="record.taskType === 'QC'"-->
 <!--              type="primary"-->
 <!--              size="small"-->
 <!--              @click="handleComplete(record)"-->
@@ -239,10 +239,10 @@
 
 
     switch (record.taskType) {
-      case 'weighing':
+      case 'WEIGHING':
         // openWeighing(true, record);
         // break;
-      case 'production':
+      case 'PRODUCTION':
        // if(actionMode ==='START'){
           openProduction(true, {
             record,
@@ -257,11 +257,11 @@
         // }
 
         break;
-      case 'package':
+      case 'PACKAGE':
         handleStartPackage(record);//只更新操作人员及开始时间
        // openPackage(true, record);
         break;
-      case 'qc':
+      case 'QC':
       //  openQc(true, record);
         break;
     }
@@ -270,10 +270,10 @@
 
   async function handleComplete(record) {
     await completeTask(record);
-    if(record.taskType === 'weighing'){
+    if(record.taskType === 'WEIGHING'){
       await setBatchStatus({id:record.batchId,status:'PRODUCING'});
     }
-    else if(record.taskType === 'package'){
+    else if(record.taskType === 'PACKAGE'){
       await setBatchStatus({id:record.batchId,status:'COMPLETED'});
     }
     createMessage.success('任务已完成');
@@ -292,7 +292,7 @@
       'PENDING': 'default',
       'PROCESSING': 'processing',
       'COMPLETED': 'success',
-      'qc': 'warning',
+      'QC': 'warning',
     };
     return map[status] || 'default';
   }
@@ -310,20 +310,20 @@
 
   function getTaskTypeColor(type: string) {
     const map: Record<string, string> = {
-      'weighing': 'blue',
-      'production': 'green',
-      'package': 'orange',
-      'qc': 'red',
+      'WEIGHING': 'blue',
+      'PRODUCTION': 'green',
+      'PACKAGE': 'orange',
+      'QC': 'red',
     };
     return map[type] || 'default';
   }
 
   function getTaskTypeText(type: string) {
     const map: Record<string, string> = {
-      'weighing': '配料',
-      'production': '生产',
-      'package': '包材',
-      'qc': '质检',
+      'WEIGHING': '配料',
+      'PRODUCTION': '生产',
+      'PACKAGE': '包材',
+      'QC': '质检',
     };
     return map[type] || type;
   }
@@ -341,7 +341,7 @@
       {
         label: '配料',
         color: 'warning',
-        disabled: !((record.status === 'PROCESSING' ) && record.taskType === 'weighing'),
+        disabled: !((record.status === 'PROCESSING' ) && record.taskType === 'WEIGHING'),
         onClick: () => handleWeighing(record),
       },
       {

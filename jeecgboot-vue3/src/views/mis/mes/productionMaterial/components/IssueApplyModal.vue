@@ -291,9 +291,9 @@
 
   // 物料类型枚举
   const MaterialType = {
-    SOURCE: '0',      // 源材料
-    INNER_PKG: '1',   // 内包
-    OUTER_PKG: '2'    // 外包
+    SOURCE: 'RAW',      // 源材料
+    INNER_PACK: 'INNER_PACK',   // 内包
+    OUTER_PACK: 'OUTER_PACK'    // 外包
   };
 
   const applyMode = ref('single');
@@ -348,7 +348,7 @@
   });
 
   const innerPackageSummary = computed(() => {
-    const items = expandedMaterialList.value.filter(i => i.materialType === MaterialType.INNER_PKG);
+    const items = expandedMaterialList.value.filter(i => i.materialType === MaterialType.INNER_PACK);
     const remaining = items.reduce((sum, i) => sum + safeNumber(i.batchRemainingQty), 0);
     const apply = items.reduce((sum, i) => sum + safeNumber(i.batchQuantity), 0);
     return {
@@ -360,7 +360,7 @@
   });
 
   const outerPackageSummary = computed(() => {
-    const items = expandedMaterialList.value.filter(i => i.materialType === MaterialType.OUTER_PKG);
+    const items = expandedMaterialList.value.filter(i => i.materialType === MaterialType.OUTER_PACK);
     const remaining = items.reduce((sum, i) => sum + safeNumber(i.batchRemainingQty), 0);
     const apply = items.reduce((sum, i) => sum + safeNumber(i.batchQuantity), 0);
     return {
@@ -438,8 +438,8 @@
   function getMaterialTypeText(type: number) {
     const map: Record<number, string> = {
       [MaterialType.SOURCE]: '源材料',
-      [MaterialType.INNER_PKG]: '内包',
-      [MaterialType.OUTER_PKG]: '外包'
+      [MaterialType.INNER_PACK]: '内包',
+      [MaterialType.OUTER_PACK]: '外包'
     };
     return map[type] || '未知';
   }
@@ -447,8 +447,8 @@
   function getMaterialTypeColor(type: number) {
     const map: Record<number, string> = {
       [MaterialType.SOURCE]: 'blue',
-      [MaterialType.INNER_PKG]: 'green',
-      [MaterialType.OUTER_PKG]: 'orange'
+      [MaterialType.INNER_PACK]: 'green',
+      [MaterialType.OUTER_PACK]: 'orange'
     };
     return map[type] || 'default';
   }

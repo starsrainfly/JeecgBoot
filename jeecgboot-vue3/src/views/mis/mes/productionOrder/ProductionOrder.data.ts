@@ -237,6 +237,17 @@ export const formSchema: FormSchema[] = [
     defaultValue: 1,
     component: 'InputNumber',
   },
+  {
+    label:'质保天数',
+    field:'shelfLife',
+    defaultValue:180,
+    component:'InputNumber',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入质保天数!'},
+      ];
+    },
+  },
   // {
   //   label: '内包装',
   //   field: 'innerPackageId',

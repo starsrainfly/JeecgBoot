@@ -140,7 +140,6 @@ public class ProductionOrderDetail implements Serializable {
     @Excel(name = "每外包含内包数量", width = 15)
     @Schema(description = "每外包含内包数量")
     private Integer innerPerOuter;
-
 	/**创建人*/
     @Schema(description = "创建人")
     private String createBy;

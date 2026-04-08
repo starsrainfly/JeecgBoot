@@ -18,10 +18,19 @@
         <template v-if="column.dataIndex === 'expiryDate'">
           <a-tag :color="getExpiryColor(text)">{{ formatDate(text) }}</a-tag>
         </template>
+
         <!-- 库存数量 -->
         <template v-if="column.dataIndex === 'quantity'">
           <span>{{ text }} / 锁:{{ record.lockedQty || 0 }}</span>
         </template>
+
+        <!-- 可用数量 - 关键修复：确保匹配到 -->
+        <template v-if="column.dataIndex === 'availableQty'">
+          <span :class="getAvailableQtyClass(record)">
+            {{ calculateAvailable(record) }}
+          </span>
+        </template>
+
         <!-- 质检状态 -->
         <template v-if="column.dataIndex === 'qcStatus'">
           <a-tag :color="getQcStatusColor(record.qcStatus)">
@@ -42,15 +51,13 @@
   const goodsId = ref('');
   const goodsName = ref('');
   const warehouseId = ref('');
-  const tableData = ref([]); // 关键：定义数据源
+  const tableData = ref([]);
 
   const modalTitle = computed(() => {
     return `${goodsName.value || '物料'} - 批次明细`;
   });
 
   const [registerModal, {setModalProps}] = useModalInner((data) => {
-    console.log('Modal received data:', data);
-
     goodsId.value = data.goodsId || '';
     goodsName.value = data.goodsName || '';
     warehouseId.value = data.warehouseId || '';
@@ -64,18 +71,35 @@
     });
   });
 
-  // 关键修复：不使用api配置，手动加载数据
+  // 关键修复：移除 slots 配置，完全依赖 bodyCell 插槽
   const [registerBatchTable] = useTable({
     title: '批次明细',
     columns: [
       { title: '批次号', dataIndex: 'batchNo', width: 120, align: 'center' },
-      { title: '库存数量', dataIndex: 'quantity', width: 120, align: 'center', slots: { customRender: 'quantity' } },
+      { title: '库存数量', dataIndex: 'quantity', width: 120, align: 'center' },
       { title: '锁定数量', dataIndex: 'lockedQty', width: 100, align: 'center' },
+      {
+        title: '可用数量',
+        dataIndex: 'availableQty',
+        width: 90,
+        align: 'center',
+        // 移除 slots 配置，让 bodyCell 统一处理
+      },
       { title: '入库时间', dataIndex: 'stockInTime', width: 150, align: 'center' },
       { title: '生产日期', dataIndex: 'productionDate', width: 110, align: 'center' },
-      { title: '效期至', dataIndex: 'expiryDate', width: 110, align: 'center', slots: { customRender: 'expiryDate' } },
+      {
+        title: '效期至',
+        dataIndex: 'expiryDate',
+        width: 110,
+        align: 'center',
+        // 移除 slots 配置
+      },
       { title: '供应商', dataIndex: 'supplierName', width: 150, ellipsis: true },
-      { title: '货位', dataIndex: 'locationId', width: 150, ellipsis: true,
+      {
+        title: '货位',
+        dataIndex: 'locationId',
+        width: 150,
+        ellipsis: true,
         customRender: ({record}) => {
           const parts = [];
           if (record.warehouseId_dictText) parts.push(record.warehouseId_dictText);
@@ -85,7 +109,13 @@
           return parts.join('-') || record.locationId || '-';
         }
       },
-      { title: '状态', dataIndex: 'qcStatus', width: 100, align: 'center', slots: { customRender: 'qcStatus' } },
+      {
+        title: '状态',
+        dataIndex: 'qcStatus',
+        width: 100,
+        align: 'center',
+        // 移除 slots 配置
+      },
     ],
     pagination: {
       pageSize: 10,
@@ -95,10 +125,8 @@
     showIndexColumn: true,
     size: 'small',
     canResize: false,
-    // 关键：不使用api属性，改用dataSource绑定
   });
 
-  // 手动加载数据
   async function loadTableData() {
     if (!goodsId.value) return;
 
@@ -109,13 +137,8 @@
       pageSize: 10,
     };
 
-    console.log('Loading data with params:', params);
-
     try {
       const res = await getDetailByGoods(params);
-      console.log('API response:', res);
-
-      // 解析数据
       let records = [];
       if (res && res.records) {
         records = res.records;
@@ -123,18 +146,33 @@
         records = res.result.records;
       }
 
-      console.log('Parsed records:', records);
+      // 调试：检查数据
+      console.log('Loaded records:', records);
+      if (records.length > 0) {
+        console.log('First record fields:', Object.keys(records[0]));
+        console.log('Sample record:', records[0]);
+      }
 
-      // 关键：赋值给dataSource
       tableData.value = records;
-
     } catch (error) {
       console.error('Load data error:', error);
       tableData.value = [];
     }
   }
 
-  // 格式化日期
+  function calculateAvailable(record) {
+    const qty = Number(record.quantity) || 0;
+    const locked = Number(record.lockedQty) || 0;
+    return (qty - locked).toFixed(2);
+  }
+
+  function getAvailableQtyClass(record) {
+    const available = Number(calculateAvailable(record));
+    if (available <= 0) return 'text-red-500 font-bold';
+    if (available < Number(record.quantity) * 0.1) return 'text-orange-500';
+    return 'text-green-600';
+  }
+
   function formatDate(date) {
     if (!date) return '-';
     if (typeof date === 'string' && date.length > 10) {
@@ -143,37 +181,57 @@
     return date;
   }
 
-  // 质检状态颜色
+  // 质检状态颜色 - 添加容错
   function getQcStatusColor(status) {
+    const s = String(status || '').toUpperCase();
     const colorMap = {
       'WAIT_CHECK': 'orange',
       'CHECKING': 'blue',
       'PASS': 'green',
       'FAIL': 'red',
     };
-    return colorMap[status] || 'default';
+    return colorMap[s] || 'default';
   }
 
-  // 质检状态文本
+  // 质检状态文本 - 添加容错
   function getQcStatusText(status) {
+    const s = String(status || '').toUpperCase();
     const textMap = {
       'WAIT_CHECK': '待报检',
       'CHECKING': '质检中',
       'PASS': '质检合格',
       'FAIL': '质检不合格',
     };
-    return textMap[status] || status;
+    return textMap[s] || s || '-';
   }
 
-  // 效期颜色
+  // 效期颜色 - 添加容错
   function getExpiryColor(date) {
     if (!date) return 'default';
-    const expiry = new Date(date);
+
+    let expiry;
+    try {
+      expiry = new Date(date);
+      if (isNaN(expiry.getTime())) {
+        return 'default';
+      }
+    } catch (e) {
+      return 'default';
+    }
+
     const now = new Date();
     const diff = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+
     if (diff < 0) return 'red';
     if (diff <= 7) return 'orange';
     if (diff <= 30) return 'blue';
     return 'green';
   }
 </script>
+
+<style lang="less" scoped>
+  .text-red-500 { color: #f5222d; }
+  .text-orange-500 { color: #fa8c16; }
+  .text-green-600 { color: #52c41a; }
+  .font-bold { font-weight: bold; }
+</style>

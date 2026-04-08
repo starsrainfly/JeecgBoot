@@ -9,9 +9,11 @@
     <BasicTable
       @register="registerBatchTable"
       :dataSource="tableData"
+      :loading="loading"
       :canResize="false"
       size="small"
       :rowKey="(record) => record.id"
+      @change="handleTableChange"
     >
       <template #bodyCell="{ column, record, text }">
         <!-- 效期 -->
@@ -24,7 +26,7 @@
           <span>{{ text }} / 锁:{{ record.lockedQty || 0 }}</span>
         </template>
 
-        <!-- 可用数量 - 关键修复：确保匹配到 -->
+        <!-- 可用数量 -->
         <template v-if="column.dataIndex === 'availableQty'">
           <span :class="getAvailableQtyClass(record)">
             {{ calculateAvailable(record) }}
@@ -52,6 +54,14 @@
   const goodsName = ref('');
   const warehouseId = ref('');
   const tableData = ref([]);
+  const loading = ref(false);
+
+  // 分页状态
+  const paginationState = ref({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   const modalTitle = computed(() => {
     return `${goodsName.value || '物料'} - 批次明细`;
@@ -64,6 +74,13 @@
 
     setModalProps({ confirmLoading: false });
 
+    // 重置分页
+    paginationState.value = {
+      current: 1,
+      pageSize: 10,
+      total: 0,
+    };
+
     nextTick(() => {
       if (goodsId.value) {
         loadTableData();
@@ -71,29 +88,16 @@
     });
   });
 
-  // 关键修复：移除 slots 配置，完全依赖 bodyCell 插槽
   const [registerBatchTable] = useTable({
     title: '批次明细',
     columns: [
       { title: '批次号', dataIndex: 'batchNo', width: 120, align: 'center' },
       { title: '库存数量', dataIndex: 'quantity', width: 120, align: 'center' },
       { title: '锁定数量', dataIndex: 'lockedQty', width: 100, align: 'center' },
-      {
-        title: '可用数量',
-        dataIndex: 'availableQty',
-        width: 90,
-        align: 'center',
-        // 移除 slots 配置，让 bodyCell 统一处理
-      },
+      { title: '可用数量', dataIndex: 'availableQty', width: 90, align: 'center' },
       { title: '入库时间', dataIndex: 'stockInTime', width: 150, align: 'center' },
       { title: '生产日期', dataIndex: 'productionDate', width: 110, align: 'center' },
-      {
-        title: '效期至',
-        dataIndex: 'expiryDate',
-        width: 110,
-        align: 'center',
-        // 移除 slots 配置
-      },
+      { title: '效期至', dataIndex: 'expiryDate', width: 110, align: 'center' },
       { title: '供应商', dataIndex: 'supplierName', width: 150, ellipsis: true },
       {
         title: '货位',
@@ -109,17 +113,16 @@
           return parts.join('-') || record.locationId || '-';
         }
       },
-      {
-        title: '状态',
-        dataIndex: 'qcStatus',
-        width: 100,
-        align: 'center',
-        // 移除 slots 配置
-      },
+      { title: '状态', dataIndex: 'qcStatus', width: 100, align: 'center' },
     ],
+    // 关键：使用动态分页配置
     pagination: {
-      pageSize: 10,
+      current: paginationState.value.current,
+      pageSize: paginationState.value.pageSize,
+      total: paginationState.value.total,
+      pageSizeOptions: ['10', '20', '50'],
       showSizeChanger: true,
+      showQuickJumper: true,
       showTotal: (total) => `共 ${total} 条`,
     },
     showIndexColumn: true,
@@ -127,36 +130,62 @@
     canResize: false,
   });
 
+  // 处理表格变化（翻页、改页码）
+  function handleTableChange(pagination, filters, sorter, extra) {
+    console.log('Table change:', pagination);
+
+    paginationState.value.current = pagination.current;
+    paginationState.value.pageSize = pagination.pageSize;
+
+    loadTableData();
+  }
+
+  // 加载数据 - 支持分页
   async function loadTableData() {
     if (!goodsId.value) return;
+
+    loading.value = true;
 
     const params = {
       goodsId: goodsId.value,
       warehouseId: warehouseId.value,
-      pageNo: 1,
-      pageSize: 10,
+      pageNo: paginationState.value.current,
+      pageSize: paginationState.value.pageSize,
     };
+
+    console.log('Loading data with params:', params);
 
     try {
       const res = await getDetailByGoods(params);
+      console.log('API response:', res);
+
       let records = [];
+      let total = 0;
+
+      // 解析数据 - 支持多种返回格式
       if (res && res.records) {
         records = res.records;
+        total = res.total || 0;
       } else if (res && res.result && res.result.records) {
         records = res.result.records;
+        total = res.result.total || 0;
+      } else if (Array.isArray(res)) {
+        // 如果直接返回数组
+        records = res;
+        total = res.length;
       }
 
-      // 调试：检查数据
-      console.log('Loaded records:', records);
-      if (records.length > 0) {
-        console.log('First record fields:', Object.keys(records[0]));
-        console.log('Sample record:', records[0]);
-      }
+      console.log('Parsed records:', records, 'total:', total);
 
       tableData.value = records;
+      paginationState.value.total = total;
+
     } catch (error) {
       console.error('Load data error:', error);
       tableData.value = [];
+      paginationState.value.total = 0;
+    } finally {
+      loading.value = false;
     }
   }
 
@@ -181,7 +210,6 @@
     return date;
   }
 
-  // 质检状态颜色 - 添加容错
   function getQcStatusColor(status) {
     const s = String(status || '').toUpperCase();
     const colorMap = {
@@ -193,7 +221,6 @@
     return colorMap[s] || 'default';
   }
 
-  // 质检状态文本 - 添加容错
   function getQcStatusText(status) {
     const s = String(status || '').toUpperCase();
     const textMap = {
@@ -205,23 +232,17 @@
     return textMap[s] || s || '-';
   }
 
-  // 效期颜色 - 添加容错
   function getExpiryColor(date) {
     if (!date) return 'default';
-
     let expiry;
     try {
       expiry = new Date(date);
-      if (isNaN(expiry.getTime())) {
-        return 'default';
-      }
+      if (isNaN(expiry.getTime())) return 'default';
     } catch (e) {
       return 'default';
     }
-
     const now = new Date();
     const diff = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-
     if (diff < 0) return 'red';
     if (diff <= 7) return 'orange';
     if (diff <= 30) return 'blue';

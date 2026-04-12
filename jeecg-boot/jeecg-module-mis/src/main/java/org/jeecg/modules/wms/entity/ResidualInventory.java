@@ -4,8 +4,10 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.math.BigDecimal;
-
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import org.jeecg.common.constant.ProvinceCityArea;
 import org.jeecg.common.util.SpringContextUtils;
 import lombok.Data;
@@ -20,7 +22,7 @@ import lombok.experimental.Accessors;
 /**
  * @Description: 余料库表
  * @Author: jeecg-boot
- * @Date:   2026-04-11
+ * @Date:   2026-04-12
  * @Version: V1.0
  */
 @Data
@@ -52,18 +54,26 @@ public class ResidualInventory implements Serializable {
 	@Dict(dictTable = "mis_warehouse where del_flag='0' and status='1'", dicText = "name", dicCode = "id")
     @Schema(description = "仓库")
     private String warehouseId;
-    /**原始数量*/
-    @Excel(name = "原始数量", width = 15)
+	/**原始数量*/
+	@Excel(name = "原始数量", width = 15)
     @Schema(description = "原始数量")
     private BigDecimal originalQty;
+	/**单价*/
+	@Excel(name = "单价", width = 15)
+    @Schema(description = "单价")
+    private BigDecimal unitPrice;
+	/**金额*/
+	@Excel(name = "金额", width = 15)
+    @Schema(description = "金额")
+    private BigDecimal totalAmount;
 	/**余料数量*/
 	@Excel(name = "余料数量", width = 15)
     @Schema(description = "余料数量")
     private BigDecimal qty;
-    /**锁定数量*/
-    @Excel(name = "锁定数量", width = 15)
+	/**锁定数量*/
+	@Excel(name = "锁定数量", width = 15)
     @Schema(description = "锁定数量")
-    private BigDecimal LockedQty;
+    private BigDecimal lockedQty;
 	/**生产订单id*/
 	@Excel(name = "生产订单id", width = 15)
     @Schema(description = "生产订单id")
@@ -92,10 +102,10 @@ public class ResidualInventory implements Serializable {
 	@Excel(name = "物料批次号", width = 15)
     @Schema(description = "物料批次号")
     private String materialBatchNo;
-	/**状态 1可用，2锁定，0耗尽*/
-	@Excel(name = "状态 1可用，2锁定，0耗尽", width = 15, dicCode = "wms_residual_status")
+	/**状态 */
+	@Excel(name = "状态 ", width = 15, dicCode = "wms_residual_status")
 	@Dict(dicCode = "wms_residual_status")
-    @Schema(description = "状态 1可用，2锁定，0耗尽")
+    @Schema(description = "状态 ")
     private String status;
 	/**是否删除*/
 	@Excel(name = "是否删除", width = 15)

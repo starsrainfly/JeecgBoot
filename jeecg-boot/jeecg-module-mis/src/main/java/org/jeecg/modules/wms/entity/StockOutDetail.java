@@ -83,6 +83,15 @@ public class StockOutDetail implements Serializable {
     @Excel(name = "超量数量", width = 15)
     @Schema(description = "超量数量")
     private BigDecimal overQty;
+    /**来源类型 NORMAL-正常库存 RESIDUAL-余料库*/
+    @Excel(name = "来源类型 NORMAL-正常库存 RESIDUAL-余料库", width = 15)
+    @Schema(description = "来源类型 NORMAL-正常库存 RESIDUAL-余料库")
+    private String sourceType;
+
+    /**余料id*/
+    @Excel(name = "余料id", width = 15)
+    @Schema(description = "余料id")
+    private String residualId;  // 【新增】
 	/**批次号*/
 	@Excel(name = "批次号", width = 15)
     @Schema(description = "批次号")

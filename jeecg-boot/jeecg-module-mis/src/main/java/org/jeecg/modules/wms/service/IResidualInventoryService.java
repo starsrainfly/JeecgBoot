@@ -4,6 +4,7 @@ import org.jeecg.modules.wms.entity.ResidualInventory;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * @Description: 余料库表
@@ -47,4 +48,9 @@ public interface IResidualInventoryService extends IService<ResidualInventory> {
      * 获取可用余料用于锁定（FIFO第一条）
      */
     ResidualInventory getOrCreateForLock(String materialId, String warehouseId);
+
+    /**
+     * 锁定余料并返回锁定明细列表
+     */
+    List<ResidualInventory> lockQtyAndReturnList(String materialId, BigDecimal qty);
 }

@@ -5,12 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.wms.entity.ResidualInventory;
 import org.jeecg.modules.wms.mapper.ResidualInventoryMapper;
 import org.jeecg.modules.wms.service.IResidualInventoryService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,8 +29,6 @@ public class ResidualInventoryServiceImpl extends ServiceImpl<ResidualInventoryM
     public void createResidual(ResidualInventory residualInventory) {
         this.save(residualInventory);
     }
-
-
 
     @Override
     public BigDecimal getAvailableQty(String materialId, String warehouseId) {
@@ -124,6 +124,43 @@ public class ResidualInventoryServiceImpl extends ServiceImpl<ResidualInventoryM
         return CollectionUtils.isEmpty(list) ? null : list.get(0);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<ResidualInventory> lockQtyAndReturnList(String materialId, BigDecimal qty) {
+        if (qty.compareTo(BigDecimal.ZERO) <= 0) return new ArrayList<>();
+
+        BigDecimal remaining = qty;
+        List<ResidualInventory> lockedList = new ArrayList<>();
+
+        // FIFO锁定
+        List<ResidualInventory> list = baseMapper.selectAvailableByMaterial(materialId, null);
+
+        for (ResidualInventory residual : list) {
+            if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
+
+            BigDecimal available = residual.getQty().subtract(residual.getLockedQty());
+            BigDecimal lock = available.min(remaining);
+
+            int updated = baseMapper.increaseLockQty(residual.getId(), lock);
+            if (updated <= 0) {
+                throw new RuntimeException("余料锁定失败: id=" + residual.getId());
+            }
+
+            // 记录锁定的数量和余料记录
+            ResidualInventory locked = new ResidualInventory();
+            BeanUtils.copyProperties(residual, locked);
+            locked.setLockedQty(lock); // 本次锁定的数量
+            lockedList.add(locked);
+
+            remaining = remaining.subtract(lock);
+        }
+
+        if (remaining.compareTo(BigDecimal.ZERO) > 0) {
+            throw new RuntimeException("余料库可用数量不足: " + remaining);
+        }
+
+        return lockedList;
+    }
 
 
 }

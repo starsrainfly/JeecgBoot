@@ -6,6 +6,7 @@ import org.jeecg.modules.mes.entity.ProductionMaterial;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.mes.vo.ProductionMaterialVo;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -31,4 +32,17 @@ public interface IProductionMaterialService extends IService<ProductionMaterial>
     List<ProductionMaterialVo> getMaterialDetailByBatches(List<String> batchIds, String orderId);
 
     IPage<ProductionMaterialVo> getPageList(Page<ProductionMaterialVo> page, ProductionMaterial productionMaterial);
+
+    boolean increaseIssuedQty(String id, BigDecimal qty);
+
+    /**
+     * 更新锁定数量（传入updateBy）
+     */
+    boolean updateLockQty(String id, BigDecimal lockQty, BigDecimal overQty,
+                          String status, String updateBy);
+    /**
+     * 释放锁定数量（传入updateBy）
+     */
+    boolean unlockQty(String id, BigDecimal unlockQty, BigDecimal unOverQty,
+                      String status, String updateBy);
 }

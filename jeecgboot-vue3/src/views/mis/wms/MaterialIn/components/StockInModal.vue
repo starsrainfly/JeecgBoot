@@ -123,12 +123,12 @@
     //     const exchangeRate = parseFloat(row.exchangeRate || 1);
     //
     //     // 计算金额
-    //     const lineAmount = actualQty * unitPrice * exchangeRate;
-    //     const finalAmount = isNaN(lineAmount) ? 0 : Math.round(lineAmount * 100) / 100;
+    //     const totalAmount = actualQty * unitPrice * exchangeRate;
+    //     const finalAmount = isNaN(totalAmount) ? 0 : Math.round(totalAmount * 100) / 100;
     //
-    //     valuesToSet.lineAmount = finalAmount;
+    //     valuesToSet.totalAmount = finalAmount;
     //     // 同步更新行数据
-    //     row.lineAmount = finalAmount;
+    //     row.totalAmount = finalAmount;
     //   }
     //
     //   // 3. 使用 setValues 批量更新单元格 [^7^]
@@ -149,12 +149,12 @@
     //     // 当申请数量变化时，自动填充实收数量
     //     autoFillActualQty(row);
     //     // 重新计算金额
-    //     row.lineAmount = calculateLineAmount(row);
+    //     row.totalAmount = calculateTotalAmount(row);
     //     needRefresh = true;
     //   }
     //   else if (field === 'actualQty') {
     //     // 当实收数量变化时，重新计算金额
-    //     row.lineAmount = calculateLineAmount(row);
+    //     row.totalAmount = calculateTotalAmount(row);
     //     needRefresh = true;
     //   }
     //   else if (field === 'originalCurrency') {
@@ -162,17 +162,17 @@
     //     const exchangeRate = getExchangeRateByCurrency(cellValue);
     //     row.exchangeRate = exchangeRate;
     //     // 重新计算金额
-    //     row.lineAmount = calculateLineAmount(row);
+    //     row.totalAmount = calculateTotalAmount(row);
     //     needRefresh = true;
     //   }
     //   else if (field === 'exchangeRate') {
     //     // 当汇率变化时，重新计算金额
-    //     row.lineAmount = calculateLineAmount(row);
+    //     row.totalAmount = calculateTotalAmount(row);
     //     needRefresh = true;
     //   }
     //   else if (field === 'unitPrice') {
     //     // 当单价变化时，重新计算金额
-    //     row.lineAmount = calculateLineAmount(row);
+    //     row.totalAmount = calculateTotalAmount(row);
     //     needRefresh = true;
     //   }
     //
@@ -238,9 +238,9 @@
 
       // 3. 重新计算金额（当 申请数量、实收数量、单价、汇率 任一变化时）
       if (['applyQty', 'actualQty', 'unitPrice', 'exchangeRate', 'currency'].includes(field)) {
-        const lineAmount = calculateLineAmount(row);
-        valuesToSet.lineAmount = lineAmount;
-        row.lineAmount = lineAmount;
+        const totalAmount = calculateTotalAmount(row);
+        valuesToSet.totalAmount = totalAmount;
+        row.totalAmount = totalAmount;
       }
 
       // 4. 使用 setValues 批量更新单元格（关键！必须调用才能刷新视图）
@@ -256,7 +256,7 @@
     /**
      * 计算并设置行金额
      */
-    function calculateLineAmount(row) {
+    function calculateTotalAmount(row) {
       // 实收数量优先，如果没有则使用申请数量
       const qty = row.actualQty !== undefined && row.actualQty !== null && row.actualQty !== ''
         ? parseFloat(row.actualQty)
@@ -269,10 +269,10 @@
       console.log("exchangeRate:",exchangeRate)
 
       // 计算：数量 * 单价 * 汇率
-      const lineAmount = qty * unitPrice * exchangeRate;
-      console.log("lineAmount:",lineAmount)
+      const totalAmount = qty * unitPrice * exchangeRate;
+      console.log("totalAmount:",totalAmount)
       // 设置金额（保留2位小数）
-      return isNaN(lineAmount) ? 0 : Math.round(lineAmount * 100) / 100;
+      return isNaN(totalAmount) ? 0 : Math.round(totalAmount * 100) / 100;
     }
     // 自动填充实收数量
      function autoFillActualQty(row) {
@@ -332,7 +332,7 @@
         // 处理子表数据，确保金额已正确计算
         const detailList = allValues.tablesValue[0].tableData.map(item => {
           // 重新计算每一行的金额
-          item.lineAmount = calculateLineAmount(item);
+          item.totalAmount = calculateTotalAmount(item);
           return item;
         });
          return {

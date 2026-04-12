@@ -2,6 +2,7 @@ package org.jeecg.modules.mes.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.mes.entity.ProductionMaterial;
 import org.jeecg.modules.mes.mapper.ProductionMaterialMapper;
 import org.jeecg.modules.mes.service.IProductionMaterialService;
@@ -10,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +23,7 @@ import java.util.List;
  * @Date:   2026-03-09
  * @Version: V1.0
  */
+@Slf4j
 @Service
 public class ProductionMaterialServiceImpl extends ServiceImpl<ProductionMaterialMapper, ProductionMaterial> implements IProductionMaterialService {
 
@@ -47,5 +51,26 @@ public class ProductionMaterialServiceImpl extends ServiceImpl<ProductionMateria
     @Override
     public IPage<ProductionMaterialVo> getPageList(Page<ProductionMaterialVo> page, ProductionMaterial productionMaterial) {
         return productionMaterialMapper.getPageList(page,productionMaterial);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean increaseIssuedQty(String id, BigDecimal qty) {
+        int rows = productionMaterialMapper.increaseIssuedQty(id, qty);
+        if (rows == 0) {
+            throw new RuntimeException("需求表：更新出库数量，可能可用库存不足");
+        }
+        log.info("需求表：requirementId={}, 出库数量={}", id, qty);
+        return true;
+    }
+
+    @Override
+    public boolean updateLockQty(String id, BigDecimal lockQty, BigDecimal overQty, String status, String updateBy) {
+        return productionMaterialMapper.updateLockQty(id, lockQty, overQty, status, updateBy) > 0;
+    }
+
+    @Override
+    public boolean unlockQty(String id, BigDecimal unlockQty, BigDecimal unOverQty, String status, String updateBy) {
+        return productionMaterialMapper.unlockQty(id, unlockQty, unOverQty, status, updateBy) > 0;
     }
 }

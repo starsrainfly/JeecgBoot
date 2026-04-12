@@ -75,6 +75,21 @@
       beforeFetch: (params) => {
         return Object.assign(params, queryParam);
       },
+      //整行加颜色
+      rowClassName: (record) => {
+        const available = parseFloat(record.availableStockQty) || 0;
+        const locked = parseFloat(record.lockedQty) || 0;
+        const realAvailable = available - locked;
+
+        const required = parseFloat(record.requiredQty) || 0;
+        const issued = parseFloat(record.issuedQty) || 0;
+        const realRemaining = required - issued - locked;
+
+        if (locked > 0 && realAvailable < realRemaining) return 'row-warning';
+        if (realAvailable <= 0) return 'row-danger';
+        if (realAvailable < realRemaining) return 'row-warning';
+        return '';
+      },
     },
     exportConfig: {
       name: "物料需求表",
@@ -205,5 +220,20 @@
 <style lang="less" scoped>
   :deep(.ant-picker), :deep(.ant-input-number) {
     width: 100%;
+  }
+  :deep(.row-danger) {
+    background-color: #fff1f0 !important;
+    td {
+      background-color: #fff1f0 !important;
+    }
+  }
+  :deep(.row-warning) {
+    background-color: #fffbe6 !important;
+    td {
+      background-color: #fffbe6 !important;
+    }
+  }
+  :deep(.row-danger:hover), :deep(.row-warning:hover) {
+    background-color: inherit;
   }
 </style>

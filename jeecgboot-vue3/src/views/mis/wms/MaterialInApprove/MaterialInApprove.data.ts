@@ -325,7 +325,7 @@ export const stockInDetailColumns: JVxeColumn[] = [
       key: 'goodsType',
       type: JVxeTypes.select,
       options:[],
-      dictCode:"wms_item_type",
+      dictCode:"mdm_material_type",
       width:"200px",
       placeholder: '请输入${title}',
       //defaultValue:"物料",
@@ -454,7 +454,7 @@ export const stockInDetailColumns: JVxeColumn[] = [
     },
     {
       title: '金额',
-      key: 'lineAmount',
+      key: 'totalAmount',
       type: JVxeTypes.inputNumber,
       width:"200px",
       placeholder: '请输入${title}',
@@ -565,7 +565,7 @@ export const superQuerySchema = {
         currency: {title: '原始交易币种',order: 9,view: 'list', type: 'string',dictTable: "mis_currency where del_flag='0' and status='1'", dictCode: 'currency_code', dictText: 'currency_name',},
         exchangeRate: {title: '汇率',order: 10,view: 'number', type: 'number',dictCode: '',},
         unitPrice: {title: '单价（本币）',order: 11,view: 'number', type: 'number',},
-        lineAmount: {title: '金额',order: 12,view: 'number', type: 'number',},
+        totalAmount: {title: '金额',order: 12,view: 'number', type: 'number',},
         qcStatus: {title: '质检状态',order: 13,view: 'list', type: 'string',dictCode: 'mes_qc_status',},
     }
   },

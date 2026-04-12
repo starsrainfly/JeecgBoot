@@ -35,6 +35,16 @@
       <a-form :model="formData" layout="vertical">
         <a-row :gutter="24">
           <a-col :span="12">
+            <a-form-item label="领料仓库" required>
+              <a-select
+                v-model:value="warehouseId"
+                placeholder="请选择仓库"
+                style="width: 100%"
+                :options="warehouseOptions.map(w => ({ label: w.name, value: w.id }))"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
             <a-form-item label="申请数量" required>
               <a-input-number
                 v-model:value="formData.quantity"
@@ -46,21 +56,13 @@
               />
             </a-form-item>
           </a-col>
-          <a-col :span="12" v-if="formData.quantity > remainingQty">
-            <a-form-item label="备注">
-              <a-input
-                v-model:value="formData.remark"
-                placeholder="超量申请，请填写原因"
-              />
-            </a-form-item>
-          </a-col>
         </a-row>
 
-        <a-row :gutter="24" v-if="formData.quantity <= remainingQty">
+        <a-row :gutter="24">
           <a-col :span="12">
             <a-form-item label="期望领料日期" required>
               <a-date-picker
-                v-model:value="formData.expectDate"
+                v-model:value="formData.requiredDate"
                 valueFormat="YYYY-MM-DD"
                 style="width: 100%"
               />
@@ -118,11 +120,11 @@
       <div v-if="(applyMode === 'order' && batchConfirmed) || applyMode === 'batch'" class="material-section">
         <div class="section-title">
           {{ applyMode === 'order' ? '步骤2：确认物料明细' : '物料汇总明细' }}
+          <a-tag v-if="selectedBatchCount > 0" color="blue">已选{{ selectedBatchCount }}个批次</a-tag>
         </div>
 
         <a-empty v-if="!loading && expandedMaterialList.length === 0" description="暂无待发料物料" />
 
-        <!-- 修复：使用 :data-source 而非 :dataSource，确保响应式更新 -->
         <a-table
           v-else
           :data-source="expandedMaterialList"
@@ -134,19 +136,16 @@
           rowKey="uniqueKey"
         >
           <template #bodyCell="{ column, record: row, index }">
-            <!-- 批次列 -->
             <template v-if="column.key === 'batchNo'">
               <a-tag color="blue" size="small">{{ row.currentBatchNo }}</a-tag>
             </template>
 
-            <!-- 物料类型列 -->
             <template v-else-if="column.key === 'materialType'">
               <a-tag :color="getMaterialTypeColor(row.materialType)">
                 {{ getMaterialTypeText(row.materialType) }}
               </a-tag>
             </template>
 
-            <!-- 申请数量列 - 修复：使用自定义输入确保可编辑 -->
             <template v-else-if="column.key === 'quantity'">
               <div class="quantity-cell">
                 <a-input-number
@@ -161,37 +160,24 @@
               </div>
             </template>
 
-            <!-- 备注列 - 超量时必填 -->
             <template v-else-if="column.key === 'remark'">
               <a-input
-                v-if="row.isOverApply"
                 :value="row.remark"
-                placeholder="超量原因"
-                size="small"
-                style="width: 140px;"
-                @change="(e) => handleRemarkChange(index, e.target.value)"
-              />
-              <a-input
-                v-else
-                :value="row.remark"
-                placeholder="备注"
+                :placeholder="row.isOverApply ? '超量原因必填' : '备注'"
                 size="small"
                 style="width: 140px;"
                 @change="(e) => handleRemarkChange(index, e.target.value)"
               />
             </template>
 
-            <!-- 物料名称 -->
             <template v-else-if="column.key === 'materialName'">
               <span>{{ row.materialName }}</span>
               <a-tag v-if="row.isSameMaterial" color="green" size="small" style="margin-left: 4px;">合并</a-tag>
             </template>
           </template>
 
-          <!-- 修复：按物料类型分组合计 -->
           <template #summary v-if="expandedMaterialList.length > 0">
             <a-table-summary>
-              <!-- 源材料合计 -->
               <a-table-summary-row v-if="sourceMaterialSummary.count > 0">
                 <a-table-summary-cell :col-span="6">
                   <strong>源材料合计</strong>
@@ -205,7 +191,6 @@
                 <a-table-summary-cell></a-table-summary-cell>
               </a-table-summary-row>
 
-              <!-- 内包合计 -->
               <a-table-summary-row v-if="innerPackageSummary.count > 0" style="background-color: #f6ffed;">
                 <a-table-summary-cell :col-span="6">
                   <strong>内包合计</strong>
@@ -219,7 +204,6 @@
                 <a-table-summary-cell></a-table-summary-cell>
               </a-table-summary-row>
 
-              <!-- 外包合计 -->
               <a-table-summary-row v-if="outerPackageSummary.count > 0" style="background-color: #fff7e6;">
                 <a-table-summary-cell :col-span="6">
                   <strong>外包合计</strong>
@@ -233,7 +217,6 @@
                 <a-table-summary-cell></a-table-summary-cell>
               </a-table-summary-row>
 
-              <!-- 总计 -->
               <a-table-summary-row style="background-color: #e6f7ff; font-weight: bold;">
                 <a-table-summary-cell :col-span="6">
                   <strong>总计</strong>
@@ -252,20 +235,43 @@
 
         <a-divider v-if="expandedMaterialList.length > 0" />
 
-        <a-form :model="commonForm" layout="vertical" v-if="expandedMaterialList.length > 0">
+        <a-form :model="formData" layout="vertical" v-if="expandedMaterialList.length > 0">
           <a-row :gutter="24">
-            <a-col :span="12">
+            <a-col :span="8">
+              <a-form-item label="领料仓库" required>
+                <a-select
+                  v-model:value="warehouseId"
+                  placeholder="请选择仓库"
+                  style="width: 100%"
+                  :options="warehouseOptions.map(w => ({ label: w.name, value: w.id }))"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :span="8">
+              <a-form-item label="领料人" required>
+                <a-select
+                  v-model:value="formData.requesterUserId"
+                  placeholder="请选择领料人"
+                  style="width: 100%"
+                  :options="userOptions"
+                  @change="handleRequesterChange"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :span="8">
               <a-form-item label="期望领料日期" required>
                 <a-date-picker
-                  v-model:value="commonForm.expectDate"
+                  v-model:value="formData.requiredDate"
                   valueFormat="YYYY-MM-DD"
                   style="width: 100%"
                 />
               </a-form-item>
             </a-col>
-            <a-col :span="12">
+          </a-row>
+          <a-row :gutter="24">
+            <a-col :span="24">
               <a-form-item label="备注">
-                <a-input v-model:value="commonForm.remark" placeholder="备注" />
+                <a-input v-model:value="formData.remark" placeholder="备注" />
               </a-form-item>
             </a-col>
           </a-row>
@@ -284,106 +290,108 @@
   import { useModalInner, BasicModal } from '/@/components/Modal';
   import { useMessage } from '/@/hooks/web/useMessage';
   import dayjs from 'dayjs';
-  import { getBatchesByOrder, getMaterialSummary, submitStockOutApply } from '../ProductionMaterial.api';
+  import { getBatchesByOrder, getMaterialSummary, submitStockOutApply, getWarehouseList, getSysUserList} from '../ProductionMaterial.api';
+  import {LoaderOptions} from "cz-git";
+
 
   const { createMessage } = useMessage();
   const emit = defineEmits(['success', 'register']);
 
-  // 物料类型枚举
+  // ==================== 物料类型枚举（字符串值）====================
   const MaterialType = {
-    SOURCE: 'RAW',      // 源材料
-    INNER_PACK: 'INNER_PACK',   // 内包
-    OUTER_PACK: 'OUTER_PACK'    // 外包
+    SOURCE: 'RAW',        // 源材料
+    INNER_PACK: 'INNER_PACK',  // 内包
+    OUTER_PACK: 'OUTER_PACK'     // 外包
   };
 
+  // ==================== 基础状态 ====================
   const applyMode = ref('single');
   const record = ref<any>({});
   const records = ref<any[]>([]);
   const orderId = ref('');
   const orderNo = ref('');
   const orderIds = ref<string[]>([]);
+
   const batchList = ref<any[]>([]);
   const selectedBatchIds = ref<string[]>([]);
   const batchConfirmed = ref(false);
   const materialList = ref<any[]>([]);
+  const expandedMaterialList = ref<any[]>([]);
   const loading = ref(false);
 
+  // ==================== 仓库选择 ====================
+  const warehouseId = ref<string>('');
+  const warehouseOptions = ref<any[]>([]);
+  const userOptions = ref<any[]>([]);
+
+  // ==================== 表单数据 ====================
   const formData = ref({
     quantity: 0,
-    expectDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
-    remark: ''
+    requiredDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
+    remark: '',
+    requesterUserId: '',   // 【新增】领料人ID
+    requesterName: ''      // 【新增】领料人姓名
   });
 
-  const commonForm = ref({
-    expectDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
-    remark: ''
-  });
+  // const commonForm = ref({
+  //   requiredDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
+  //   remark: '',
+  //   requesterUserId: '',   // 【新增】领料人ID
+  //   requesterName: ''      // 【新增】领料人姓名
+  // });
 
-  // 浮点数精度处理
-  const safeNumber = (val: any, precision = 6): number => {
-    if (!val || isNaN(Number(val))) return 0;
-    return Number(Number(val).toFixed(precision));
-  };
+  // ==================== 领料人变化处理 ====================
+  function handleRequesterChange(userId: string) {
+    const selected = userOptions.value.find(u => u.value === userId);
+    formData.value.requesterUserId = userId;
+    formData.value.requesterName = selected?.realname || '';
+  }
 
+  // ==================== 计算属性 ====================
   const remainingQty = computed(() => {
     if (!record.value) return 0;
     return safeNumber(record.value.remainingQty) ||
       safeNumber((record.value.requiredQty || 0) - (record.value.issuedQty || 0));
   });
 
-  // 修复：使用 ref 存储展开列表，确保可编辑
-  const expandedMaterialList = ref<any[]>([]);
+  const selectedBatchCount = computed(() => {
+    if (applyMode.value === 'batch') {
+      return records.value.length;
+    }
+    return selectedBatchIds.value.length;
+  });
 
-  // 计算属性：按物料类型分组合计
+  // 【修正】使用字符串比较
   const sourceMaterialSummary = computed(() => {
     const items = expandedMaterialList.value.filter(i => i.materialType === MaterialType.SOURCE);
     const remaining = items.reduce((sum, i) => sum + safeNumber(i.batchRemainingQty), 0);
     const apply = items.reduce((sum, i) => sum + safeNumber(i.batchQuantity), 0);
-    return {
-      count: items.length,
-      remaining,
-      apply,
-      isOver: apply > remaining
-    };
+    return { count: items.length, remaining, apply, isOver: apply > remaining };
   });
 
   const innerPackageSummary = computed(() => {
     const items = expandedMaterialList.value.filter(i => i.materialType === MaterialType.INNER_PACK);
     const remaining = items.reduce((sum, i) => sum + safeNumber(i.batchRemainingQty), 0);
     const apply = items.reduce((sum, i) => sum + safeNumber(i.batchQuantity), 0);
-    return {
-      count: items.length,
-      remaining,
-      apply,
-      isOver: apply > remaining
-    };
+    return { count: items.length, remaining, apply, isOver: apply > remaining };
   });
 
   const outerPackageSummary = computed(() => {
     const items = expandedMaterialList.value.filter(i => i.materialType === MaterialType.OUTER_PACK);
     const remaining = items.reduce((sum, i) => sum + safeNumber(i.batchRemainingQty), 0);
     const apply = items.reduce((sum, i) => sum + safeNumber(i.batchQuantity), 0);
-    return {
-      count: items.length,
-      remaining,
-      apply,
-      isOver: apply > remaining
-    };
+    return { count: items.length, remaining, apply, isOver: apply > remaining };
   });
 
   const totalExpandedRemaining = computed(() => {
-    return expandedMaterialList.value.reduce((sum, item) =>
-      sum + safeNumber(item.batchRemainingQty), 0);
+    return expandedMaterialList.value.reduce((sum, item) => sum + safeNumber(item.batchRemainingQty), 0);
   });
 
   const totalExpandedApply = computed(() => {
-    return expandedMaterialList.value.reduce((sum, item) =>
-      sum + safeNumber(item.batchQuantity), 0);
+    return expandedMaterialList.value.reduce((sum, item) => sum + safeNumber(item.batchQuantity), 0);
   });
 
-  const totalIsOver = computed(() => {
-    return totalExpandedApply.value > totalExpandedRemaining.value;
-  });
+  const totalIsOver = computed(() => totalExpandedApply.value > totalExpandedRemaining.value);
 
   const modalTitle = computed(() => {
     const titles: Record<string, string> = {
@@ -394,7 +402,7 @@
     return titles[applyMode.value] || '出库申请';
   });
 
-  // 表格列定义（增加物料类型列，移除超量原因列改为备注列）
+  // ==================== 表格列定义 ====================
   const detailColumns = [
     { title: '物料编码', dataIndex: 'materialCode', key: 'materialCode', width: 100, fixed: 'left' },
     { title: '物料名称', dataIndex: 'materialName', key: 'materialName', width: 140 },
@@ -407,6 +415,7 @@
     { title: '备注', key: 'remark', width: 160 },
   ];
 
+  // ==================== Modal初始化 ====================
   const [registerModal, { closeModal, setModalProps }] = useModalInner(async (data) => {
     applyMode.value = data.mode || 'single';
     record.value = data.record || {};
@@ -420,12 +429,27 @@
     materialList.value = [];
     expandedMaterialList.value = [];
     batchList.value = [];
-
+    warehouseId.value = '';
+    warehouseOptions.value = [];
+    userOptions.value = [];
+    formData.value = {
+      requiredDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
+      remark: '',
+      requesterUserId: '',
+      requesterName: ''
+    };
     await nextTick();
+
+    await loadWarehouseList();
+    await loadUserOptions();
+
+    if (applyMode.value === 'single' && record.value.warehouseId) {
+      warehouseId.value = record.value.warehouseId;
+    }
 
     if (applyMode.value === 'single') {
       formData.value.quantity = safeNumber(remainingQty.value);
-      formData.value.expectDate = dayjs().add(1, 'day').format('YYYY-MM-DD');
+      formData.value.requiredDate = dayjs().add(1, 'day').format('YYYY-MM-DD');
       formData.value.remark = '';
     } else if (applyMode.value === 'batch') {
       await loadBatchMaterialsFromRecords(records.value);
@@ -434,23 +458,10 @@
     }
   });
 
-  // 物料类型显示
-  function getMaterialTypeText(type: number) {
-    const map: Record<number, string> = {
-      [MaterialType.SOURCE]: '源材料',
-      [MaterialType.INNER_PACK]: '内包',
-      [MaterialType.OUTER_PACK]: '外包'
-    };
-    return map[type] || '未知';
-  }
-
-  function getMaterialTypeColor(type: number) {
-    const map: Record<number, string> = {
-      [MaterialType.SOURCE]: 'blue',
-      [MaterialType.INNER_PACK]: 'green',
-      [MaterialType.OUTER_PACK]: 'orange'
-    };
-    return map[type] || 'default';
+  // ==================== 工具函数 ====================
+  function safeNumber(val: any, precision = 6): number {
+    if (!val || isNaN(Number(val))) return 0;
+    return Number(Number(val).toFixed(precision));
   }
 
   function formatNumber(val: any, precision = 2) {
@@ -458,17 +469,56 @@
     return num.toFixed(precision);
   }
 
-  function handleSingleQtyChange(val: number) {
-    formData.value.quantity = safeNumber(val);
+  // 【修正】字符串参数
+  function getMaterialTypeText(type: string) {
+    const map: Record<string, string> = {
+      [MaterialType.SOURCE]: '源材料',
+      [MaterialType.INNER_PACK]: '内包',
+      [MaterialType.OUTER_PACK]: '外包'
+    };
+    return map[type] || type || '未知';
   }
 
-  // 修复：直接修改数组元素确保响应式
+  function getMaterialTypeColor(type: string) {
+    const map: Record<string, string> = {
+      [MaterialType.SOURCE]: 'blue',
+      [MaterialType.INNER_PACK]: 'green',
+      [MaterialType.OUTER_PACK]: 'orange'
+    };
+    return map[type] || 'default';
+  }
+
+  // ==================== 事件处理 ====================
+  function handleSingleQtyChange(val: number) {
+    formData.value.quantity = safeNumber(val);
+    // 【关键】动态更新单条模式的备注
+    const isOver = formData.value.quantity > remainingQty.value;
+    if (isOver && (!formData.value.remark || formData.value.remark.startsWith('超量申请：'))) {
+      const overQty = safeNumber(formData.value.quantity - remainingQty.value);
+      formData.value.remark = `超量申请：${formatNumber(overQty)}`;
+    } else if (!isOver && formData.value.remark?.startsWith('超量申请：')) {
+      formData.value.remark = '';
+    }
+  }
+
   function handleQtyChange(index: number, val: number) {
     if (index >= 0 && index < expandedMaterialList.value.length) {
       const item = expandedMaterialList.value[index];
       item.batchQuantity = safeNumber(val);
       item.isOverApply = item.batchQuantity > item.batchRemainingQty;
-      // 触发更新
+      // 【关键】动态更新默认备注
+      if (item.isOverApply) {
+        const overQty = safeNumber(item.batchQuantity - item.batchRemainingQty);
+        // 如果用户还没填内容，或之前是自动生成的备注，则更新
+        if (!item.remark || item.remark.startsWith('超量申请：')) {
+          item.remark = `超量申请：${formatNumber(overQty)}`;
+        }
+      } else {
+        // 不超量时，如果备注是自动生成的，则清空
+        if (item.remark && item.remark.startsWith('超量申请：')) {
+          item.remark = '';
+        }
+      }
       expandedMaterialList.value = [...expandedMaterialList.value];
     }
   }
@@ -480,6 +530,30 @@
     }
   }
 
+  // ==================== 数据加载 ====================
+  async function loadWarehouseList() {
+    try {
+      const res = await getWarehouseList({ pageSize: 100 });
+      warehouseOptions.value = res.records || [];
+    } catch (error) {
+      console.error('加载仓库列表失败', error);
+    }
+  }
+
+  async function loadUserOptions(){
+    try{
+      const res = await getSysUserList({pageSize:100, status:'1'});
+      userOptions.value = (res.records || []).map((u: any) => ({
+        label: u.realname + (u.username ? `(${u.username})` : ''),
+        value: u.id,
+        realname: u.realname
+      }));
+    }catch(error){
+      console.error('加载用户列表失败', error);
+    }
+
+  }
+
   async function loadBatchList() {
     if (!orderId.value) {
       createMessage.error('订单ID为空');
@@ -488,23 +562,12 @@
     loading.value = true;
     try {
       const res = await getBatchesByOrder(orderId.value);
-      if (res && Array.isArray(res)) {
-        batchList.value = res.map(item => ({
-          batchId: item.batchId || item.batch_id,
-          batchNo: item.batchNo || item.batch_no,
-          materialCount: item.materialCount || item.material_count || 0,
-          totalRemainingQty: safeNumber(item.totalRemainingQty || item.total_remaining_qty)
-        }));
-      } else if (res && res.records) {
-        batchList.value = res.records.map(item => ({
-          batchId: item.batchId || item.batch_id,
-          batchNo: item.batchNo || item.batch_no,
-          materialCount: item.materialCount || item.material_count || 0,
-          totalRemainingQty: safeNumber(item.totalRemainingQty || item.total_remaining_qty)
-        }));
-      } else {
-        batchList.value = [];
-      }
+      batchList.value = (res.records || res || []).map((item: any) => ({
+        batchId: item.batchId || item.batch_id,
+        batchNo: item.batchNo || item.batch_no,
+        materialCount: item.materialCount || item.material_count || 0,
+        totalRemainingQty: safeNumber(item.totalRemainingQty || item.total_remaining_qty)
+      }));
     } catch (error: any) {
       createMessage.error('加载批次列表失败: ' + (error.message || '未知错误'));
       batchList.value = [];
@@ -545,9 +608,9 @@
         mergeMaterialsFallback(list);
         return;
       }
-      const res = await getMaterialSummary({ materialReqIds: materialReqIds });
+      const res = await getMaterialSummary({ materialReqIds });
       processMaterialData(res);
-    } catch (error: any) {
+    } catch (error) {
       mergeMaterialsFallback(list);
     } finally {
       loading.value = false;
@@ -555,50 +618,81 @@
   }
 
   function processMaterialData(res: any) {
-    let list: any[] = [];
-    if (res && Array.isArray(res)) {
-      list = res;
-    } else if (res && res.records) {
-      list = res.records;
-    } else if (res && res.result) {
-      list = res.result;
-    }
+    let list: any[] = res.records || res.result || res || [];
 
-    // 先处理原始物料数据
     const processedList = list.map((item: any) => {
       const batchNosStr = item.batchNos || item.batch_nos || '';
       const batchIdsStr = item.batchIds || item.batch_ids || '';
       const materialReqIdsStr = item.materialReqIds || item.material_req_ids || '';
-      const remainingQty = safeNumber(item.remainingQty || item.remaining_qty || 0);
 
-      // 获取物料类型：0-源材料，1-内包，2-外包
-      const materialType = item.materialType !== undefined ? item.materialType :
-        (item.material_type !== undefined ? item.material_type : MaterialType.SOURCE);
+      // 【修正】保持原始字符串值 RAW/INNER_PACK/OUTER_PACK
+      const materialType = item.materialType || item.material_type || MaterialType.SOURCE;
 
       return {
         materialId: item.materialId || item.material_id,
         materialCode: item.materialCode || item.material_code,
         materialName: item.materialName || item.material_name,
         materialSpec: item.materialSpec || item.material_spec,
-        materialType: materialType,
+        materialType: materialType,  // 字符串值
         unit: item.unit,
-        remainingQty: remainingQty,
-        quantity: remainingQty,
+        remainingQty: safeNumber(item.remainingQty || item.remaining_qty),
+        quantity: safeNumber(item.remainingQty || item.remaining_qty),
         batchNos: batchNosStr ? batchNosStr.split(',') : [],
         batchIds: batchIdsStr ? batchIdsStr.split(',') : [],
         sourceIds: materialReqIdsStr ? materialReqIdsStr.split(',') : [],
+        warehouseId: item.warehouseId || item.warehouse_id,
         isOverApply: false,
         remark: ''
       };
     });
 
     materialList.value = processedList;
-
-    // 展开为可编辑列表
     expandMaterialList(processedList);
+
+    if (processedList.length > 0 && processedList[0].warehouseId) {
+      warehouseId.value = processedList[0].warehouseId;
+    }
   }
 
-  // 修复：展开物料列表，使用 ref 存储以便编辑
+  function expandMaterialList1(list: any[]) {
+    const expanded: any[] = [];
+    let uniqueIndex = 0;
+
+    list.forEach(item => {
+      const batchIds = item.batchIds || [];
+      const batchNos = item.batchNos || [];
+      const sourceIds = item.sourceIds || [];  // 修复 需求id重复
+
+      if (batchIds.length === 0) return;
+
+      const totalQty = safeNumber(item.quantity);
+
+      batchIds.forEach((batchId: string, idx: number) => {
+        const batchRemaining = safeNumber(item.remainingQty / batchIds.length);
+        const avgQty = safeNumber(totalQty / batchIds.length);
+        const isLast = idx === batchIds.length - 1;
+        const allocQty = isLast
+          ? safeNumber(totalQty - avgQty * (batchIds.length - 1))
+          : avgQty;
+
+        expanded.push({
+          ...item,
+          uniqueKey: `${item.materialId}_${batchId}_${uniqueIndex++}`,
+          currentBatchId: batchId,
+          currentBatchNo: batchNos[idx] || batchId,
+          currentSourceId: sourceIds[idx] || sourceIds[0] || '',  // 【关键】取对应索引的sourceId即 物料需求表id
+          batchQuantity: allocQty,
+          batchRemainingQty: batchRemaining,
+          isSameMaterial: idx > 0,
+          isOverApply: false,
+          remark: ''
+        });
+      });
+    });
+
+    expandedMaterialList.value = expanded;
+  }
+
   function expandMaterialList(list: any[]) {
     const expanded: any[] = [];
     let uniqueIndex = 0;
@@ -606,32 +700,47 @@
     list.forEach(item => {
       const batchIds = item.batchIds || [];
       const batchNos = item.batchNos || [];
+      const sourceIds = item.sourceIds || [];
 
-      if (batchIds.length > 0) {
-        const totalQty = safeNumber(item.quantity);
-        const avgQty = safeNumber(totalQty / batchIds.length);
-        const lastQty = safeNumber(totalQty - avgQty * (batchIds.length - 1));
+      if (batchIds.length === 0) return;
 
-        batchIds.forEach((batchId: string, idx: number) => {
-          const batchRemaining = safeNumber(item.remainingQty / batchIds.length);
+      const totalQty = safeNumber(item.quantity);
+      const avgQty = safeNumber(totalQty / batchIds.length);
 
-          expanded.push({
-            ...item,
-            uniqueKey: `${item.materialId}_${batchId}_${uniqueIndex++}`,
-            currentBatchId: batchId,
-            currentBatchNo: batchNos[idx] || batchId,
-            batchQuantity: idx === batchIds.length - 1 ? lastQty : avgQty,
-            batchRemainingQty: batchRemaining,
-            isSameMaterial: idx > 0,
-            isOverApply: false,
-            remark: ''
-          });
+      batchIds.forEach((batchId: string, idx: number) => {
+        const isLast = idx === batchIds.length - 1;
+        const allocQty = isLast
+          ? safeNumber(totalQty - avgQty * (batchIds.length - 1))
+          : avgQty;
+
+        const batchRemaining = safeNumber(item.remainingQty / batchIds.length);
+        const isOverApply = allocQty > batchRemaining;
+
+        // 【关键】初始化时就设置默认备注
+        let defaultRemark = '';
+        if (isOverApply) {
+          const overQty = safeNumber(allocQty - batchRemaining);
+          defaultRemark = `超量申请：${formatNumber(overQty)}`;
+        }
+
+        expanded.push({
+          ...item,
+          uniqueKey: `${item.materialId}_${batchId}_${uniqueIndex++}`,
+          currentBatchId: batchId,
+          currentBatchNo: batchNos[idx] || batchId,
+          currentSourceId: sourceIds[idx] || sourceIds[0] || '',
+          batchQuantity: allocQty,
+          batchRemainingQty: batchRemaining,//safeNumber(item.remainingQty / batchIds.length),
+          isSameMaterial: idx > 0,
+          isOverApply: isOverApply,//allocQty > safeNumber(item.remainingQty / batchIds.length),
+          remark: defaultRemark  // 【关键】设置默认备注
         });
-      }
+      });
     });
 
     expandedMaterialList.value = expanded;
   }
+
 
   function mergeMaterialsFallback(list: any[]) {
     const map = new Map();
@@ -641,8 +750,6 @@
       if (remaining <= 0) return;
 
       const key = item.materialId || item.material_code;
-      const materialType = item.materialType !== undefined ? item.materialType :
-        (item.material_type !== undefined ? item.material_type : MaterialType.SOURCE);
 
       if (map.has(key)) {
         const exist = map.get(key);
@@ -657,13 +764,14 @@
           materialCode: item.materialCode || item.material_code,
           materialName: item.materialName || item.material_name,
           materialSpec: item.materialSpec || item.material_spec,
-          materialType: materialType,
+          materialType: item.materialType || item.material_type || MaterialType.SOURCE,
           unit: item.unit,
           remainingQty: remaining,
           quantity: remaining,
           sourceIds: [item.id],
           batchIds: [item.batchId || item.batch_id],
           batchNos: [item.batchNo || item.batch_no],
+          warehouseId: item.warehouseId || item.warehouse_id,
           isOverApply: false,
           remark: ''
         });
@@ -673,6 +781,10 @@
     const mergedList = Array.from(map.values());
     materialList.value = mergedList;
     expandMaterialList(mergedList);
+
+    if (mergedList.length > 0 && mergedList[0].warehouseId) {
+      warehouseId.value = mergedList[0].warehouseId;
+    }
   }
 
   function resetBatchSelect() {
@@ -682,84 +794,31 @@
     expandedMaterialList.value = [];
   }
 
+  // ==================== 提交处理 ====================
   async function handleSubmit() {
     try {
+      if (!warehouseId.value) {
+        createMessage.error('请选择领料仓库');
+        return;
+      }
+      if (!formData.value.requesterUserId) {
+        createMessage.error('请选择领料人');
+        return;
+      }
       let submitData: any = {};
 
       if (applyMode.value === 'single') {
-        if (formData.value.quantity <= 0) {
-          createMessage.error('申请数量必须大于0');
-          return;
-        }
-
-        submitData = {
-          billType: 'production_issue',
-          businessStatus: 'pending',
-          productionOrderId: record.value.orderId,
-          productionOrderCode: record.value.orderNo,
-          expectDate: formData.value.expectDate,
-          remark: formData.value.remark,
-          detailList: [{
-            productionOrderMaterialId: record.value.id,
-            productionBatchId: record.value.batchId,
-            stockItemCode: record.value.materialCode,
-            itemName: record.value.materialName,
-            specification: record.value.materialSpec,
-            unit: record.value.unit,
-            quantity: safeNumber(formData.value.quantity),
-            isOverApply: formData.value.quantity > remainingQty.value
-          }]
-        };
+        submitData = buildSingleSubmitData();
       } else {
-        const zeroItems = expandedMaterialList.value.filter((i: any) => safeNumber(i.batchQuantity) <= 0);
-        if (zeroItems.length === expandedMaterialList.value.length) {
-          createMessage.error('请至少申请一个物料');
-          return;
+        const batchCount = selectedBatchCount.value;
+        if (batchCount === 1) {
+          submitData = buildSingleBatchSubmitData();
+        } else {
+          submitData = buildMultiBatchSubmitData();
         }
-
-        // 按物料ID分组
-        const materialGroup = new Map();
-        expandedMaterialList.value.forEach((item: any) => {
-          if (safeNumber(item.batchQuantity) <= 0) return;
-
-          if (!materialGroup.has(item.materialId)) {
-            materialGroup.set(item.materialId, {
-              ...item,
-              batchDetails: []
-            });
-          }
-          const group = materialGroup.get(item.materialId);
-          group.batchDetails.push({
-            batchId: item.currentBatchId,
-            batchNo: item.currentBatchNo,
-            quantity: safeNumber(item.batchQuantity),
-            isOverApply: item.isOverApply,
-            remark: item.remark || ''
-          });
-        });
-
-        submitData = {
-          billType: 'production_issue',
-          businessStatus: 'pending',
-          productionOrderId: orderId.value || orderIds.value[0],
-          productionOrderCode: orderNo.value,
-          expectDate: commonForm.value.expectDate,
-          remark: commonForm.value.remark,
-          detailList: Array.from(materialGroup.values()).map((item: any) => ({
-            productionBatchId: item.batchDetails[0].batchId,
-            stockItemCode: item.materialCode,
-            itemName: item.materialName,
-            specification: item.materialSpec,
-            unit: item.unit,
-            quantity: safeNumber(item.batchDetails.reduce((sum: number, bd: any) => sum + bd.quantity, 0)),
-            isOverApply: item.batchDetails.some((bd: any) => bd.isOverApply),
-            remark: item.batchDetails.find((bd: any) => bd.remark)?.remark || '',
-            productionOrderMaterialIds: item.sourceIds?.join(','),
-            batchDetailList: item.batchDetails
-          }))
-        };
       }
 
+      console.log('提交数据:', submitData);
       await submitStockOutApply(submitData);
       createMessage.success('出库申请提交成功，等待仓库审核');
       emit('success');
@@ -767,6 +826,209 @@
     } catch (error: any) {
       createMessage.error('提交失败：' + error.message);
     }
+  }
+
+  // 单条申请
+  function buildSingleSubmitData(): any {
+    if (formData.value.quantity <= 0) {
+      throw new Error('申请数量必须大于0');
+    }
+
+    const isOver = formData.value.quantity > remainingQty.value;
+    const overQty = isOver ? safeNumber(formData.value.quantity - remainingQty.value) : 0;
+    // 自动生成备注兜底：如果用户没填且超量，自动生成
+    const remark = formData.value.remark || (isOver ? `超量申请：${formatNumber(overQty)}` : '');
+    return {
+      stockOutType: 'PRODUCTION',
+      status: 'APPLY',
+      warehouseId: warehouseId.value,
+      sourceOrderId: record.value.orderId,
+      sourceOrderCode: record.value.orderNo,
+      requiredDate: formData.value.requiredDate,
+      remark: formData.value.remark,
+      stockOutDetailList: [{
+        goodsId: record.value.materialId,
+        goodsCode: record.value.materialCode,
+        goodsName: record.value.materialName,
+        goodsSpec: record.value.materialSpec,
+        // 【修正】保持字符串值 RAW/INNER_PACK/OUTER_PACK
+        goodsType: record.value.materialType || MaterialType.SOURCE,
+        unit: record.value.unit,
+        applyQty: safeNumber(formData.value.quantity),
+        actualQty: safeNumber(formData.value.quantity),
+        overFlag: isOver ? '1' : '0',
+        overQty: overQty,
+        productionBatchId: record.value.batchId,
+        requirementId: record.value.id,
+        remark: remark
+      }]
+    };
+  }
+
+  // 单批次
+  function buildSingleBatchSubmitData(): any {
+    const validItems = expandedMaterialList.value.filter(
+      (i: any) => safeNumber(i.batchQuantity) > 0
+    );
+
+    if (validItems.length === 0) {
+      throw new Error('请至少申请一个物料');
+    }
+
+    const firstItem = validItems[0];
+    const batchId = firstItem.currentBatchId;
+
+    return {
+      stockOutType: 'PRODUCTION',
+      status: 'APPLY',
+      warehouseId: warehouseId.value,
+      requesterUserId: formData.value.requesterUserId,  // 【新增】
+      requesterName: formData.value.requesterName,      // 【新增】
+      sourceOrderId: orderId.value || orderIds.value[0],
+      sourceOrderCode: orderNo.value,
+      requiredDate: formData.value.requiredDate,
+      remark: formData.value.remark,
+      stockOutDetailList: validItems.map((item: any) => {
+        const isOver = item.batchQuantity > item.batchRemainingQty;
+
+        return {
+          goodsId: item.materialId,
+          goodsCode: item.materialCode,
+          goodsName: item.materialName,
+          goodsSpec: item.materialSpec,
+          goodsType: item.materialType,  // 字符串值
+          unit: item.unit,
+          applyQty: safeNumber(item.batchQuantity),
+          actualQty: safeNumber(item.batchQuantity),
+          overFlag: isOver ? '1' : '0',
+          overQty: isOver ? safeNumber(item.batchQuantity - item.batchRemainingQty) : 0,
+          productionBatchId: batchId,
+          requirementId: item.sourceIds?.[0],
+          remark: item.remark || (isOver ? `超量申请：${formatNumber(safeNumber(item.batchQuantity - item.batchRemainingQty))}` : '')
+        };
+      })
+    };
+  }
+
+
+  function buildMultiBatchSubmitData(): any {
+    const validItems = expandedMaterialList.value.filter(
+      (i: any) => safeNumber(i.batchQuantity) > 0
+    );
+
+    if (validItems.length === 0) {
+      throw new Error('请至少申请一个物料');
+    }
+
+    return {
+      stockOutType: 'PRODUCTION',
+      status: 'APPLY',
+      warehouseId: warehouseId.value,
+      requesterUserId: formData.value.requesterUserId,  // 【新增】
+      requesterName: formData.value.requesterName,      // 【新增】
+      sourceOrderId: orderId.value || orderIds.value[0],
+      sourceOrderCode: orderNo.value,
+      requiredDate: formData.value.requiredDate,
+      remark: formData.value.remark,
+      // 每行独立，不合并
+      stockOutDetailList: validItems.map((item: any) => ({
+
+        goodsId: item.materialId,
+        goodsCode: item.materialCode,
+        goodsName: item.materialName,
+        goodsSpec: item.materialSpec,
+        goodsType: item.materialType,
+        unit: item.unit,
+        applyQty: safeNumber(item.batchQuantity),
+        actualQty: safeNumber(item.batchQuantity),
+        overFlag: item.isOverApply ? '1' : '0',           // 【加】超量标识
+        overQty: item.isOverApply                       // 【加】超量数量
+          ? safeNumber(item.batchQuantity - item.batchRemainingQty)
+          : 0,
+        productionBatchId: item.currentBatchId,
+        requirementId: item.currentSourceId,
+        remark: item.remark || (item.isOverApply ? `超量申请：${formatNumber(safeNumber(item.batchQuantity - item.batchRemainingQty))}` : '')
+      }))
+    };
+  }
+  // 多批次合并
+  function buildMultiBatchSubmitData1(): any {
+    const validItems = expandedMaterialList.value.filter(
+      (i: any) => safeNumber(i.batchQuantity) > 0
+    );
+
+    if (validItems.length === 0) {
+      throw new Error('请至少申请一个物料');
+    }
+
+    const materialGroup = new Map();
+    validItems.forEach((item: any) => {
+      if (!materialGroup.has(item.materialId)) {
+        materialGroup.set(item.materialId, {
+          materialId: item.materialId,
+          materialCode: item.materialCode,
+          materialName: item.materialName,
+          materialSpec: item.materialSpec,
+          materialType: item.materialType,  // 字符串值
+          unit: item.unit,
+          remainingQty: 0,
+          batchDetails: []
+        });
+      }
+
+      const group = materialGroup.get(item.materialId);
+      group.remainingQty += item.batchRemainingQty;
+      group.batchDetails.push({
+        batchId: item.currentBatchId,
+        batchNo: item.currentBatchNo,
+        quantity: safeNumber(item.batchQuantity),
+       // sourceId: item.sourceIds?.[0],
+        sourceId: item.currentSourceId,  // 【改】原来是 item.sourceIds?.[0]
+        remark: item.remark || ''
+      });
+    });
+
+    return {
+      stockOutType: 'PRODUCTION',
+      status: 'APPLY',
+      warehouseId: warehouseId.value,
+      sourceOrderId: orderId.value || orderIds.value[0],
+      sourceOrderCode: orderNo.value,
+      requiredDate: formData.value.requiredDate,
+      remark: formData.value.remark,
+      stockOutDetailList: Array.from(materialGroup.values()).map((item: any) => {
+        const totalApply = safeNumber(
+          item.batchDetails.reduce((sum: number, bd: any) => sum + bd.quantity, 0)
+        );
+        const isOver = totalApply > item.remainingQty;
+
+        const remarks: string[] = [];
+        if (isOver) {
+          remarks.push(`超量申请: ${(totalApply - item.remainingQty).toFixed(2)}`);
+        }
+        const detailRemarks = item.batchDetails
+          .map((bd: any) => bd.remark)
+          .filter((r: string) => r && r !== '超量申请');
+        if (detailRemarks.length > 0) {
+          remarks.push(detailRemarks.join(';'));
+        }
+
+        return {
+          goodsId: item.materialId,
+          goodsCode: item.materialCode,
+          goodsName: item.materialName,
+          goodsSpec: item.materialSpec,
+          goodsType: item.materialType,  // 字符串值
+          unit: item.unit,
+          applyQty: totalApply,
+          actualQty: totalApply,
+          productionBatchId: item.batchDetails.map((bd: any) => bd.batchId).join(','),
+         // batchNo: item.batchDetails.map((bd: any) => bd.batchNo).join(','),
+          requirementId: item.batchDetails.map((bd: any) => bd.sourceId).filter(Boolean).join(','),
+          remark: remarks.join(' | ')
+        };
+      })
+    };
   }
 
   function handleCancel() {

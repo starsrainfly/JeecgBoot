@@ -99,4 +99,82 @@
         s.unit, s.goods_type, s.warehouse_id
         ORDER BY s.goods_code, s.warehouse_id
     </select>
+
+    <!-- FIFO查询可用库存（按入库时间升序） -->
+    <select id="selectAvailableStockByGoods" resultType="org.jeecg.modules.wms.entity.Stock">
+        SELECT
+        id,
+        goods_id,
+        goods_code,
+        goods_name,
+        goods_spec,
+        unit,
+        warehouse_id,
+        area_id,
+        shelf_id,
+        location_id,
+        batch_no,
+        production_date,
+        shelf_life,
+        expiry_date,
+        quantity,
+        locked_qty,
+        in_detail_id,
+        production_batch_id,
+        supplier_id,
+        supplier_name,
+        stock_in_time,
+        original_qty
+        FROM mis_stock
+        WHERE del_flag = '0'
+        AND warehouse_id = #{warehouseId}
+        AND goods_id = #{goodsId}
+        AND (quantity - locked_qty) > 0
+        <if test="batchNo != null and batchNo != ''">
+            AND batch_no = #{batchNo}
+        </if>
+        ORDER BY stock_in_time ASC, create_time ASC
+    </select>
+
+    <!-- 增加锁定数量（申请时） -->
+    <update id="increaseLockQty">
+        UPDATE mis_stock
+        SET locked_qty = locked_qty + #{lockQty},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND (quantity - locked_qty) >= #{lockQty}
+    </update>
+
+    <!-- 确认出库：扣减库存并释放锁定（审核时） -->
+    <update id="confirmDeduct">
+        UPDATE mis_stock
+        SET quantity = quantity - #{qty},
+            locked_qty = locked_qty - #{qty},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND locked_qty >= #{qty}
+    </update>
+
+    <!-- 释放锁定（取消/驳回时） -->
+    <update id="releaseLockQty">
+        UPDATE mis_stock
+        SET locked_qty = locked_qty - #{lockQty},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND locked_qty >= #{lockQty}
+    </update>
+
+    <!-- 查询库存占用情况 -->
+    <select id="selectStockOccupancy" resultType="java.util.HashMap">
+        SELECT
+            SUM(quantity) as totalQty,
+            SUM(locked_qty) as lockedQty,
+            SUM(quantity - locked_qty) as availableQty,
+            COUNT(DISTINCT id) as batchCount
+        FROM mis_stock
+        WHERE warehouse_id = #{warehouseId}
+          AND goods_id = #{goodsId}
+          AND quantity > 0
+    </select>
+
 </mapper>

@@ -13,7 +13,10 @@ enum Api {
   exportXls = '/mes/productionMaterial/exportXls',
   getBatchesByOrder = '/mes/productionMaterial/getBatchesByOrder',
   getMaterialSummary = '/mes/productionMaterial/getMaterialSummary',
-  submitStockOutApply = '/mes/misStockOut/submitApply',
+  submitStockOutApply = '/wms/stockOut/apply',
+  getWarehouseList = '/wms/warehouse/list',
+  sysUserist = '/sys/user/list',
+
 }
 /**
  * 导出api
@@ -30,6 +33,15 @@ export const getImportUrl = Api.importExcel;
  */
 export const list = (params) =>
   defHttp.get({url: Api.list, params});
+/**
+ * 得到仓库列表
+ * @param params
+ */
+export const getWarehouseList = (params) =>
+  defHttp.get({url:Api.getWarehouseList,params});
+
+export const getSysUserList = (params) =>
+  defHttp.get({url:Api.sysUserist, params});
 
 /**
  * 删除单个

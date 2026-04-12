@@ -1,5 +1,6 @@
 package org.jeecg.modules.mes.mapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -36,4 +37,24 @@ public interface ProductionMaterialMapper extends BaseMapper<ProductionMaterial>
 
     IPage<ProductionMaterialVo> getPageList(@Param("page") Page<ProductionMaterialVo> page,
                                             @Param("productionMaterial") ProductionMaterial productionMaterial);
+
+    int increaseIssuedQty(@Param("id") String id, @Param("qty") BigDecimal qty);
+
+    /**
+     * 更新锁定数量（XML实现）
+     */
+    int updateLockQty(@Param("id") String id,
+                      @Param("lockQty") BigDecimal lockQty,
+                      @Param("overQty") BigDecimal overQty,
+                      @Param("status") String status,
+                      @Param("updateBy") String updateBy);
+
+    /**
+     * 释放锁定数量（XML实现）
+     */
+    int unlockQty(@Param("id") String id,
+                  @Param("unlockQty") BigDecimal unlockQty,
+                  @Param("unOverQty") BigDecimal unOverQty,
+                  @Param("status") String status,
+                  @Param("updateBy") String updateBy);
 }

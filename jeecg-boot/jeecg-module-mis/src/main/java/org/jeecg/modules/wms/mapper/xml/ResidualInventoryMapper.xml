@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.wms.mapper.ResidualInventoryMapper">
+    <!-- 查询可用余料总量（SUM） -->
+    <select id="sumAvailableQty" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(qty - locked_qty), 0)
+        FROM mis_residual_inventory
+        WHERE material_id = #{materialId}
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+        AND status IN ('AVAILABLE', 'LOCKED')
+        AND (qty - locked_qty) > 0
+        AND del_flag = '0'
+    </select>
+
+    <!-- FIFO查询可用余料列表（用于锁定） -->
+    <select id="selectAvailableByMaterial" resultType="org.jeecg.modules.wms.entity.ResidualInventory">
+        SELECT * FROM mis_residual_inventory
+        WHERE material_id = #{materialId}
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+        AND status IN ('AVAILABLE', 'LOCKED')
+        AND (qty - locked_qty) > 0
+        AND del_flag = '0'
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- LIFO查询被锁定的余料（用于释放锁定） -->
+    <select id="selectLockedByMaterial" resultType="org.jeecg.modules.wms.entity.ResidualInventory">
+        SELECT * FROM mis_residual_inventory
+        WHERE material_id = #{materialId}
+          AND locked_qty > 0
+          AND del_flag = '0'
+        ORDER BY update_time DESC
+    </select>
+
+    <!-- 根据出库明细ID查询 -->
+    <select id="selectByStockOutDetailId" resultType="org.jeecg.modules.wms.entity.ResidualInventory">
+        SELECT * FROM mis_residual_inventory
+        WHERE stock_out_detail_id = #{stockOutDetailId}
+          AND del_flag = '0'
+            LIMIT 1
+    </select>
+
+    <!-- 增加锁定数量（原子操作） -->
+    <update id="increaseLockQty">
+        UPDATE mis_residual_inventory
+        SET locked_qty = locked_qty + #{lockQty},
+            status = CASE
+                         WHEN (qty - locked_qty - #{lockQty}) &lt;= 0 THEN 'LOCKED'
+                         ELSE status
+                END,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND (qty - locked_qty) >= #{lockQty}
+          AND del_flag = '0'
+    </update>
+
+    <!-- 减少锁定数量（原子操作） -->
+    <update id="decreaseLockQty">
+        UPDATE mis_residual_inventory
+        SET locked_qty = locked_qty - #{unlockQty},
+            status = CASE
+                         WHEN (locked_qty - #{unlockQty}) &lt;= 0 THEN 'AVAILABLE'
+                         ELSE status
+                END,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND locked_qty >= #{unlockQty}
+          AND del_flag = '0'
+    </update>
+
+    <!-- 扣减数量（实际出库，原子操作） -->
+    <update id="deductQty">
+        UPDATE mis_residual_inventory
+        SET qty = qty - #{deductQty},
+            locked_qty = locked_qty - #{deductQty},
+            status = CASE
+                         WHEN (qty - #{deductQty}) &lt;= 0 THEN 'USED'
+                         WHEN (locked_qty - #{deductQty}) &lt;= 0 THEN 'AVAILABLE'
+                         ELSE 'LOCKED'
+                END,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND qty >= #{deductQty}
+          AND locked_qty >= #{deductQty}
+          AND del_flag = '0'
+    </update>
+
+</mapper>

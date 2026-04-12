@@ -11,15 +11,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
-
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 /**
  * @Description: 库存记录表
  * @Author: jeecg-boot
  * @Date:   2026-03-31
  * @Version: V1.0
  */
+@Slf4j
 @Service
 public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements IStockService {
 
@@ -34,5 +38,47 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
     @Override
     public IPage<StockSummaryVo> querySummaryPage(Page<StockSummaryVo> page, Stock stock) {
         return stockMapper.querySummaryPage(page, stock);
+    }
+
+    @Override
+    public List<Stock> selectAvailableStockByGoods(String warehouseId, String goodsId, String batchNo) {
+        return stockMapper.selectAvailableStockByGoods(warehouseId, goodsId, batchNo);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean increaseLockQty(String id, BigDecimal lockQty) {
+        int rows = stockMapper.increaseLockQty(id, lockQty);
+        if (rows == 0) {
+            throw new RuntimeException("库存锁定失败，可能可用库存不足");
+        }
+        log.info("锁定库存：stockId={}, 锁定数量={}", id, lockQty);
+        return true;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean confirmDeduct(String id, BigDecimal qty) {
+        int rows = stockMapper.confirmDeduct(id, qty);
+        if (rows == 0) {
+            throw new RuntimeException("库存扣减失败，可能锁定已释放");
+        }
+        log.info("确认出库：stockId={}, 扣减数量={}", id, qty);
+        return true;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean releaseLockQty(String id, BigDecimal lockQty) {
+        int rows = stockMapper.releaseLockQty(id, lockQty);
+        if (rows > 0) {
+            log.info("释放锁定：stockId={}, 释放数量={}", id, lockQty);
+        }
+        return rows > 0;
+    }
+
+    @Override
+    public Map<String, Object> selectStockOccupancy(String warehouseId, String goodsId) {
+        return stockMapper.selectStockOccupancy(warehouseId, goodsId);
     }
 }

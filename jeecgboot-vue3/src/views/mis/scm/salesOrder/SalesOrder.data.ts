@@ -334,7 +334,7 @@ export const salesOrderLineColumns: JVxeColumn[] = [
     },
     {
       title: '金额',
-      key: 'lineAmount',
+      key: 'totalAmount',
       type: JVxeTypes.inputNumber,
       width:"200px",
       placeholder: '请输入${title}',
@@ -342,7 +342,7 @@ export const salesOrderLineColumns: JVxeColumn[] = [
     },
     {
       title: '本币金额',
-      key: 'lineAmountLocal',
+      key: 'totalAmountLocal',
       type: JVxeTypes.inputNumber,
       width:"200px",
       placeholder: '请输入${title}',
@@ -458,8 +458,7 @@ export const superQuerySchema = {
         unit: {title: '单位',order: 2,view: 'text', type: 'string',},
         quantity: {title: '数量',order: 3,view: 'number', type: 'number',},
         unitPrice: {title: '单价',order: 4,view: 'number', type: 'number',},
-        lineAmount: {title: '金额',order: 5,view: 'number', type: 'number',},
-        lineAmountLocal: {title: '本币金额',order: 6,view: 'number', type: 'number',},
+        totalAmount: {title: '金额',order: 5,view: 'number', type: 'number',},
         isGift: {title: '是否赠品',order: 7,view: 'list', type: 'string',dictCode: 'yn',},
         remark: {title: '备注',order: 8,view: 'text', type: 'string',},
         taxRate: {title: '税率(%)',order: 9,view: 'number', type: 'number',},

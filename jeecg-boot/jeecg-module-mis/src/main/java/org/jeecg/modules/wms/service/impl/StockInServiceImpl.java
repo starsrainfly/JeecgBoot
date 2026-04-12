@@ -52,7 +52,8 @@ public class StockInServiceImpl extends ServiceImpl<StockInMapper, StockIn> impl
 		stockInMapper.insert(stockIn);
 		if(stockInDetailList!=null && stockInDetailList.size()>0) {
 			for(StockInDetail entity:stockInDetailList) {
-				//外键设置
+				//外键设置 及入库单号
+				entity.setStockInNo(stockIn.getStockInNo());
 				entity.setStockInId(stockIn.getId());
 				stockInDetailMapper.insert(entity);
 			}

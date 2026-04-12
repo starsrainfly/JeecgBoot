@@ -85,7 +85,7 @@ public class StockInDetail implements Serializable {
 	/**金额*/
 	@Excel(name = "金额", width = 15)
     @Schema(description = "金额")
-    private java.math.BigDecimal lineAmount;
+    private java.math.BigDecimal totalAmount;
 	/**批号*/
 	@Excel(name = "批号", width = 15)
     @Schema(description = "批号")
@@ -122,10 +122,6 @@ public class StockInDetail implements Serializable {
 	@Excel(name = "原销售/采购订单id", width = 15)
     @Schema(description = "原销售/采购订单id")
     private String sourceDetailId;
-	/**序号*/
-	@Excel(name = "序号", width = 15)
-    @Schema(description = "序号")
-    private Integer sortIndex;
 	/**是否删除*/
 	@Excel(name = "是否删除", width = 15)
     @Schema(description = "是否删除")

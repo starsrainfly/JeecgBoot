@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -136,6 +137,11 @@ public class Stock implements Serializable {
 	@Dict(dicCode = "wms_stock_status")
     @Schema(description = "状态")
     private java.lang.String qcStatus;
+    /**是否删除*/
+    @Excel(name = "是否删除", width = 15)
+    @Schema(description = "是否删除")
+    @TableLogic
+    private String delFlag;
 	/**创建人*/
     @Schema(description = "创建人")
     private java.lang.String createBy;

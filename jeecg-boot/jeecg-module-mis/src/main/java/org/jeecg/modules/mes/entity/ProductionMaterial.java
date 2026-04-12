@@ -85,6 +85,15 @@ public class ProductionMaterial implements Serializable {
 	@Excel(name = "已发数量", width = 15)
     @Schema(description = "已发数量")
     private BigDecimal issuedQty;
+    /**锁定数量*/
+    @Excel(name = "锁定数量", width = 15)
+    @Schema(description = "锁定数量")
+    private BigDecimal lockedQty;
+
+    /**超量数量*/
+    @Excel(name = "超量数量", width = 15)
+    @Schema(description = "超量数量")
+    private BigDecimal overQty;
 	/**剩余待发*/
 	@Excel(name = "剩余待发", width = 15)
     @Schema(description = "剩余待发")
@@ -111,6 +120,7 @@ public class ProductionMaterial implements Serializable {
 	/**目标仓库*/
 	@Excel(name = "目标仓库", width = 15)
     @Schema(description = "目标仓库")
+    @Dict(dictTable = "mis_warehouse where del_flag='0' and status='1'", dicText = "name", dicCode = "id")
     private String warehouseId;
 
     /**是否删除*/

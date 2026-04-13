@@ -51,10 +51,7 @@ public interface IStockOutService extends IService<StockOut> {
 	 * 阶段一：申请出库 - FIFO匹配并锁定库存
 	 */
 	public List<StockOutDetail> matchAndLockStock(StockOut stockOut, List<StockOutDetail> detailList);
-	/**
-	 * 阶段二：确认出库 - 扣减实际库存
-	 */
-	public void confirmStockOut(String stockOutId);
+
 	/**
 	 * 取消/驳回 - 释放锁定
 	 */

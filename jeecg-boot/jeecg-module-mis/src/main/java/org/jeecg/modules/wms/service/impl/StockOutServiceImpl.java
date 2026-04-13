@@ -58,7 +58,6 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 		stockOutMapper.insert(stockOut);
 		if(stockOutDetailList!=null && stockOutDetailList.size()>0) {
 			for(StockOutDetail entity:stockOutDetailList) {
-				//外键设置
 				entity.setStockOutId(stockOut.getId());
 				stockOutDetailMapper.insert(entity);
 			}
@@ -69,14 +68,9 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 	@Transactional(rollbackFor = Exception.class)
 	public void updateMain(StockOut stockOut,List<StockOutDetail> stockOutDetailList) {
 		stockOutMapper.updateById(stockOut);
-		
-		//1.先删除子表数据
 		stockOutDetailMapper.deleteByMainId(stockOut.getId());
-		
-		//2.子表数据重新插入
 		if(stockOutDetailList!=null && stockOutDetailList.size()>0) {
 			for(StockOutDetail entity:stockOutDetailList) {
-				//外键设置
 				entity.setStockOutNo(stockOut.getStockOutNo());
 				entity.setStockOutId(stockOut.getId());
 				stockOutDetailMapper.insert(entity);
@@ -102,10 +96,7 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 
 	/***
 	 * 阶段一：申请出库 - FIFO匹配并锁定库存
-	 * 只增加 locked_qty，不扣减 quantity
-	 * @param stockOut 出库主表
-	 * @param detailList 出库明细（用户填写的物料和申请数量）
-	 * @return 匹配后的出库明细（已关联stock_id，可能拆分多条）
+	 * 拆分成独立明细（正常+超量）
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -113,173 +104,169 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 		List<StockOutDetail> resultList = new ArrayList<>();
 
 		for (StockOutDetail detail : detailList) {
-			BigDecimal applyQty = detail.getApplyQty();
-			BigDecimal overQty = detail.getOverQty() != null ? detail.getOverQty() : BigDecimal.ZERO;
-			String overFlag = detail.getOverFlag();
+			BigDecimal applyQty = detail.getApplyQty();           // 150
+			BigDecimal overQty = detail.getOverQty() != null ? detail.getOverQty() : BigDecimal.ZERO;  // 50
+			String overFlag = detail.getOverFlag();                 // "1"
 
-			// 实际需要从正常库存申请的数量（先减去余料部分）
-			BigDecimal normalApplyQty = applyQty;
+			// 拆分：正常部分 + 超量部分
+			BigDecimal normalApplyQty = applyQty.subtract(overQty);  // 100
+			BigDecimal overApplyQty = overQty;                      // 50
 
-			// ===== 步骤1：优先使用余料库（FIFO分配）=====
-			BigDecimal residualAvailable = residualInventoryService.getAvailableQty(
-					detail.getGoodsId(), stockOut.getWarehouseId()
-			);
-
-			if (residualAvailable.compareTo(BigDecimal.ZERO) > 0) {
-				BigDecimal useResidual = applyQty.min(residualAvailable);
-
-				// 【关键】锁定余料并返回锁定明细列表
-				List<ResidualInventory> lockedResiduals = residualInventoryService.lockQtyAndReturnList(
-						detail.getGoodsId(), useResidual
+			// ===== 步骤1：处理正常部分（100）=====
+			if (normalApplyQty.compareTo(BigDecimal.ZERO) > 0) {
+				List<StockOutDetail> normalDetails = processNormalPart(
+						detail, normalApplyQty, stockOut
 				);
-
-				// 逐条生成余料出库明细
-				for (ResidualInventory residual : lockedResiduals) {
-					StockOutDetail residualDetail = createResidualDetail(detail, residual,
-							residual.getLockedQty(), stockOut);
-					resultList.add(residualDetail);
-				}
-
-				normalApplyQty = applyQty.subtract(useResidual);
+				resultList.addAll(normalDetails);
 			}
 
-			// ===== 步骤2：正常库存匹配（含超量拆分）=====
-			if (normalApplyQty.compareTo(BigDecimal.ZERO) <= 0) {
-				continue; // 余料已满足全部需求
-			}
-
-			// 查询正常库存
-			List<Stock> stocks = stockService.selectAvailableStockByGoods(
-					stockOut.getWarehouseId(), detail.getGoodsId(), detail.getBatchNo()
-			);
-
-			if (stocks.isEmpty()) {
-				throw new JeecgBootException("物料[" + detail.getGoodsName() + "]无可用库存");
-			}
-
-			// 计算总可用量
-			BigDecimal totalAvailable = stocks.stream()
-					.map(s -> s.getQuantity().subtract(s.getLockedQty()))
-					.reduce(BigDecimal.ZERO, BigDecimal::add);
-
-			if (totalAvailable.compareTo(normalApplyQty) < 0) {
-				throw new JeecgBootException(String.format(
-						"物料[%s]库存不足，申请：%s（余料已用%s），可用：%s",
-						detail.getGoodsName(), applyQty, applyQty.subtract(normalApplyQty), totalAvailable
-				));
-			}
-
-			// 拆分正常部分和超量部分
-			BigDecimal normalQty = normalApplyQty.subtract(overQty);
-			BigDecimal actualOverQty = overQty;
-
-			// FIFO分配正常部分
-			if (normalQty.compareTo(BigDecimal.ZERO) > 0) {
-				BigDecimal remaining = normalQty;
-				for (Stock stock : stocks) {
-					if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
-
-					BigDecimal available = stock.getQuantity().subtract(stock.getLockedQty());
-					if (available.compareTo(BigDecimal.ZERO) <= 0) continue;
-
-					BigDecimal allocate = available.min(remaining);
-					stockService.increaseLockQty(stock.getId(), allocate);
-
-					StockInDetail inDetail = stockInDetailService.getById(stock.getInDetailId());
-					StockOutDetail outDetail = createOutDetail(detail, stock, inDetail, allocate, stockOut, "0");
-					resultList.add(outDetail);
-
-					remaining = remaining.subtract(allocate);
-				}
-			}
-
-			// FIFO分配超量部分
-			if (actualOverQty.compareTo(BigDecimal.ZERO) > 0 && "1".equals(overFlag)) {
-				BigDecimal remaining = actualOverQty;
-				for (Stock stock : stocks) {
-					if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
-
-					BigDecimal available = stock.getQuantity().subtract(stock.getLockedQty());
-					if (available.compareTo(BigDecimal.ZERO) <= 0) continue;
-
-					BigDecimal allocate = available.min(remaining);
-					stockService.increaseLockQty(stock.getId(), allocate);
-
-					StockInDetail inDetail = stockInDetailService.getById(stock.getInDetailId());
-					StockOutDetail outDetail = createOutDetail(detail, stock, inDetail, allocate, stockOut, "1");
-					resultList.add(outDetail);
-
-					remaining = remaining.subtract(allocate);
-				}
+			// ===== 步骤2：处理超量部分（50）=====
+			if (overApplyQty.compareTo(BigDecimal.ZERO) > 0 && "1".equals(overFlag)) {
+				List<StockOutDetail> overDetails = processOverPart(
+						detail, overApplyQty, overQty, stockOut  // overQty=总超量50，用于标记
+				);
+				resultList.addAll(overDetails);
 			}
 		}
 
 		return resultList;
 	}
 
+	/**
+	 * 处理正常部分
+	 * 申请数量固定，实际出库根据库存分配
+	 */
+	private List<StockOutDetail> processNormalPart(StockOutDetail source,
+												   BigDecimal normalApplyQty,
+												   StockOut stockOut) {
+		List<StockOutDetail> result = new ArrayList<>();
+		String originalRemark = source.getRemark();
+		// 1. 优先使用余料库
+		BigDecimal residualAvailable = residualInventoryService.getAvailableQty(
+				source.getGoodsId(), null
+		);//stockOut.getWarehouseId()
 
+		BigDecimal normalRemaining = normalApplyQty;
 
-	@Override
-	@Transactional(rollbackFor = Exception.class)
-	public void confirmStockOut(String stockOutId) {
-		List<StockOutDetail> details = stockOutDetailService.selectByMainId(stockOutId);
+		if (residualAvailable.compareTo(BigDecimal.ZERO) > 0) {
+			BigDecimal useResidual = normalApplyQty.min(residualAvailable);
+			List<ResidualInventory> lockedResiduals = residualInventoryService.lockQtyAndReturnList(
+					source.getGoodsId(), useResidual
+			);
 
-		for (StockOutDetail detail : details) {
-			// 检查必要字段
-			if (detail.getStockId() == null || detail.getActualQty() == null
-					|| detail.getActualQty().compareTo(BigDecimal.ZERO) <= 0) {
-				continue;
+			for (ResidualInventory residual : lockedResiduals) {
+				StockOutDetail residualDetail = createResidualDetail(source, residual,
+						residual.getLockedQty(), stockOut);
+				// 标记为正常部分
+				residualDetail.setApplyQty(normalApplyQty);   // 申请量=100（固定）
+				residualDetail.setActualQty(residual.getLockedQty());  // 实际=本次分配
+				residualDetail.setOverFlag("0");
+				residualDetail.setOverQty(BigDecimal.ZERO);
+				// **设置 remark（合并原始 + 余料说明）**
+				String residualRemark = "余料库出库：" + residual.getProductionOrderNo() +
+						"(原数量" + residual.getQty() + ",本次出" + residual.getLockedQty() + ")";
+				residualDetail.setRemark(StringUtils.isNotBlank(originalRemark)
+						? originalRemark + " | " + residualRemark
+						: residualRemark);
+				result.add(residualDetail);
 			}
 
-			// 1. 扣减库存
-			stockService.confirmDeduct(detail.getStockId(), detail.getActualQty());
+			normalRemaining = normalApplyQty.subtract(useResidual);
+		}
 
-			// 2. 更新需求表
-			if (StringUtils.isBlank(detail.getRequirementId())) {
-				continue; // 无需求单关联
+		// 2. 正常库存分配
+		if (normalRemaining.compareTo(BigDecimal.ZERO) > 0) {
+			List<Stock> stocks = stockService.selectAvailableStockByGoods(
+					stockOut.getWarehouseId(), source.getGoodsId(), source.getBatchNo()
+			);
+
+			if (stocks.isEmpty()) {
+				throw new JeecgBootException("物料[" + source.getGoodsName() + "]正常库存不足");
 			}
 
-			String[] reqIds = detail.getRequirementId().split(",");
-			BigDecimal remainingToAllocate = detail.getActualQty();
-			StringBuilder allocateLog = new StringBuilder(); // 记录分配明细
+			for (Stock stock : stocks) {
+				if (normalRemaining.compareTo(BigDecimal.ZERO) <= 0) break;
 
-			for (String reqId : reqIds) {
-				ProductionMaterial material = productionMaterialService.getById(reqId.trim());
-				if (material == null) continue;
+				BigDecimal available = stock.getQuantity().subtract(stock.getLockedQty());
+				if (available.compareTo(BigDecimal.ZERO) <= 0) continue;
 
-				// 计算剩余待发
-				BigDecimal materialRemaining = material.getRemainingQty() != null
-						? material.getRemainingQty()
-						: material.getRequiredQty().subtract(material.getIssuedQty());
+				BigDecimal allocate = available.min(normalRemaining);
+				stockService.increaseLockQty(stock.getId(), allocate);
 
-				// 本次分配
-				BigDecimal allocateQty = materialRemaining.min(remainingToAllocate);
+				StockInDetail inDetail = stockInDetailService.getById(stock.getInDetailId());
+				StockOutDetail outDetail = createOutDetail(source, stock, inDetail, allocate, stockOut, "0");
 
-				if (allocateQty.compareTo(BigDecimal.ZERO) > 0) {
-					productionMaterialService.increaseIssuedQty(reqId.trim(), allocateQty);
-					remainingToAllocate = remainingToAllocate.subtract(allocateQty);
-
-					allocateLog.append(String.format("需求%s分配%s;", reqId.substring(0,8), allocateQty));
-				}
-
-				if (remainingToAllocate.compareTo(BigDecimal.ZERO) <= 0) {
-					break; // 分配完毕
-				}
+				// 关键：申请数量固定为100，实际=本次分配
+				outDetail.setApplyQty(normalApplyQty);   // 固定100
+				outDetail.setActualQty(allocate);        // 实际分配量
+				outDetail.setOverFlag("0");
+				outDetail.setOverQty(BigDecimal.ZERO);
+				// 复制原始remark
+				outDetail.setRemark(originalRemark);
+				result.add(outDetail);
+				normalRemaining = normalRemaining.subtract(allocate);
 			}
 
-			// 超量处理
-			if (remainingToAllocate.compareTo(BigDecimal.ZERO) > 0) {
-				String overMsg = String.format("超量%s", remainingToAllocate);
-				allocateLog.append(overMsg);
-				log.warn("出库超量，物料:{}, {}", detail.getGoodsName(), overMsg);
-
-				// 【可选】更新明细remark记录分配情况
-				detail.setRemark((detail.getRemark() != null ? detail.getRemark() + " | " : "")
-						+ "分配:" + allocateLog.toString());
-				stockOutDetailService.updateById(detail);
+			if (normalRemaining.compareTo(BigDecimal.ZERO) > 0) {
+				throw new JeecgBootException("正常库存不足，剩余需锁定：" + normalRemaining);
 			}
 		}
+
+		return result;
 	}
+
+	/**
+	 * 处理超量部分
+	 * 申请数量=超量本身（50），实际出库根据库存分配
+	 * totalOverQty: 总超量（用于overQty字段标记）
+	 */
+	private List<StockOutDetail> processOverPart(StockOutDetail source,
+												 BigDecimal overApplyQty,    // 50
+												 BigDecimal totalOverQty,    // 50（总超量，标记用）
+												 StockOut stockOut) {
+		List<StockOutDetail> result = new ArrayList<>();
+		String originalRemark = source.getRemark();
+		// 超量部分直接从正常库存分配（不入余料库）
+		List<Stock> stocks = stockService.selectAvailableStockByGoods(
+				stockOut.getWarehouseId(), source.getGoodsId(), source.getBatchNo()
+		);
+
+		if (stocks.isEmpty()) {
+			throw new JeecgBootException("物料[" + source.getGoodsName() + "]无可用库存供超量分配");
+		}
+
+		BigDecimal overRemaining = overApplyQty;
+
+		for (Stock stock : stocks) {
+			if (overRemaining.compareTo(BigDecimal.ZERO) <= 0) break;
+
+			BigDecimal available = stock.getQuantity().subtract(stock.getLockedQty());
+			if (available.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+			BigDecimal allocate = available.min(overRemaining);
+			stockService.increaseLockQty(stock.getId(), allocate);
+
+			StockInDetail inDetail = stockInDetailService.getById(stock.getInDetailId());
+			StockOutDetail outDetail = createOutDetail(source, stock, inDetail, allocate, stockOut, "1");
+
+			// 关键：申请数量=超量本身（50），实际=本次分配，overQty=总超量（标记）
+			outDetail.setApplyQty(overApplyQty);     // 固定50（超量本身）
+			outDetail.setActualQty(allocate);         // 实际分配量
+			outDetail.setOverFlag("1");
+			outDetail.setOverQty(totalOverQty);      // **总超量50，仅标记**
+			// **设置 remark（复制原始，可选追加超量标记）**
+			outDetail.setRemark(originalRemark);
+			result.add(outDetail);
+			overRemaining = overRemaining.subtract(allocate);
+		}
+
+		if (overRemaining.compareTo(BigDecimal.ZERO) > 0) {
+			throw new JeecgBootException("库存不足支持超量申请，剩余需锁定：" + overRemaining);
+		}
+
+		return result;
+	}
+
 	/**
 	 * 取消/驳回 - 释放锁定
 	 */
@@ -287,82 +274,19 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 	@Transactional(rollbackFor = Exception.class)
 	public void releaseStockLock(String stockOutId) {
 		List<StockOutDetail> details = stockOutDetailService.selectByMainId(stockOutId);
-
 		for (StockOutDetail detail : details) {
 			if (detail.getStockId() == null || detail.getActualQty() == null) {
 				continue;
 			}
-
 			stockService.releaseLockQty(detail.getStockId(), detail.getActualQty());
 		}
-	}
-
-	/**
-	 * 创建出库明细
-	 */
-	private StockOutDetail createOutDetail(StockOutDetail source, Stock stock, StockInDetail inDetail,
-										   BigDecimal qty, StockOut stockOut) {
-		StockOutDetail detail = new StockOutDetail();
-
-		// 复制基本信息
-		BeanUtils.copyProperties(source, detail);
-
-		// 关联主表
-		detail.setStockOutId(stockOut.getId());
-		detail.setStockOutNo(stockOut.getStockOutNo());
-
-		// 关联库存
-		detail.setStockId(stock.getId());
-		detail.setInDetailId(stock.getInDetailId());
-
-		// 设置数量（申请时actualQty等于申请数量）
-		detail.setApplyQty(qty);
-		detail.setActualQty(qty);
-
-		// 成本信息
-		// 单价从入库明细取
-		if (inDetail != null) {
-			// 入库时的单价（本币）
-			detail.setCostPrice(inDetail.getUnitPrice());
-
-			// 计算成本金额
-			if (detail.getCostPrice() != null) {
-				detail.setCostTotal(
-						detail.getCostPrice().multiply(qty)
-								.setScale(2, RoundingMode.HALF_UP)
-				);
-			}
-		}
-		else {
-			// 备用：如果找不到入库明细，从stock取（不应该发生）
-			log.warn("未找到入库明细，stockId={}", stock.getId());
-			detail.setProductionDate(stock.getProductionDate());
-			detail.setExpiryDate(stock.getExpiryDate());
-		}
-		// 计算销售金额（如果销售价有值）
-		if (detail.getSalesPrice() != null) {
-			detail.setSalesTotal(
-					detail.getSalesPrice().multiply(qty)
-							.setScale(2, RoundingMode.HALF_UP)
-			);
-		}
-		// 批次信息
-		detail.setBatchNo(stock.getBatchNo());
-		detail.setExpiryDate(stock.getExpiryDate());
-		detail.setProductionDate(stock.getProductionDate());
-		detail.setShelfLife(stock.getShelfLife());
-
-		return detail;
 	}
 
 	// ==================== 申请出库 ====================
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void applyStockOut(StockOut stockOut, List<StockOutDetail> details) {
-		// 1. 保存主表和明细
 		this.saveMain(stockOut, details);
-
-		// 2. 更新物料需求表锁定状态
 		for (StockOutDetail detail : details) {
 			lockMaterial(detail, stockOut.getRequiredDate());
 		}
@@ -371,35 +295,62 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 	private void lockMaterial(StockOutDetail detail, Date requiredDate) {
 		String reqId = detail.getRequirementId();
 		BigDecimal applyQty = detail.getApplyQty();
+		BigDecimal overQty = detail.getOverQty() != null ? detail.getOverQty() : BigDecimal.ZERO;
 
 		if (StringUtils.isBlank(reqId) || applyQty == null) {
 			return;
 		}
 
-		// 单个需求ID
-		if (reqId.length() <= 36) {
-			doLockMaterial(reqId, applyQty, requiredDate, detail);
+		// 拆分正常和超量
+		BigDecimal normalQty = applyQty.subtract(overQty);  // 100
+		BigDecimal actualOverQty = overQty;                  // 50
+
+		String[] ids = reqId.split(",");
+		if (ids.length == 1) {
+			doLockMaterial(reqId, normalQty, actualOverQty, requiredDate, detail);
 		} else {
 			// 多批次（兼容处理）
-			String[] reqIds = reqId.split(",");
-			BigDecimal avgQty = applyQty.divide(new BigDecimal(reqIds.length), 6, RoundingMode.HALF_UP);
 
-			for (int i = 0; i < reqIds.length; i++) {
-				String id = reqIds[i].trim();
-				BigDecimal qty = (i == reqIds.length - 1)
-						? applyQty.subtract(avgQty.multiply(new BigDecimal(i)))
-						: avgQty;
-				doLockMaterial(id, qty, requiredDate, detail);
+			int count = ids.length;
+
+			// 正常部分平分
+			BigDecimal avgNormal = normalQty.divide(new BigDecimal(count), 6, RoundingMode.HALF_UP);
+			// 超量部分平分
+			BigDecimal avgOver = actualOverQty.divide(new BigDecimal(count), 6, RoundingMode.HALF_UP);
+
+			for (int i = 0; i < count; i++) {
+				String id = ids[i].trim();
+
+				BigDecimal normalPart = (i == count - 1)
+						? normalQty.subtract(avgNormal.multiply(new BigDecimal(i)))
+						: avgNormal;
+
+				BigDecimal overPart = (i == count - 1)
+						? actualOverQty.subtract(avgOver.multiply(new BigDecimal(i)))
+						: avgOver;
+
+				doLockMaterial(id, normalPart, overPart, requiredDate, detail);
 			}
 		}
 	}
 
-	private void doLockMaterial(String materialReqId, BigDecimal applyQty, Date requiredDate, StockOutDetail detail) {
+	/**
+	 * 锁定材料（分别处理正常和超量）
+	 */
+	private void doLockMaterial(String materialReqId, BigDecimal normalQty, BigDecimal overQty,
+								Date requiredDate, StockOutDetail detail) {
+
+		// 【新增】防御性判断
+		if (StringUtils.isBlank(materialReqId)) {
+			log.warn("物料需求ID为空，跳过锁定");
+			return;
+		}
 		ProductionMaterial material = productionMaterialService.getById(materialReqId);
 		if (material == null) {
 			log.warn("物料需求不存在: {}", materialReqId);
 			return;
 		}
+
 		if (requiredDate != null) {
 			material.setRequiredDate(requiredDate);
 		}
@@ -408,64 +359,49 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 		BigDecimal issued = material.getIssuedQty() == null ? BigDecimal.ZERO : material.getIssuedQty();
 		BigDecimal currentLocked = material.getLockedQty() == null ? BigDecimal.ZERO : material.getLockedQty();
 		BigDecimal currentOver = material.getOverQty() == null ? BigDecimal.ZERO : material.getOverQty();
-		// 计算锁定和超量
-		BigDecimal realRemaining = required.subtract(issued).subtract(currentLocked);
-		BigDecimal lockQty = applyQty.min(realRemaining.max(BigDecimal.ZERO));//本次正常锁定
-		BigDecimal overQty = applyQty.subtract(lockQty).max(BigDecimal.ZERO);//本次超量
 
-		BigDecimal newTotalLocked = currentLocked.add(lockQty);//物料需求表中累计锁定量
-		//String status = issued.add(newTotalLocked).compareTo(required) >= 0 ? "1" : "0";
-		// 0-待发料, 1-部分发料, 2-已完成
+		// 更新锁定量（正常部分）
+		BigDecimal newLocked = currentLocked.add(normalQty);
+		// 更新超量（超量部分）
+		BigDecimal newOver = currentOver.add(overQty);
+
+		// 计算状态
 		String status;
 		if (issued.compareTo(required) >= 0) {
 			status = "2";  // 已完成
-		} else if (newTotalLocked.compareTo(BigDecimal.ZERO) > 0 || issued.compareTo(BigDecimal.ZERO) > 0) {
-			status = "1";  // 部分发料（有锁定或有已出）
+		} else if (issued.add(newLocked).compareTo(BigDecimal.ZERO) > 0 || newOver.compareTo(BigDecimal.ZERO) > 0) {
+			status = "1";  // 部分发料（有锁定或有超量）
 		} else {
 			status = "0";  // 待发料
 		}
-		// ========== 出库明细只记录超量信息 ==========
-		detail.setOverFlag(overQty.compareTo(BigDecimal.ZERO) > 0 ? "1" : "0");
-		detail.setOverQty(overQty);//本次超量
 
-		// 超量备注（可选）
-		if (overQty.compareTo(BigDecimal.ZERO) > 0) {
-			detail.setRemark(String.format("超量申请：申请%s，需求剩余%s，超量%s",
-					applyQty.stripTrailingZeros().toPlainString(),
-					realRemaining.stripTrailingZeros().toPlainString(),
-					overQty.stripTrailingZeros().toPlainString()));
-		}
-		// ======================================
-
-		material.setLockedQty(newTotalLocked);
-		material.setOverQty(currentOver.add(overQty));
+		material.setLockedQty(newLocked);
+		material.setOverQty(newOver);
 		material.setStatus(status);
 
 		productionMaterialService.updateById(material);
-		log.info("物料锁定: reqId={}, lockQty={}, overQty={}, newTotalLocked={}, status={}",
-				materialReqId, lockQty, overQty, newTotalLocked, status);
+
+		log.info("物料锁定: reqId={}, normalLock={}, overQty={}, newLocked={}, newOver={}, status={}",
+				materialReqId, normalQty, overQty, newLocked, newOver, status);
 	}
 
 	// ==================== 审核通过 ====================
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void approveStockOut(StockOut stockOut) {
-		//StockOut stockOut = this.getById(stockOutId);
 		if (stockOut == null) {
 			throw new RuntimeException("出库单不存在");
 		}
-		 if (!"APPLY".equals(stockOut.getStatus())) {
-			 throw new RuntimeException("只有申请状态的出库单可以审核");
-		 }
-		// 1. 获取明细
+		if (!"APPLY".equals(stockOut.getStatus())) {
+			throw new RuntimeException("只有申请状态的出库单可以审核");
+		}
+
 		List<StockOutDetail> details = stockOutDetailService.selectByMainId(stockOut.getId());
 
-		// 2. 扣减库存、处理需求表、创建余料
 		for (StockOutDetail detail : details) {
 			confirmDetail(detail, stockOut);
 		}
 
-		// 3. 更新出库单状态
 		LoginUser user = (LoginUser) SecurityUtils.getSubject().getPrincipal();
 		stockOut.setApproveId(user.getId());
 		stockOut.setApproveName(user.getRealname());
@@ -476,18 +412,30 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 		stockOut.setStockOutTime(new DateTime());
 		this.updateById(stockOut);
 	}
+
 	/**
 	 * 确认单条明细（审核时）
-	 * 余料出库：扣减余料库（只扣库存，不减金额）
-	 * 超量入库：入余料库
 	 */
 	private void confirmDetail(StockOutDetail detail, StockOut stockOut) {
-		if (detail.getStockId() == null || detail.getActualQty() == null) {
+		// ===== 情况1：余料库来源（余料出库）=====
+		if ("RESIDUAL".equals(detail.getSourceType())) {
+			residualInventoryService.deductQty(detail.getResidualId(), detail.getActualQty());
+			updateMaterialIssued(detail.getRequirementId(), detail.getActualQty());
+			updateMaterialStatus(detail.getRequirementId());
+			log.info("余料出库完成: detailId={}, residualId={}, qty={}",
+					detail.getId(), detail.getResidualId(), detail.getActualQty());
 			return;
 		}
+
+		// ===== 情况2：正常库存来源 =====
+		if (detail.getStockId() == null || detail.getActualQty() == null) {
+			log.warn("明细缺少库存ID或数量: detailId={}", detail.getId());
+			return;
+		}
+
 		// 1. 扣减库存
 		stockService.confirmDeduct(detail.getStockId(), detail.getActualQty());
-		// 2. 处理需求表
+
 		String reqId = detail.getRequirementId();
 		if (StringUtils.isBlank(reqId)) {
 			return;
@@ -498,92 +446,161 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 			return;
 		}
 
-		BigDecimal actualQty = detail.getActualQty() == null ? BigDecimal.ZERO : detail.getActualQty();
+		BigDecimal actualQty = detail.getActualQty();
 		BigDecimal required = material.getRequiredQty() == null ? BigDecimal.ZERO : material.getRequiredQty();
 		BigDecimal issued = material.getIssuedQty() == null ? BigDecimal.ZERO : material.getIssuedQty();
 		BigDecimal locked = material.getLockedQty() == null ? BigDecimal.ZERO : material.getLockedQty();
 		BigDecimal overApply = material.getOverQty() == null ? BigDecimal.ZERO : material.getOverQty();
+		// 【新增】获取当前 remaining_qty，用于后续计算
+		BigDecimal remaining = material.getRemainingQty() == null ?
+				required.subtract(issued).subtract(locked) : material.getRemainingQty();
 
-		//======从明细获取本次申请数据 ==========
-		BigDecimal detailApplyQty = detail.getApplyQty() == null ? BigDecimal.ZERO : detail.getApplyQty();
-		BigDecimal detailOverQty = detail.getOverQty() == null ? BigDecimal.ZERO : detail.getOverQty();
-		BigDecimal detailNormalLock = detailApplyQty.subtract(detailOverQty);  // 本次正常锁定
+		// 区分正常和超量处理
+		if ("1".equals(detail.getOverFlag())) {
+			// ===== 超量明细 =====
+			// 超量部分：释放锁定，不入issued（因为超量不算正常需求）
+			BigDecimal newLocked = locked.subtract(actualQty).max(BigDecimal.ZERO);
+			// over_qty在审核时保持不变（回滚时才减）
+			// 【新增】更新 remaining_qty：超量部分也扣减（因为已经出库了）
+			// 但超量部分不算入正常需求，所以 remaining 要减去实际出库量
+			BigDecimal newRemaining = remaining.subtract(actualQty).max(BigDecimal.ZERO);
 
-		// 本次实际释放的正常锁定 = min(实际出库, 本次正常锁定)
-		BigDecimal releaseNormal = actualQty.min(detailNormalLock);
-		// 本次实际超量 = 实际出库 - 释放的正常锁定
-		BigDecimal actualOverQty = actualQty.subtract(releaseNormal).max(BigDecimal.ZERO);
+			material.setLockedQty(newLocked);
+			// material.setOverQty(overApply);  // 保持不变
+			material.setRemainingQty(newRemaining);  // 【新增】
 
-		// 更新需求表
-		BigDecimal newIssued = issued.add(releaseNormal);  // 已出库只加正常部分
-		BigDecimal newLocked = locked.subtract(releaseNormal).max(BigDecimal.ZERO);  // 只释放本次正常锁定
-		BigDecimal newOverApply = overApply.subtract(actualOverQty).max(BigDecimal.ZERO);  // 超量减少
+			// 计算状态
+			String newStatus;
+			if (issued.compareTo(required) >= 0) {
+				newStatus = "2";
+			} else if (issued.add(newLocked).compareTo(BigDecimal.ZERO) > 0 || overApply.compareTo(BigDecimal.ZERO) > 0) {
+				newStatus = "1";
+			} else {
+				newStatus = "0";
+			}
+			material.setStatus(newStatus);
 
+			// 超量入余料库（用实际出库量）
+			createResidualInventory(detail, stockOut, actualQty);
 
-		String newStatus;
-		if (newIssued.compareTo(required) >= 0) {
-			newStatus = "2";  // 已完成
-		} else if (newIssued.compareTo(BigDecimal.ZERO) > 0 || newLocked.compareTo(BigDecimal.ZERO) > 0) {
-			newStatus = "1";  // 部分发料
 		} else {
-			newStatus = "0";  // 待发料
+			// ===== 正常明细 =====
+			BigDecimal newIssued = issued.add(actualQty);
+			BigDecimal newLocked = locked.subtract(actualQty).max(BigDecimal.ZERO);
+			// 【新增】更新 remaining_qty：正常出库，减少剩余待发
+			// remaining = required - newIssued - newLocked
+			BigDecimal newRemaining = required.subtract(newIssued).subtract(newLocked);
+			if (newRemaining.compareTo(BigDecimal.ZERO) < 0) {
+				newRemaining = BigDecimal.ZERO;
+			}
+
+			String newStatus;
+			if (newIssued.compareTo(required) >= 0) {
+				newStatus = "2";
+			} else if (newIssued.compareTo(BigDecimal.ZERO) > 0 || newLocked.compareTo(BigDecimal.ZERO) > 0) {
+				newStatus = "1";
+			} else {
+				newStatus = "0";
+			}
+
+			material.setIssuedQty(newIssued);
+			material.setLockedQty(newLocked);
+			material.setRemainingQty(newRemaining);  // 【新增】
+			material.setStatus(newStatus);
 		}
-
-		material.setIssuedQty(newIssued);           // 已出库数量
-		material.setLockedQty(newLocked);           // 锁定数量（释放）
-		material.setOverQty(newOverApply);          // 超量申请（减少）
-		material.setStatus(newStatus);              // 状态
-
 
 		productionMaterialService.updateById(material);
-		// 3. 超量入余料库
-		if (actualOverQty.compareTo(BigDecimal.ZERO) > 0) {
-			ResidualInventory residualInventory = new ResidualInventory();
-			residualInventory.setMaterialId(detail.getGoodsId());
-			residualInventory.setMaterialCode(detail.getGoodsCode());
-			residualInventory.setMaterialName(detail.getGoodsName());
-			residualInventory.setWarehouseId(stockOut.getWarehouseId());
-			residualInventory.setOriginalQty(actualQty);
-			residualInventory.setQty(actualOverQty);
-			residualInventory.setProductionOrderId(stockOut.getSourceOrderId());
-			residualInventory.setProductionOrderNo(stockOut.getSourceOrderCode());
-			residualInventory.setProductionBatchId(detail.getProductionBatchId());
-			residualInventory.setMaterialBatchNo(detail.getBatchNo());
-			residualInventory.setStockOutId(stockOut.getId());
-			residualInventory.setStockOutDetailId(detail.getId());
+	}
 
-			residualInventoryService.createResidual(residualInventory);
-		}
+	/**
+	 * 创建余料库存（超量入余料库）
+	 */
+	private void createResidualInventory(StockOutDetail detail, StockOut stockOut, BigDecimal qty) {
+		BigDecimal unitPrice = getUnitPriceFromStock(detail.getStockId());
 
-		// 4. 记录日志
-		String logMsg = String.format("出库:%s,正常:%s,超量:%s", actualQty, releaseNormal, actualOverQty);
+		ResidualInventory residual = new ResidualInventory();
+		residual.setMaterialId(detail.getGoodsId());
+		residual.setMaterialCode(detail.getGoodsCode());
+		residual.setMaterialName(detail.getGoodsName());
+		residual.setWarehouseId(stockOut.getWarehouseId());
+		residual.setOriginalQty(qty);
+		residual.setQty(qty);
+		residual.setUnitPrice(unitPrice);
+		residual.setTotalAmount(qty.multiply(unitPrice));
+		residual.setProductionOrderId(stockOut.getSourceOrderId());
+		residual.setProductionOrderNo(stockOut.getSourceOrderCode());
+		residual.setProductionBatchId(detail.getProductionBatchId());
+		residual.setMaterialBatchNo(detail.getBatchNo());
+		residual.setStockOutId(stockOut.getId());
+		residual.setStockOutDetailId(detail.getId());
+
+		residualInventoryService.createResidual(residual);
+
+		// 更新明细备注
+		String logMsg = String.format("超量%s入余料库,单价%s",
+				qty.stripTrailingZeros().toPlainString(),
+				unitPrice != null ? unitPrice.stripTrailingZeros().toPlainString() : "0");
 		detail.setRemark((detail.getRemark() != null ? detail.getRemark() + " | " : "") + logMsg);
 		stockOutDetailService.updateById(detail);
+
+		log.info("超量入余料库: detailId={}, qty={}, unitPrice={}", detail.getId(), qty, unitPrice);
+	}
+
+	/**
+	 * 从库存记录追溯单价
+	 */
+	private BigDecimal getUnitPriceFromStock(String stockId) {
+		if (StringUtils.isBlank(stockId)) {
+			return BigDecimal.ZERO;
+		}
+		try {
+			Stock stock = stockService.getById(stockId);
+			if (stock == null || StringUtils.isBlank(stock.getInDetailId())) {
+				return BigDecimal.ZERO;
+			}
+			StockInDetail inDetail = stockInDetailService.getById(stock.getInDetailId());
+			return inDetail != null && inDetail.getUnitPrice() != null
+					? inDetail.getUnitPrice() : BigDecimal.ZERO;
+		} catch (Exception e) {
+			log.error("追溯单价失败: {}", stockId, e);
+			return BigDecimal.ZERO;
+		}
+	}
+
+	/**
+	 * 更新需求表已出库量（支持多ID）
+	 */
+	private void updateMaterialIssued(String requirementId, BigDecimal qty) {
+		if (StringUtils.isBlank(requirementId) || qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
+			return;
+		}
+		String[] ids = requirementId.split(",");
+		if (ids.length == 1) {
+			productionMaterialService.increaseIssuedQty(ids[0].trim(), qty);
+		} else {
+			BigDecimal avg = qty.divide(new BigDecimal(ids.length), 6, RoundingMode.HALF_UP);
+			for (int i = 0; i < ids.length; i++) {
+				BigDecimal allocate = (i == ids.length - 1)
+						? qty.subtract(avg.multiply(new BigDecimal(i)))
+						: avg;
+				productionMaterialService.increaseIssuedQty(ids[i].trim(), allocate);
+			}
+		}
 	}
 
 	// ==================== 审核驳回/取消 ====================
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void rejectStockOut(StockOut stockOut) {
-		//StockOut stockOut = this.getById(stockOutId);
 		if (stockOut == null) {
 			throw new RuntimeException("出库单不存在");
 		}
 
-		// 1. 释放库存锁定
 		List<StockOutDetail> details = stockOutDetailService.selectByMainId(stockOut.getId());
-		for (StockOutDetail detail : details) {
-			if (detail.getStockId() != null && detail.getActualQty() != null) {
-				stockService.releaseLockQty(detail.getStockId(), detail.getActualQty());
-			}
-		}
-
-		// 2. 回滚物料需求表
 		for (StockOutDetail detail : details) {
 			unlockMaterial(detail);
 		}
 
-		// 3. 更新出库单状态
 		LoginUser user = (LoginUser) SecurityUtils.getSubject().getPrincipal();
 		stockOut.setApproveId(user.getId());
 		stockOut.setApproveName(user.getRealname());
@@ -594,54 +611,40 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 		this.updateById(stockOut);
 	}
 
+	/**
+	 * 回滚单条明细（驳回时）
+	 * 统一用 actualQty 回滚
+	 */
 	private void unlockMaterial(StockOutDetail detail) {
 		String reqId = detail.getRequirementId();
-		BigDecimal applyQty = detail.getApplyQty();
+		BigDecimal actualQty = detail.getActualQty();
 
-		if (StringUtils.isBlank(reqId) || applyQty == null) {
+		if (StringUtils.isBlank(reqId) || actualQty == null || actualQty.compareTo(BigDecimal.ZERO) <= 0) {
 			return;
 		}
 
-		ProductionMaterial material = productionMaterialService.getById(reqId);
-		if (material == null) {
-			return;
+		// 1. 释放库存锁定（正常和超量都一样）
+		if (detail.getStockId() != null) {
+			stockService.releaseLockQty(detail.getStockId(), actualQty);
 		}
 
-		BigDecimal locked = material.getLockedQty() == null ? BigDecimal.ZERO : material.getLockedQty();
-		BigDecimal overApply = material.getOverQty() == null ? BigDecimal.ZERO : material.getOverQty();
-		BigDecimal issued = material.getIssuedQty() == null ? BigDecimal.ZERO : material.getIssuedQty();
-		BigDecimal required = material.getRequiredQty() == null ? BigDecimal.ZERO : material.getRequiredQty();
+		// 2. 回滚余料库锁定（如果是余料来源）
+		if ("RESIDUAL".equals(detail.getSourceType()) && detail.getResidualId() != null) {
+			residualInventoryService.unlockQty(detail.getResidualId(), actualQty);
+		}
 
-		// 优先回滚超量
-		//BigDecimal rollbackOver = applyQty.min(overApply);
-		//BigDecimal rollbackLock = applyQty.subtract(rollbackOver).min(locked);
-		BigDecimal detailOverQty = detail.getOverQty() == null ? BigDecimal.ZERO : detail.getOverQty();
-		BigDecimal detailNormalLock = applyQty.subtract(detailOverQty);  // 本次正常锁定
-
-		// 优先回滚超量，再回滚正常锁定
-		BigDecimal rollbackOver = detailOverQty.min(overApply);
-		BigDecimal rollbackLock = detailNormalLock.min(locked);
-
-		BigDecimal newLocked = locked.subtract(rollbackLock);
-		BigDecimal newOverApply = overApply.subtract(rollbackOver);
-
-		String newStatus;
-		if (issued.compareTo(required) >= 0) {
-			newStatus = "2";
-		} else if (issued.add(newLocked).compareTo(BigDecimal.ZERO) > 0) { //.add(newOverApply)
-			newStatus = "1";
+		// 3. 回滚物料需求表（统一用 actualQty）
+		if ("1".equals(detail.getOverFlag())) {
+			// 超量明细：减 over_qty，删除余料记录
+			rollbackMaterialOver(reqId, actualQty);
+			deleteResidualByDetail(detail.getId());
 		} else {
-			newStatus = "0";
+			// 正常明细：减 locked_qty
+			rollbackMaterialLock(reqId, actualQty);
 		}
-		material.setLockedQty(newLocked);
-		material.setOverQty(newOverApply);
-		material.setStatus(newStatus);
-		productionMaterialService.updateById(material);
-//		String updateBy = getCurrentUsername();
-//		productionMaterialService.unlockQty(reqId, rollbackLock, rollbackOver, newStatus, updateBy);
 
-		log.info("回滚物料锁定: reqId={}, unlock={}, unOver={}, status={}",
-				reqId, rollbackLock, rollbackOver, newStatus);
+		// 4. 更新状态
+		updateMaterialStatus(reqId);
 	}
 
 	// ==================== 删除出库单 ====================
@@ -653,32 +656,24 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 			return;
 		}
 
-		// 申请状态才需要释放
 		if ("APPLY".equals(stockOut.getStatus())) {
 			List<StockOutDetail> details = stockOutDetailService.selectByMainId(stockOutId);
 			for (StockOutDetail detail : details) {
-				if (detail.getStockId() != null && detail.getActualQty() != null) {
-					stockService.releaseLockQty(detail.getStockId(), detail.getActualQty());
-				}
 				unlockMaterial(detail);
 			}
 		}
 
-		// 删除主表和明细
 		this.delMain(stockOutId);
 	}
 
 	/**
 	 * 创建余料库出库明细
-	 * @param lockedQty 本次锁定的数量（从residual.getLockedQty()传入）
 	 */
 	private StockOutDetail createResidualDetail(StockOutDetail source,
 												ResidualInventory residual,
 												BigDecimal lockedQty,
 												StockOut stockOut) {
 		StockOutDetail detail = new StockOutDetail();
-
-		// 基本信息
 		detail.setStockOutId(stockOut.getId());
 		detail.setStockOutNo(stockOut.getStockOutNo());
 		detail.setGoodsId(source.getGoodsId());
@@ -687,40 +682,22 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 		detail.setGoodsSpec(source.getGoodsSpec());
 		detail.setGoodsType(source.getGoodsType());
 		detail.setUnit(source.getUnit());
-
-		// 余料库来源标记
 		detail.setSourceType("RESIDUAL");
 		detail.setResidualId(residual.getId());
-
-		// 不关联库存表
 		detail.setStockId(null);
 		detail.setInDetailId(null);
-
-		// 【关键】使用本次锁定的数量
 		detail.setApplyQty(lockedQty);
 		detail.setActualQty(lockedQty);
-
-		// 超量标记（用余料不算超量）
 		detail.setOverFlag("0");
 		detail.setOverQty(BigDecimal.ZERO);
-
-		// 使用余料记录的单价
 		detail.setCostPrice(residual.getUnitPrice());
 		if (residual.getUnitPrice() != null) {
 			detail.setCostTotal(residual.getUnitPrice().multiply(lockedQty)
 					.setScale(2, RoundingMode.HALF_UP));
 		}
-
-		// 批次信息
 		detail.setBatchNo(residual.getMaterialBatchNo());
 		detail.setProductionBatchId(residual.getProductionBatchId());
-
-		// 需求表ID
 		detail.setRequirementId(source.getRequirementId());
-
-		// 备注
-		detail.setRemark("余料库出库：" + residual.getProductionOrderNo() +
-				"(原数量" + residual.getQty() + ",本次出" + lockedQty + ")");
 
 		return detail;
 	}
@@ -735,8 +712,6 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 										   StockOut stockOut,
 										   String overFlag) {
 		StockOutDetail detail = new StockOutDetail();
-
-		// 基本信息
 		detail.setStockOutId(stockOut.getId());
 		detail.setStockOutNo(stockOut.getStockOutNo());
 		detail.setGoodsId(source.getGoodsId());
@@ -745,69 +720,189 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 		detail.setGoodsSpec(source.getGoodsSpec());
 		detail.setGoodsType(source.getGoodsType());
 		detail.setUnit(source.getUnit());
-
-		// 正常库存来源
 		detail.setSourceType("NORMAL");
 		detail.setResidualId(null);
-
-		// 关联库存
 		detail.setStockId(stock.getId());
 		detail.setInDetailId(stock.getInDetailId());
-
-		// 数量
-		detail.setApplyQty(qty);
-		detail.setActualQty(qty);
-
-		// 超量标记
+		// applyQty和actualQty由调用方设置
 		detail.setOverFlag(overFlag);
-		if ("1".equals(overFlag)) {
-			detail.setOverQty(qty);
-		} else {
-			detail.setOverQty(BigDecimal.ZERO);
-		}
-
-		// 成本信息
 		if (inDetail != null) {
 			detail.setCostPrice(inDetail.getUnitPrice());
 			if (detail.getCostPrice() != null) {
 				detail.setCostTotal(detail.getCostPrice().multiply(qty).setScale(2, RoundingMode.HALF_UP));
 			}
 		}
-
-		// 批次信息
 		detail.setBatchNo(stock.getBatchNo());
 		detail.setExpiryDate(stock.getExpiryDate());
 		detail.setProductionDate(stock.getProductionDate());
 		detail.setShelfLife(stock.getShelfLife());
-
-		// 需求表ID
 		detail.setRequirementId(source.getRequirementId());
 
 		return detail;
 	}
 
+	// ==================== 回滚方法（支持多ID） ====================
+
 	/**
-	 * 锁定库存并创建明细
+	 * 回滚超量（逐条减 actualQty）
 	 */
-	private void lockAndCreateDetails(StockOutDetail source, List<Stock> stocks,
-									  BigDecimal qty, StockOut stockOut,
-									  List<StockOutDetail> resultList, String overFlag) {
-		BigDecimal remaining = qty;
+	private void rollbackMaterialOver(String requirementId, BigDecimal qty) {
+		if (StringUtils.isBlank(requirementId) || qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
+			return;
+		}
 
-		for (Stock stock : stocks) {
-			if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
+		String[] ids = requirementId.split(",");
+		if (ids.length == 1) {
+			doRollbackMaterialOver(ids[0].trim(), qty);
+		} else {
+			BigDecimal avg = qty.divide(new BigDecimal(ids.length), 6, RoundingMode.HALF_UP);
+			for (int i = 0; i < ids.length; i++) {
+				BigDecimal allocate = (i == ids.length - 1)
+						? qty.subtract(avg.multiply(new BigDecimal(i)))
+						: avg;
+				doRollbackMaterialOver(ids[i].trim(), allocate);
+			}
+		}
+	}
 
-			BigDecimal available = stock.getQuantity().subtract(stock.getLockedQty());
-			if (available.compareTo(BigDecimal.ZERO) <= 0) continue;
+	private void doRollbackMaterialOver(String reqId, BigDecimal qty) {
+		ProductionMaterial material = productionMaterialService.getById(reqId);
+		if (material == null) {
+			log.warn("回滚超量失败，物料需求不存在: {}", reqId);
+			return;
+		}
 
-			BigDecimal allocate = available.min(remaining);
-			stockService.increaseLockQty(stock.getId(), allocate);
+		BigDecimal currentOver = material.getOverQty() == null ? BigDecimal.ZERO : material.getOverQty();
+		BigDecimal newOver = currentOver.subtract(qty).max(BigDecimal.ZERO);
 
-			StockInDetail inDetail = stockInDetailService.getById(stock.getInDetailId());
-			StockOutDetail outDetail = createOutDetail(source, stock, inDetail, allocate, stockOut, overFlag);
+		material.setOverQty(newOver);
+		productionMaterialService.updateById(material);
 
-			resultList.add(outDetail);
-			remaining = remaining.subtract(allocate);
+		log.info("回滚超量: reqId={}, rollbackQty={}, newOver={}", reqId, qty, newOver);
+	}
+
+	/**
+	 * 回滚锁定量（逐条减 actualQty）
+	 */
+	private void rollbackMaterialLock(String requirementId, BigDecimal qty) {
+		if (StringUtils.isBlank(requirementId) || qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
+			return;
+		}
+
+		String[] ids = requirementId.split(",");
+		if (ids.length == 1) {
+			doRollbackMaterialLock(ids[0].trim(), qty);
+		} else {
+			BigDecimal avg = qty.divide(new BigDecimal(ids.length), 6, RoundingMode.HALF_UP);
+			for (int i = 0; i < ids.length; i++) {
+				BigDecimal allocate = (i == ids.length - 1)
+						? qty.subtract(avg.multiply(new BigDecimal(i)))
+						: avg;
+				doRollbackMaterialLock(ids[i].trim(), allocate);
+			}
+		}
+	}
+
+	private void doRollbackMaterialLock(String reqId, BigDecimal qty) {
+		ProductionMaterial material = productionMaterialService.getById(reqId);
+		if (material == null) {
+			log.warn("回滚锁定量失败，物料需求不存在: {}", reqId);
+			return;
+		}
+
+		BigDecimal currentLocked = material.getLockedQty() == null ? BigDecimal.ZERO : material.getLockedQty();
+		BigDecimal newLocked = currentLocked.subtract(qty).max(BigDecimal.ZERO);
+
+		material.setLockedQty(newLocked);
+		productionMaterialService.updateById(material);
+
+		log.info("回滚锁定量: reqId={}, rollbackQty={}, newLocked={}", reqId, qty, newLocked);
+	}
+
+	/**
+	 * 回滚已出库量（预留）
+	 */
+	private void rollbackMaterialIssued(String requirementId, BigDecimal qty) {
+		if (StringUtils.isBlank(requirementId) || qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
+			return;
+		}
+
+		String[] ids = requirementId.split(",");
+		if (ids.length == 1) {
+			doRollbackMaterialIssued(ids[0].trim(), qty);
+		} else {
+			BigDecimal avg = qty.divide(new BigDecimal(ids.length), 6, RoundingMode.HALF_UP);
+			for (int i = 0; i < ids.length; i++) {
+				BigDecimal allocate = (i == ids.length - 1)
+						? qty.subtract(avg.multiply(new BigDecimal(i)))
+						: avg;
+				doRollbackMaterialIssued(ids[i].trim(), allocate);
+			}
+		}
+	}
+
+	private void doRollbackMaterialIssued(String reqId, BigDecimal qty) {
+		ProductionMaterial material = productionMaterialService.getById(reqId);
+		if (material == null) {
+			log.warn("回滚已出库量失败，物料需求不存在: {}", reqId);
+			return;
+		}
+
+		BigDecimal currentIssued = material.getIssuedQty() == null ? BigDecimal.ZERO : material.getIssuedQty();
+		BigDecimal newIssued = currentIssued.subtract(qty).max(BigDecimal.ZERO);
+
+		material.setIssuedQty(newIssued);
+		productionMaterialService.updateById(material);
+
+		log.info("回滚已出库量: reqId={}, rollbackQty={}, newIssued={}", reqId, qty, newIssued);
+	}
+
+	/**
+	 * 删除本次入库的余料记录
+	 */
+	private void deleteResidualByDetail(String stockOutDetailId) {
+		residualInventoryService.deleteByStockOutDetailId(stockOutDetailId);
+	}
+
+	/**
+	 * 更新物料需求状态
+	 */
+	private void updateMaterialStatus(String requirementId) {
+		if (StringUtils.isBlank(requirementId)) {
+			return;
+		}
+		String[] ids = requirementId.split(",");
+		for (String id : ids) {
+			doUpdateMaterialStatus(id.trim());
+		}
+	}
+
+	private void doUpdateMaterialStatus(String reqId) {
+		ProductionMaterial material = productionMaterialService.getById(reqId);
+		if (material == null) {
+			log.warn("更新状态失败，物料需求不存在: {}", reqId);
+			return;
+		}
+
+		BigDecimal required = material.getRequiredQty() == null ? BigDecimal.ZERO : material.getRequiredQty();
+		BigDecimal issued = material.getIssuedQty() == null ? BigDecimal.ZERO : material.getIssuedQty();
+		BigDecimal locked = material.getLockedQty() == null ? BigDecimal.ZERO : material.getLockedQty();
+		BigDecimal over = material.getOverQty() == null ? BigDecimal.ZERO : material.getOverQty();
+
+		String newStatus;
+		if (issued.compareTo(required) >= 0) {
+			newStatus = "2";  // 已完成
+		} else if (issued.compareTo(BigDecimal.ZERO) > 0 || locked.compareTo(BigDecimal.ZERO) > 0 || over.compareTo(BigDecimal.ZERO) > 0) {
+			newStatus = "1";  // 部分发料（有已出库、锁定或超量）
+		} else {
+			newStatus = "0";  // 待发料
+		}
+
+		if (!newStatus.equals(material.getStatus())) {
+			material.setStatus(newStatus);
+			productionMaterialService.updateById(material);
+			log.info("更新物料状态: reqId={}, oldStatus={}, newStatus={}",
+					reqId, material.getStatus(), newStatus);
 		}
 	}
 

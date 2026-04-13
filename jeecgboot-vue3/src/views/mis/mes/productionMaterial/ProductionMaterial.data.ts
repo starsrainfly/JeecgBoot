@@ -68,6 +68,12 @@ export const columns: BasicColumn[] = [
     dataIndex: 'remainingQty',
      width:100,
    },
+   {
+     title: '锁定数量',
+     align:"center",
+     dataIndex: 'lockedQty',
+     width:100,
+   },
   {
     title: '可用库存',
     align:"center",
@@ -156,11 +162,11 @@ export const columns: BasicColumn[] = [
    {
     title: '状态',
     align:"center",
-    dataIndex: 'status_dictText',
+    dataIndex: 'status',
      customRender: ({ text, record }) => {
        const statusMap = {
-         '0': { color: 'default', text: '待发货' },
-         '1': { color: 'processing', text: '部分发料' },
+         '0': { color: 'default', text: '待申请' },
+         '1': { color: 'processing', text: '待发货' },
          '2': { color: 'success', text: '已完成' },
          '3': { color: 'error', text: '已取消' }
        };

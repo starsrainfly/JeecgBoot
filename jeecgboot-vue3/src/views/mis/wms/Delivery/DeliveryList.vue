@@ -4,9 +4,9 @@
    <BasicTable @register="registerTable" :rowSelection="rowSelection">
      <!--插槽:table标题-->
       <template #tableTitle>
-          <a-button type="primary" v-auth="'wms:mis_stock_in:add'"  @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
-          <a-button  type="primary" v-auth="'wms:mis_stock_in:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
-          <j-upload-button  type="primary" v-auth="'wms:mis_stock_in:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
+          <a-button type="primary" v-auth="'wms:mis_delivery:add'"  @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
+          <a-button  type="primary" v-auth="'wms:mis_delivery:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
+          <j-upload-button  type="primary" v-auth="'wms:mis_delivery:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
           <a-dropdown v-if="selectedRowKeys.length > 0">
               <template #overlay>
                 <a-menu>
@@ -16,7 +16,7 @@
                   </a-menu-item>
                 </a-menu>
               </template>
-              <a-button v-auth="'wms:mis_stock_in:deleteBatch'">批量操作
+              <a-button v-auth="'wms:mis_delivery:deleteBatch'">批量操作
                 <Icon icon="mdi:chevron-down"></Icon>
               </a-button>
         </a-dropdown>
@@ -32,18 +32,18 @@
       </template>
     </BasicTable>
     <!-- 表单区域 -->
-    <StockInModal @register="registerModal" @success="handleSuccess"></StockInModal>
+    <DeliveryModal @register="registerModal" @success="handleSuccess"></DeliveryModal>
   </div>
 </template>
 
-<script lang="ts" name="wms-stockIn" setup>
+<script lang="ts" name="wms-delivery" setup>
   import {ref, reactive, computed, unref} from 'vue';
   import {BasicTable, useTable, TableAction} from '/@/components/Table';
   import { useListPage } from '/@/hooks/system/useListPage'
   import {useModal} from '/@/components/Modal';
-  import StockInModal from './components/MaterialInApproveModal.vue'
-  import {columns, searchFormSchema, superQuerySchema} from './MaterialInApprove.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './MaterialInApprove.api';
+  import DeliveryModal from './components/DeliveryModal.vue'
+  import {columns, searchFormSchema, superQuerySchema} from './Delivery.data';
+  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './Delivery.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
   const queryParam = reactive<any>({});
@@ -54,7 +54,7 @@
    //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
-           title: '入库表',
+           title: '发货表',
            api: list,
            columns,
            canResize:false,
@@ -66,18 +66,19 @@
                 fieldMapToNumber: [
                 ],
                 fieldMapToTime: [
+                   ['deliveryTime', ['deliveryTime_begin', 'deliveryTime_end'], 'YYYY-MM-DD HH:mm:ss'],
                 ],
             },
            actionColumn: {
-               width: 140,
+               width: 120,
                fixed:'right'
            },
            beforeFetch: (params) => {
-             return Object.assign(params, queryParam,{isProduct:'0'});
+             return Object.assign(params, queryParam);
            },
         },
         exportConfig: {
-            name:"入库表",
+            name:"发货表",
             url: getExportUrl,
             params: queryParam,
         },
@@ -149,41 +150,16 @@
   function handleSuccess() {
       (selectedRowKeys.value = []) && reload();
    }
-
-  // 新增：审核事件
-  function handleAudit(record) {
-    openModal(true, {
-      record,
-      isUpdate: true,
-      showFooter: true,
-      isAudit: true, // 传给 Modal 的关键参数
-      title: '入库审核'
-    });
-  }
-
    /**
       * 操作栏
       */
   function getTableAction(record){
-     //  record.approveStatus === '1' 代表已审核，此时不能再审核，也不能删除
-     const isAudited = record.approveStatus === '1';
-     return [
+       return [
          {
            label: '编辑',
            onClick: handleEdit.bind(null, record),
-           auth: 'wms:mis_stock_in:edit',
-           disabled:isAudited
-         },
-         {
-           label: '审核',
-           popConfirm: {
-             title: '确认执行审核操作吗？',
-             confirm: handleAudit.bind(null, record),
-             placement: 'topLeft'
-           },
-           // 只有未审核的记录才显示审核按钮
-           disabled: isAudited
-         },
+           auth: 'wms:mis_delivery:edit'
+         }
        ]
    }
 
@@ -203,9 +179,7 @@
           confirm: handleDelete.bind(null, record),
           placement: 'topLeft'
         },
-        auth: 'wms:mis_stock_in:delete',
-        disabled:record.approveStatus === '1'
-
+        auth: 'wms:mis_delivery:delete'
       }
     ]
   }

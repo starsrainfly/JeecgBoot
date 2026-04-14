@@ -33,7 +33,21 @@ public interface IProductionMaterialService extends IService<ProductionMaterial>
 
     IPage<ProductionMaterialVo> getPageList(Page<ProductionMaterialVo> page, ProductionMaterial productionMaterial);
 
+    /**
+     * 增加已发数量以及 减少 剩余数量及锁定数量
+     * @param id
+     * @param qty
+     * @return
+     */
     boolean increaseIssuedQty(String id, BigDecimal qty);
+
+    /**
+     * 减少锁定数量及剩余数量
+     * @param id
+     * @param qty
+     * @return
+     */
+    boolean decreaseLockAndRemainingQty(String id, BigDecimal qty);
 
     /**
      * 更新锁定数量（传入updateBy）

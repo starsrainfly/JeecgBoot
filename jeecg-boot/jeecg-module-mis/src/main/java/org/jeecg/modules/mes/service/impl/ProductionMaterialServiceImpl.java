@@ -58,7 +58,17 @@ public class ProductionMaterialServiceImpl extends ServiceImpl<ProductionMateria
     public boolean increaseIssuedQty(String id, BigDecimal qty) {
         int rows = productionMaterialMapper.increaseIssuedQty(id, qty);
         if (rows == 0) {
-            throw new RuntimeException("需求表：更新出库数量，可能可用库存不足");
+            throw new RuntimeException("需求表：更新出库数量、剩余待发数量及锁定数量，失败");
+        }
+        log.info("需求表：requirementId={}, 出库数量={}", id, qty);
+        return true;
+    }
+
+    @Override
+    public boolean decreaseLockAndRemainingQty(String id, BigDecimal qty) {
+        int rows = productionMaterialMapper.decreaseLockAndRemainingQty(id, qty);
+        if(rows == 0) {
+            throw new RuntimeException("需求表：剩余待发数量及锁定数量，失败");
         }
         log.info("需求表：requirementId={}, 出库数量={}", id, qty);
         return true;

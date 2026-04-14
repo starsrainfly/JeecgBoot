@@ -2,14 +2,24 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.mes.mapper.ProductionMaterialMapper">
 
-    <!-- 增加已发数量，减少剩余待发 -->
+    <!-- 增加已发数量，减少剩余待发及锁定数量 -->
     <update id="increaseIssuedQty">
         UPDATE mis_production_material
         SET issued_qty = issued_qty + #{qty},
             remaining_qty = remaining_qty - #{qty},
+            locked_qty = locked_qty - #{qty},
             update_time = NOW()
         WHERE id = #{id}
     </update>
+    <!-- 减少剩余待发及锁定数量 -->
+    <update id="decreaseLockAndRemainingQty">
+        UPDATE mis_production_material
+        SET remaining_qty = remaining_qty - #{qty},
+            locked_qty = locked_qty - #{qty},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
     <!-- 更新锁定数量 -->
     <update id="updateLockQty">
         UPDATE mis_production_material
@@ -31,6 +41,7 @@
             update_by = #{updateBy}
         WHERE id = #{id}
     </update>
+
 
     <!-- 根据订单获取批次列表 -->
     <select id="getBatchesByOrder" resultType="org.jeecg.modules.mes.vo.ProductionMaterialVo">

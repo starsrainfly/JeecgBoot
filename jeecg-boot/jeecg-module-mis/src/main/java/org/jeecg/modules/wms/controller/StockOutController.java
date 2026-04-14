@@ -154,35 +154,25 @@ public class StockOutController {
 	 @PostMapping(value = "/approve")
 	 @Transactional(rollbackFor = Exception.class)
 	 public Result<String> approve(@RequestBody StockOutPage stockOutPage) {
-
-		 StockOut stockOut = stockOutService.getById(stockOutPage.getId());
-		 if (stockOut == null) {
+		 StockOut stockOut = buildStockOut(stockOutPage);
+		 StockOut stockOutEntity = stockOutService.getById(stockOutPage.getId());
+		 if (stockOutEntity == null) {
 			 return Result.error("出库单不存在");
 		 }
-		 if (!"APPLY".equals(stockOut.getStatus())) {
+		 if (!"APPLY".equals(stockOutEntity.getStatus())) {
 			 return Result.error("只有申请状态的出库单可以审核");
 		 }
-		 stockOutService.approveStockOut(stockOut);
-//
-//		 LoginUser user = (LoginUser) SecurityUtils.getSubject().getPrincipal();
-//
-//		 // 1. 更新审核信息
-//		 stockOut.setApproveId(user.getId());
-//		 stockOut.setApproveName(user.getRealname());
-//		 stockOut.setApproveTime(new DateTime());
-//		 stockOut.setApproveStatus(ApproveStatusEnum.PASS.getCode());
-//		 stockOut.setApproveRemark(stockOutPage.getApproveRemark());
-//
-//		 stockOutService.updateById(stockOut);
-//
-//		 // 2. 确认出库：扣减库存
-//		 stockOutService.confirmStockOut(stockOut.getId());
-//
-//		 // 3. 完成出库
-//		 stockOut.setStatus(StockEnum.StockOutStatus.FINISHED.getCode());
-//		 stockOut.setStockOutTime(new DateTime());
-//		 stockOutService.updateById(stockOut);
+		 stockOutEntity.setApproveRemark(stockOutPage.getApproveRemark());
+		 stockOutEntity.setApproveStatus(stockOutPage.getApproveStatus());
+		 stockOutEntity.setRemark(stockOutPage.getRemark());
 
+		 if(stockOut.getApproveStatus().equals(ApproveStatusEnum.PASS.getCode())) {
+			 stockOutService.approveStockOut(stockOutEntity, stockOutPage.getStockOutDetailList());
+		 }
+		 else if(stockOut.getApproveStatus().equals(ApproveStatusEnum.REJECT.getCode())) {
+			 stockOutService.rejectStockOut(stockOut);
+			 return Result.OK("已驳回，库存锁定已释放");
+		 }
 		 return Result.OK("审核通过，库存已出库！");
 	 }
 
@@ -195,28 +185,19 @@ public class StockOutController {
 	 @Transactional(rollbackFor = Exception.class)
 	 public Result<String> reject(@RequestBody StockOutPage stockOutPage) {
 
-		 StockOut stockOut = stockOutService.getById(stockOutPage.getId());
-		 if (stockOut == null) {
+		 StockOut stockOutEntity = stockOutService.getById(stockOutPage.getId());
+		 if (stockOutEntity == null) {
 			 return Result.error("出库单不存在");
 		 }
 
-		 if (!"APPLY".equals(stockOut.getStatus())) {
+		 if (!"APPLY".equals(stockOutEntity.getStatus())) {
 			 return Result.error("只有申请状态的出库单可以驳回");
 		 }
+		 stockOutEntity.setApproveRemark(stockOutPage.getApproveRemark());
+		 stockOutEntity.setApproveStatus(ApproveStatusEnum.REJECT.getCode());
+		 stockOutEntity.setRemark(stockOutPage.getRemark());
+		 stockOutService.rejectStockOut(stockOutEntity);
 
-		 stockOutService.rejectStockOut(stockOut);
-//		 // 1. 释放锁定
-//		 stockOutService.releaseStockLock(stockOut.getId());
-//
-//		 // 2. 更新状态
-//		 LoginUser user = (LoginUser) SecurityUtils.getSubject().getPrincipal();
-//		 stockOut.setApproveId(user.getId());
-//		 stockOut.setApproveName(user.getRealname());
-//		 stockOut.setApproveTime(new DateTime());
-//		 stockOut.setApproveStatus(ApproveStatusEnum.REJECT.getCode());
-//		 stockOut.setApproveRemark(stockOutPage.getApproveRemark());
-//		 stockOut.setStatus(StockEnum.StockOutStatus.CANCEL.getCode());
-//		 stockOutService.updateById(stockOut);
 
 		 return Result.OK("已驳回，库存锁定已释放");
 	 }

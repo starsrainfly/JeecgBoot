@@ -859,6 +859,7 @@
         overFlag: isOver ? '1' : '0',
         overQty: overQty,
         productionBatchId: record.value.batchId,
+        productionBatchNo: record.value.batchNo,
         requirementId: record.value.id,
         remark: remark
       }]
@@ -903,6 +904,7 @@
           overFlag: isOver ? '1' : '0',
           overQty: isOver ? safeNumber(item.batchQuantity - item.batchRemainingQty) : 0,
           productionBatchId: batchId,
+          productionBatchNo: item.currentBatchNo,
           requirementId: item.sourceIds?.[0],
           remark: item.remark || (isOver ? `超量申请：${formatNumber(safeNumber(item.batchQuantity - item.batchRemainingQty))}` : '')
         };
@@ -946,6 +948,7 @@
           ? safeNumber(item.batchQuantity - item.batchRemainingQty)
           : 0,
         productionBatchId: item.currentBatchId,
+        productionBatchNo: item.currentBatchNo,
         requirementId: item.currentSourceId,
         remark: item.remark || (item.isOverApply ? `超量申请：${formatNumber(safeNumber(item.batchQuantity - item.batchRemainingQty))}` : '')
       }))

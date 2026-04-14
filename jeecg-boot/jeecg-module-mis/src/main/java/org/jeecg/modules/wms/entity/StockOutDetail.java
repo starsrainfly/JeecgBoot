@@ -153,6 +153,10 @@ public class StockOutDetail implements Serializable {
 	@Excel(name = "生产批次id", width = 15)
     @Schema(description = "生产批次id")
     private String productionBatchId;
+    /**生产批次号*/
+    @Excel(name = "生产批次号", width = 15)
+    @Schema(description = "生产批次号")
+    private String productionBatchNo;
 	/**入库明细id*/
 	@Excel(name = "入库明细id", width = 15)
     @Schema(description = "入库明细id")

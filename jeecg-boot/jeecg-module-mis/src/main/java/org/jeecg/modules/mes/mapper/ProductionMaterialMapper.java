@@ -40,6 +40,7 @@ public interface ProductionMaterialMapper extends BaseMapper<ProductionMaterial>
 
     int increaseIssuedQty(@Param("id") String id, @Param("qty") BigDecimal qty);
 
+    int decreaseLockAndRemainingQty(@Param("id") String id, @Param("qty") BigDecimal qty);
     /**
      * 更新锁定数量（XML实现）
      */

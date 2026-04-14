@@ -1,9 +1,5 @@
-import {BasicColumn} from '/@/components/Table';
-import {FormSchema} from '/@/components/Table';
-import { rules} from '/@/utils/helper/validator';
-import { render } from '/@/utils/common/renderUtils';
-import {JVxeTypes,JVxeColumn} from '/@/components/jeecg/JVxeTable/types'
-import { getWeekMonthQuarterYear } from '/@/utils';
+import {BasicColumn, FormSchema} from '/@/components/Table';
+import {JVxeColumn, JVxeTypes} from '/@/components/jeecg/JVxeTable/types'
 //列表数据
 export const columns: BasicColumn[] = [
    {
@@ -26,11 +22,11 @@ export const columns: BasicColumn[] = [
    //  align:"center",
    //  dataIndex: 'customerName'
    // },
-   {
-    title: '领用人id',
-    align:"center",
-    dataIndex: 'requesterUserId_dictText'
-   },
+   // {
+   //  title: '领用人id',
+   //  align:"center",
+   //  dataIndex: 'requesterUserId_dictText'
+   // },
    {
     title: '领用人',
     align:"center",
@@ -202,16 +198,18 @@ export const formSchema: FormSchema[] = [
           ];
      },
   },
-  // {
-  //   label: '销售订单',
-  //   field: 'sourceOrderId',
-  //   component: 'Input',
-  // },
-  // {
-  //   label: '来源单据编号',
-  //   field: 'sourceOrderCode',
-  //   component: 'Input',
-  // },
+  {
+    label: '来源单据id',
+    field: 'sourceOrderId',
+    component: 'Input',
+    show:false
+  },
+  {
+    label: '来源单据编号',
+    field: 'sourceOrderCode',
+    component: 'Input',
+    show:false
+  },
   // {
   //   label: '客户id',
   //   field: 'customerId',
@@ -291,20 +289,26 @@ export const formSchema: FormSchema[] = [
   //   component: 'Input',
   //   show:false
   // },
-  // {
-  //   label: '审核备注',
-  //   field: 'approveRemark',
-  //   component: 'Input',
-  //   show:false
-  // },
-  // {
-  //   label: '审核状态',
-  //   field: 'approveStatus',
-  //   component: 'JDictSelectTag',
-  //   componentProps:{
-  //       dictCode:"approval_status"
-  //    },
-  // },
+  {
+    label: '审核备注',
+    field: 'approveRemark',
+    component: 'Input',
+    show:true
+  },
+  {
+    label: '审核状态',
+    field: 'approveStatus',
+    component: 'JDictSelectTag',
+    componentProps:{
+        dictCode:"approval_status"
+     },
+    defaultValue:'',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入审核状态!'},
+      ];
+    },
+  },
   // {
   //   label: '收货地址',
   //   field: 'deliverAddress',
@@ -367,7 +371,7 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       type: JVxeTypes.select,
       options:[],
       dictCode:"mdm_material_type",
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
 
@@ -385,7 +389,7 @@ export const stockOutDetailColumns: JVxeColumn[] = [
         { source: 'material_type', target: 'goodsType' },
       ],
 
-      width:"200px",
+      width:"150px",
       placeholder: '请输入${title}',
       defaultValue:'',
         validateRules: [
@@ -417,7 +421,7 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       type: JVxeTypes.select,
       options:[],
       dictCode:"mis_unit where del_flag='0',unit,unit",
-      width:"200px",
+      width:"80px",
       placeholder: '请输入${title}',
       defaultValue:"kg",
       validateRules: [
@@ -428,7 +432,7 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       title: '申请数量',
       key: 'applyQty',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"150px",
       placeholder: '请输入${title}',
       defaultValue:'',
         validateRules: [
@@ -439,15 +443,35 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       title: '实发数量',
       key: 'actualQty',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"150px",
       placeholder: '请输入${title}',
       defaultValue:'',
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
+    },
+    {
+      title:'是否超量',
+      key:'overFlag',
+      type:JVxeTypes.select,
+      width:"100px",
+      options:[],
+      dictCode:"yn",
+      placeholder: '请输入${title}',
+      defaultValue:"0",
+    },
+    {
+      title:'超量数量',
+      key:'overQty',
+      type:JVxeTypes.inputNumber,
+      width:"100px",
+      defaultValue: 0,
     },
     {
       title: '批次号',
       key: 'batchNo',
       type: JVxeTypes.input,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
     },
@@ -455,7 +479,7 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       title: '序列号',
       key: 'serialNo',
       type: JVxeTypes.input,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
     },
@@ -487,7 +511,7 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       title:'销售单价',
       key:'salesPrice',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
     },
@@ -495,7 +519,7 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       title:'销售金额',
       key:'salesTotal',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
     },

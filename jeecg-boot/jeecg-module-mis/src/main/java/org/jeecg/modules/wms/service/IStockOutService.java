@@ -5,6 +5,8 @@ import org.jeecg.modules.wms.entity.StockInDetail;
 import org.jeecg.modules.wms.entity.StockOutDetail;
 import org.jeecg.modules.wms.entity.StockOut;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.wms.vo.StockOutPage;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -65,7 +67,7 @@ public interface IStockOutService extends IService<StockOut> {
 	/**
 	 * 审核通过 - 确认出库并处理余料
 	 */
-	void approveStockOut(StockOut stockOut);
+	void approveStockOut(StockOut stockOut, List<StockOutDetail> details);
 
 	/**
 	 * 审核驳回/取消 - 释放锁定

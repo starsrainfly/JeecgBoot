@@ -77,16 +77,6 @@ export const columns: BasicColumn[] = [
     dataIndex: 'deliveryTime'
    },
    {
-    title: '发货数量',
-    align:"center",
-    dataIndex: 'deliveryQty'
-   },
-   {
-    title: '发货金额',
-    align:"center",
-    dataIndex: 'deliveryAmount'
-   },
-   {
     title: '状态',
     align:"center",
     dataIndex: 'status_dictText'
@@ -121,13 +111,42 @@ export const searchFormSchema: FormSchema[] = [
 	{
       label: "来源订单号",
       field: "sourceOrderNo",
-      component: 'Input',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"scm_sales_order_for_plan",
+            fieldConfig: [
+                { source: 'id', target: 'sourceOrderId' },
+                { source: 'order_no', target: 'sourceOrderNo' },
+            ],
+            multi:true
+        }
+    },
+
       //colProps: {span: 6},
  	},
 	{
       label: "客户名称",
       field: "customerName",
-      component: 'Input',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"scm_customer",
+            fieldConfig: [
+                { source: 'id', target: 'customerId' },
+                { source: 'customer_name', target: 'customerName' },
+                { source: 'name', target: 'consignee' },
+                { source: 'address', target: 'consigneeAddress' },
+                { source: 'phone_number', target: 'consigneePhone' },
+            ],
+            multi:true
+        }
+    },
+
       //colProps: {span: 6},
  	},
 	{
@@ -142,7 +161,21 @@ export const searchFormSchema: FormSchema[] = [
 	{
       label: "物流公司编码",
       field: "logisticsCompanyCode",
-      component: 'Input',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"wms_logistics_company",
+            fieldConfig: [
+                { source: 'id', target: 'logisticsCompanyId' },
+                { source: 'company_code', target: 'logisticsCompanyCode' },
+                { source: 'company_name', target: 'logisticsCompany' },
+            ],
+            multi:true
+        }
+    },
+
       //colProps: {span: 6},
  	},
 	{
@@ -200,7 +233,25 @@ export const formSchema: FormSchema[] = [
   {
     label: '来源订单号',
     field: 'sourceOrderNo',
-    component: 'Input',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"scm_sales_order_for_plan",
+            fieldConfig: [
+                { source: 'id', target: 'sourceOrderId' },
+                { source: 'order_no', target: 'sourceOrderNo' },
+            ],
+            multi:true
+        }
+    },
+
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入来源订单号!'},
+          ];
+     },
   },
   {
     label: '客户id',
@@ -210,7 +261,28 @@ export const formSchema: FormSchema[] = [
   {
     label: '客户名称',
     field: 'customerName',
-    component: 'Input',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"scm_customer",
+            fieldConfig: [
+                { source: 'id', target: 'customerId' },
+                { source: 'customer_name', target: 'customerName' },
+                { source: 'name', target: 'consignee' },
+                { source: 'address', target: 'consigneeAddress' },
+                { source: 'phone_number', target: 'consigneePhone' },
+            ],
+            multi:true
+        }
+    },
+
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入客户名称!'},
+          ];
+     },
   },
   {
     label: '收货人',
@@ -248,7 +320,26 @@ export const formSchema: FormSchema[] = [
   {
     label: '物流公司编码',
     field: 'logisticsCompanyCode',
-    component: 'Input',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"wms_logistics_company",
+            fieldConfig: [
+                { source: 'id', target: 'logisticsCompanyId' },
+                { source: 'company_code', target: 'logisticsCompanyCode' },
+                { source: 'company_name', target: 'logisticsCompany' },
+            ],
+            multi:true
+        }
+    },
+
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入物流公司编码!'},
+          ];
+     },
   },
   {
     label: '物流公司',
@@ -264,6 +355,11 @@ export const formSchema: FormSchema[] = [
     label: '物流费用',
     field: 'logisticsCost',
     component: 'InputNumber',
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入物流费用!'},
+          ];
+     },
   },
   {
     label: '司机电话',
@@ -278,16 +374,11 @@ export const formSchema: FormSchema[] = [
        showTime:true,
        valueFormat: 'YYYY-MM-DD HH:mm:ss'
      },
-  },
-  {
-    label: '发货数量',
-    field: 'deliveryQty',
-    component: 'InputNumber',
-  },
-  {
-    label: '发货金额',
-    field: 'deliveryAmount',
-    component: 'InputNumber',
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入发货时间!'},
+          ];
+     },
   },
   {
     label: '状态',
@@ -526,24 +617,22 @@ export const deliveryDetailColumns: JVxeColumn[] = [
 export const superQuerySchema = {
   deliveryNo: {title: '发货单号',order: 0,view: 'text', type: 'string',},
   sourceType: {title: '来源类型',order: 1,view: 'list', type: 'string',dictCode: 'wms_delivery_source',},
-  sourceOrderNo: {title: '来源订单号',order: 3,view: 'text', type: 'string',},
-  customerName: {title: '客户名称',order: 5,view: 'text', type: 'string',},
+  sourceOrderNo: {title: '来源订单号',order: 3,view: 'popup', type: 'string',code: 'scm_sales_order_for_plan', orgFields: 'order_no', destFields: 'sourceOrderNo', popupMulti: false,},
+  customerName: {title: '客户名称',order: 5,view: 'popup', type: 'string',code: 'scm_customer', orgFields: 'customer_name', destFields: 'customerName', popupMulti: false,},
   consignee: {title: '收货人',order: 6,view: 'text', type: 'string',},
   consigneePhone: {title: '收货人电话',order: 7,view: 'text', type: 'string',},
   consigneeAddress: {title: '收货人地址',order: 8,view: 'text', type: 'string',},
   logisticsType: {title: '物流类型',order: 9,view: 'list', type: 'string',dictCode: 'wms_logistics_type',},
-  logisticsCompanyCode: {title: '物流公司编码',order: 11,view: 'text', type: 'string',},
+  logisticsCompanyCode: {title: '物流公司编码',order: 11,view: 'popup', type: 'string',code: 'wms_logistics_company', orgFields: 'company_code', destFields: 'logisticsCompanyCode', popupMulti: false,},
   logisticsCompany: {title: '物流公司',order: 12,view: 'text', type: 'string',},
   logisticsNo: {title: '物流单号/车牌号',order: 13,view: 'text', type: 'string',},
   logisticsCost: {title: '物流费用',order: 14,view: 'number', type: 'number',},
   driverPhone: {title: '司机电话',order: 15,view: 'text', type: 'string',},
   deliveryTime: {title: '发货时间',order: 16,view: 'datetime', type: 'string',},
-  deliveryQty: {title: '发货数量',order: 17,view: 'number', type: 'number',},
-  deliveryAmount: {title: '发货金额',order: 18,view: 'number', type: 'number',},
-  status: {title: '状态',order: 19,view: 'list', type: 'string',dictCode: 'wms_delivery_status',},
-  stockOutNo: {title: '出库单号',order: 21,view: 'text', type: 'string',},
-  remark: {title: '备注',order: 22,view: 'text', type: 'string',},
-  deliverBy: {title: '发货人',order: 23,view: 'text', type: 'string',},
+  status: {title: '状态',order: 17,view: 'list', type: 'string',dictCode: 'wms_delivery_status',},
+  stockOutNo: {title: '出库单号',order: 19,view: 'text', type: 'string',},
+  remark: {title: '备注',order: 20,view: 'text', type: 'string',},
+  deliverBy: {title: '发货人',order: 21,view: 'text', type: 'string',},
   //子表高级查询
   deliveryDetail: {
     title: '发货明细',

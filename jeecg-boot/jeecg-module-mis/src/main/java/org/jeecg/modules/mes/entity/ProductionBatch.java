@@ -96,7 +96,7 @@ public class ProductionBatch implements Serializable {
     @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")
     @DateTimeFormat(pattern="yyyy-MM-dd")
     @Schema(description = "失效日期")
-    private Date expiredDate;
+    private Date expiryDate;
     /**已入库数量*/
     @Excel(name = "已入库数量", width = 15)
     @Schema(description = "已入库数量")

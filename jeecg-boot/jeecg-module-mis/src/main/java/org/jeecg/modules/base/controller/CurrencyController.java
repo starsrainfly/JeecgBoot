@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import org.jeecg.common.util.oConvertUtils;
@@ -162,6 +164,17 @@ public class CurrencyController extends JeecgController<Currency, ICurrencyServi
 	
 
     /*--------------------------------子表处理-汇率表-begin----------------------------------------------*/
+
+	 /**
+	  * 根据币种代码获取最新启用汇率
+	  */
+	 @ApiOperation(value="汇率表-通过币种代码查询最新汇率", notes="汇率表-通过币种代码查询最新汇率")
+	 @GetMapping("/getRateByCode")
+	 public Result<BigDecimal> getRateByCode(@RequestParam String currencyCode) {
+		 BigDecimal rate = exchangeRateService.getRateByCode(currencyCode);
+		 return Result.OK(rate);
+	 }
+
 	/**
 	 * 通过主表ID查询
 	 * @return

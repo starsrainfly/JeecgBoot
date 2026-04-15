@@ -190,7 +190,7 @@ public class ProductionBatchController {
 		 LocalDate productionDate = LocalDate.now();
 		 LocalDate expiredDate = productionDate.plusDays(productionBatch.getShelfLife());
 		 productionBatch.setProductionDate(Date.from(productionDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()));
-		 productionBatch.setExpiredDate(Date.from(expiredDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()));
+		 productionBatch.setExpiryDate(Date.from(expiredDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()));
 
 		 productionBatch.setWeighingStartTime(new Date());
 		 productionBatch.setStatus("WEIGHING");

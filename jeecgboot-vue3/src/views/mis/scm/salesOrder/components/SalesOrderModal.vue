@@ -16,9 +16,25 @@
           :rowSelection="true"
           :disabled="formDisabled"
           :toolbar="true"
-          />
+        >
+          <!-- 插槽名对应 slotName -->
+
+          <template #productCodeSlot="{ row, rowIndex }">
+            <a-input-group compact>
+              <a-input
+                v-model:value="row.productCode"
+                style="width: 65%"
+                placeholder="选择报价产品"
+                readonly
+              />
+              <a-button type="primary" @click="openPriceModal(row, rowIndex)">选择</a-button>
+            </a-input-group>
+          </template>
+        </JVxeTable>
       </a-tab-pane>
     </a-tabs>
+    <!-- 报价选择弹窗 -->
+    <PriceOfferModal @register="registerPriceModal" @success="onPriceSelected" />
   </BasicModal>
 </template>
 
@@ -31,7 +47,9 @@
     import {formSchema, salesOrderLineColumns, setPriceSelectModalOpener} from '../SalesOrder.data';
     import {saveOrUpdate,salesOrderLineList} from '../SalesOrder.api';
     import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
-
+    import JPopup from '/@/components/Form/src/jeecg/components/JPopup.vue';
+    import PriceOfferModal from './PriceOfferModal.vue';
+    import { useMessage } from '/@/hooks/web/useMessage';
     // Emits声明
     const emit = defineEmits(['register','success']);
     const isUpdate = ref(true);
@@ -45,6 +63,64 @@
           dataSource: [],
           columns:salesOrderLineColumns
     })
+    const { createMessage } = useMessage();
+
+    // 报价弹窗
+    const [registerPriceModal, { openModal: openPriceModalBase }] = useModal();
+    const currentSelectRow = ref(null);
+    const currentSelectIndex = ref(-1);
+
+    const openPriceModal = (row, index) => {
+      const formData = formRef.value?.getFieldsValue?.() || {};
+      if (!formData.customerId) {
+        createMessage.warning('请先选择客户');
+        return;
+      }
+
+      currentSelectRow.value = row;
+      currentSelectIndex.value = index;
+
+      openPriceModalBase(true, {
+        customerId: formData.customerId,
+        customerCode: formData.customerCode || '',  // 确保传客户编码
+        customerName: formData.customerName || '',   // 确保传客户名称
+        salesmanId: formData.salesmanId || '',
+      });
+    };
+
+    const onPriceSelected = (record) => {
+      if (!currentSelectRow.value || !record) return;
+
+      const row = currentSelectRow.value;
+      row.offerDetailId = record.offerDetailId;
+      row.productCode = record.productCode;
+      row.productName = record.productName;
+      row.customProductCode = record.customProductCode;
+      row.customProductName = record.customProductName;
+      row.customProductSpec = record.customProductSpec;
+      row.packageId = record.packageId;
+      row.packageName = record.packageName;
+      row.packageSpec = record.packageSpec;
+      row.packageCapacity = record.packageCapacity;
+      row.priceType = record.priceType;
+      row.unit = record.unit;
+      row.qtyMin = record.qtyMin;
+      row.qtyMax = record.qtyMax;
+      row.unitPrice = Number(record.unitPrice);
+      row.taxRate = record.taxRate;
+      row.orderQty = record.minOrderQty;
+      row.qtyStep = record.qtyStep;
+      row.effectiveDate = record.effectiveDate;
+      row.expiryDate = record.expiryDate;
+
+      // 强制刷新
+      const dataSource = salesOrderLineTable.dataSource;
+      dataSource[currentSelectIndex.value] = { ...row };
+      salesOrderLineTable.dataSource = [...dataSource];
+
+      createMessage.success('已选择报价产品');
+    };
+
     //表单配置
     const [registerForm, {setProps,resetFields, setFieldsValue, validate}] = useForm({
         schemas: formSchema,

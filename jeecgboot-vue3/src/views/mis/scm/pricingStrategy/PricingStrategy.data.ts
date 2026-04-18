@@ -138,7 +138,7 @@ export const searchFormSchema: FormSchema[] = [
       field: 'salesmanId',
       component: 'JSelectMultiple',
       componentProps:{
-          dictCode:"sys_user where del_flag='0',realname,id"
+          dictCode:"sys_user where del_flag='0' and status='1',realname,id"
       },
       //colProps: {span: 6},
  	},
@@ -231,7 +231,7 @@ export const formSchema: FormSchema[] = [
     field: 'salesmanId',
     component: 'JDictSelectTag',
     componentProps:{
-        dictCode:"sys_user where del_flag='0',realname,id"
+        dictCode:"sys_user where del_flag='0' and status='1',realname,id"
      },
   },
   {

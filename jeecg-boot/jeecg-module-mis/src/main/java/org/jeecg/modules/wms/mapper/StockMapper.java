@@ -78,6 +78,17 @@ public interface StockMapper extends BaseMapper<Stock> {
     );
 
     /**
+     * 直接扣减库存（不检查锁定数量，用于扫码发货直接出库）
+     * @param id 库存ID
+     * @param qty 扣减数量
+     * @return 影响行数
+     */
+    int directDeduct(
+            @Param("id") String id,
+            @Param("qty") BigDecimal qty
+    );
+
+    /**
      * 查询库存占用情况
      */
     Map<String, Object> selectStockOccupancy(

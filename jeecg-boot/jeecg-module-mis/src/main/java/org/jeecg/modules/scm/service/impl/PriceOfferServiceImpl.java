@@ -1,11 +1,14 @@
 package org.jeecg.modules.scm.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.modules.scm.entity.PriceOffer;
 import org.jeecg.modules.scm.entity.PriceOfferDetail;
 import org.jeecg.modules.scm.mapper.PriceOfferDetailMapper;
 import org.jeecg.modules.scm.mapper.PriceOfferMapper;
 import org.jeecg.modules.scm.service.IPriceOfferDetailService;
 import org.jeecg.modules.scm.service.IPriceOfferService;
+import org.jeecg.modules.scm.vo.PriceOfferDetailVo;
 import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,6 +100,11 @@ public class PriceOfferServiceImpl extends ServiceImpl<PriceOfferMapper, PriceOf
 		for (PriceOfferDetail newDetail : newDetails) {
 			disableDuplicate(offer, newDetail);
 		}
+	}
+
+	@Override
+	public IPage<PriceOfferDetailVo> getDetailVoPage(Page<PriceOfferDetailVo> page, PriceOfferDetailVo vo) {
+		return priceOfferMapper.selectDetailVoPage(page, vo);
 	}
 
 	/**

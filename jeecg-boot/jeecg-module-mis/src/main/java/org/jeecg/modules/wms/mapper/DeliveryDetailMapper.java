@@ -28,4 +28,9 @@ public interface DeliveryDetailMapper extends BaseMapper<DeliveryDetail> {
    * @return List<DeliveryDetail>
    */
 	public List<DeliveryDetail> selectByMainId(@Param("mainId") String mainId);
+
+	/**
+	 * 根据销售订单明细ID查询已发货数量
+	 */
+	public java.math.BigDecimal sumDeliveredQtyBySourceDetailId(@Param("sourceDetailId") String sourceDetailId);
 }

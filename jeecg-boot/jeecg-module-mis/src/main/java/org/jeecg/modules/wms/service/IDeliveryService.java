@@ -1,11 +1,16 @@
 package org.jeecg.modules.wms.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.modules.wms.entity.DeliveryDetail;
 import org.jeecg.modules.wms.entity.Delivery;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.wms.vo.DeliveryTaskVo;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Description: 发货表
@@ -44,5 +49,10 @@ public interface IDeliveryService extends IService<Delivery> {
 	 * @param idList
 	 */
 	public void delBatchMain (Collection<? extends Serializable> idList);
-	
+
+
+	/**
+	 * 待发货任务列表查询
+	 */
+	IPage<DeliveryTaskVo> queryTaskList(Page<DeliveryTaskVo> page, Map<String, Object> param);
 }

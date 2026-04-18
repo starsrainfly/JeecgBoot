@@ -1,10 +1,13 @@
 package org.jeecg.modules.wms.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.modules.wms.entity.Delivery;
 import org.jeecg.modules.wms.entity.DeliveryDetail;
 import org.jeecg.modules.wms.mapper.DeliveryDetailMapper;
 import org.jeecg.modules.wms.mapper.DeliveryMapper;
 import org.jeecg.modules.wms.service.IDeliveryService;
+import org.jeecg.modules.wms.vo.DeliveryTaskVo;
 import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * @Description: 发货表
@@ -73,5 +77,18 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
 			deliveryMapper.deleteById(id);
 		}
 	}
-	
+
+	@Override
+	public IPage<DeliveryTaskVo> queryTaskList(Page<DeliveryTaskVo> page, Map<String, Object> param) {
+		// 参数默认值处理
+		if (param.get("alertEnabled") == null) {
+			param.put("alertEnabled", true);
+		}
+		if (param.get("alertDays") == null) {
+			param.put("alertDays", 3);
+		}
+
+		return deliveryMapper.queryTaskList(page, param);
+	}
+
 }

@@ -100,7 +100,7 @@ export const searchFormSchema: FormSchema[] = [
     field: 'salesmanId',
     component: 'JDictSelectTag',
     componentProps:{
-      dictCode:"sys_user,realname,id",
+      dictCode:"sys_user where del_flag='0' and status='1',realname,id",
       disabled:!isAdmin,
     },
     defaultValue:userInfo.id
@@ -436,6 +436,7 @@ export const priceOfferDetailColumns: JVxeColumn[] = [
         { source: 'material_code', target: 'packageCode' },
         { source: 'material_name', target: 'packageName' },
         { source: 'description', target: 'packageSpec' },
+        { source: 'package_capacity', target: 'packageCapacity'},
       ],
 
       width:"200px",
@@ -456,6 +457,14 @@ export const priceOfferDetailColumns: JVxeColumn[] = [
     {
       title: '包装规格',
       key: 'packageSpec',
+      type: JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
+    {
+      title: '包装容量',
+      key: 'packageCapacity',
       type: JVxeTypes.input,
       width:"200px",
       placeholder: '请输入${title}',

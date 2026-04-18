@@ -5,12 +5,15 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableLogic;
+import org.jeecg.common.aspect.annotation.Dict;
 import org.jeecg.common.constant.ProvinceCityArea;
 import org.jeecg.common.util.SpringContextUtils;
 import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.jeecgframework.poi.excel.annotation.Excel;
+
+import java.math.BigDecimal;
 import java.util.Date;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.UnsupportedEncodingException;
@@ -82,6 +85,10 @@ public class PriceOfferDetail implements Serializable {
 	@Excel(name = "包装规格", width = 15)
     @Schema(description = "包装规格")
     private String packageSpec;
+    /**包装容量*/
+    @Excel(name = "包装容量", width = 15)
+    @Schema(description = "包装容量")
+    private BigDecimal packageCapacity;
 	/**价格类型*/
 	@Excel(name = "价格类型", width = 15, dicCode = "mdm_price_type")
     @Schema(description = "价格类型")
@@ -125,6 +132,7 @@ public class PriceOfferDetail implements Serializable {
 	/**状态*/
 	@Excel(name = "状态", width = 15, dicCode = "status")
     @Schema(description = "状态")
+    @Dict(dicCode = "status")
     private String status;
 	/**禁用原因*/
 	@Excel(name = "禁用原因", width = 15)

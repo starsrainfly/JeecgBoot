@@ -3,6 +3,8 @@ package org.jeecg.modules.common.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.util.RedisUtil;
 import org.jeecg.modules.common.service.ISerialNoService;
+import org.jeecg.modules.mdm.service.IRegionMappingService;
+import org.jeecg.modules.scm.mapper.CustomerMapper;
 import org.springframework.stereotype.Service;
 import org.apache.commons.lang3.StringUtils;
 
@@ -19,6 +21,10 @@ public class SerialNoServiceImpl implements ISerialNoService {
 
     @Autowired
     private RedisUtil redisUtil;
+    @Autowired
+    CustomerMapper customerMapper;
+    @Autowired
+    private IRegionMappingService regionService;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -63,6 +69,43 @@ public class SerialNoServiceImpl implements ISerialNoService {
         }
     }
 
+    @Override
+    public String generateCustomerCode(String tradeType, String districtCode, String countryCode) {
+        return generatePartnerCode("K", tradeType, districtCode, countryCode);
+    }
+
+    @Override
+    public String generateSupplierCode(String tradeType, String districtCode, String countryCode) {
+        return generatePartnerCode("S", tradeType, districtCode, countryCode);
+    }
+
+    /**
+     * 统一生成往来编码
+     */
+    private String generatePartnerCode(String partnerType, String tradeType,
+                                       String districtCode, String countryCode) {
+        // 1. 获取地区简写
+        String regionCode = getRegionCode(tradeType, districtCode, countryCode);
+
+        // 2. 查对应表最大序号
+        int nextSeq;
+        String codePrefix = String.format("%s-%s-%s-", partnerType, tradeType, regionCode);
+
+        Integer maxSeq = customerMapper.selectMaxSeq(codePrefix + "%");
+        nextSeq = (maxSeq == null ? 1 : maxSeq + 1);
+        // 3. 组装编码
+        return String.format("%s%05d", codePrefix, nextSeq);
+    }
+
+    private String getRegionCode(String tradeType, String districtCode, String countryCode) {
+        if ("N".equals(tradeType)) {
+            // 内贸：6位区编码前2位匹配省简写
+            String prefix = districtCode.substring(0, 2);
+            return regionService.getShortCodeByPrefix(prefix);
+        }
+        // 外贸：直接用国家码
+        return countryCode;
+    }
     /**
      * 计算距离明天 00:00:00 的秒数
      */

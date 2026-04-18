@@ -11,11 +11,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.date.DateTime;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities;
 import org.jeecg.modules.common.enums.ApproveStatusEnum;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.enums.StockEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
+import org.jeecg.modules.scm.vo.PriceOfferDetailVo;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecg.modules.wms.entity.Stock;
@@ -93,7 +95,35 @@ public class PriceOfferController {
 		IPage<PriceOffer> pageList = priceOfferService.page(page, queryWrapper);
 		return Result.OK(pageList);
 	}
-	
+
+	 @Operation(summary="报价明细分页查询")
+	 @GetMapping("/detailPage")
+	 public Result<IPage<PriceOfferDetailVo>> detailPage(
+			 @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
+			 @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
+			 @RequestParam(required = false) String customerId,
+			 @RequestParam(required = false) String salesmanId,
+			 @RequestParam(required = false) String productCode,
+			 @RequestParam(required = false) String productName,
+			 @RequestParam(required = false) String customProductName) {
+
+		 if (StringUtils.isEmpty(customerId)) {
+			 return Result.OK(new Page<>());
+		 }
+
+		 PriceOfferDetailVo vo = new PriceOfferDetailVo();
+		 vo.setCustomerId(customerId);
+		 vo.setSalesmanId(salesmanId);
+		 vo.setProductCode(productCode);
+		 vo.setProductName(productName);
+		 vo.setCustomProductName(customProductName);
+
+		 Page<PriceOfferDetailVo> page = new Page<>(pageNo, pageSize);
+		 IPage<PriceOfferDetailVo> result = priceOfferService.getDetailVoPage(page, vo);
+
+		 return Result.OK(result);
+	 }
+
 	/**
 	 *   添加
 	 *
@@ -141,10 +171,7 @@ public class PriceOfferController {
 		 priceOffer.setApproveTime(new DateTime());
 
 		 if(priceOffer.getApproveStatus().equals(ApproveStatusEnum.PASS.getCode())) {
-			 priceOffer.setStatus(StockEnum.StockInStatus.FINISHED.getCode());
-			 //更新主表及明细表（主要明细表是要删除再重建）
-			// priceOfferService.updateMain(priceOffer, priceOfferPage.getPriceOfferDetailList());
-			 // 更新主表
+
 			 priceOffer.setStatus("1"); // 启用
 			 priceOfferService.updateById(priceOffer);
 

@@ -2,4 +2,9 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.scm.mapper.SupplierMapper">
 
+    <select id="selectMaxSeq" resultType="java.lang.Integer">
+        SELECT MAX(CAST(SUBSTRING_INDEX(supplier_code, '-', -1) AS UNSIGNED))
+        FROM mis_supplier
+        WHERE supplier_code LIKE #{prefix}
+    </select>
 </mapper>

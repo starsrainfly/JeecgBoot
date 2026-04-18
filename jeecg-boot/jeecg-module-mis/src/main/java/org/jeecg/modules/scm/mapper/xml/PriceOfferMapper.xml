@@ -2,4 +2,75 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.scm.mapper.PriceOfferMapper">
 
+    <select id="selectDetailVoPage" resultType="org.jeecg.modules.scm.vo.PriceOfferDetailVo">
+        SELECT
+        d.id AS offerDetailId,
+        o.offer_no AS offerNo,
+        o.customer_id AS customerId,
+        o.customer_name AS customerName,
+        o.salesman_id AS salesmanId,
+        o.salesman_name AS salesmanName,
+        d.product_id AS productId,
+        d.product_code AS productCode,
+        d.product_name AS productName,
+        d.product_spec AS productSpec,
+        d.custom_product_code AS customProductCode,
+        d.custom_product_name AS customProductName,
+        d.custom_product_spec AS customProductSpec,
+        d.unit AS unit,
+        d.package_id AS packageId,
+        d.package_code AS packageCode,
+        d.package_name AS packageName,
+        d.package_spec AS packageSpec,
+        d.package_capacity as packageCapacity,
+        d.price_type AS priceType,
+        d.qty_min AS qtyMin,
+        d.qty_max AS qtyMax,
+        d.effective_date AS effectiveDate,
+        d.expiry_date AS expiryDate,
+        d.unit_price AS unitPrice,
+        d.tax_rate AS taxRate,
+        d.min_order_qty AS minOrderQty,
+        d.qty_step AS qtyStep,
+        d.status AS status
+        FROM mis_price_offer_detail d
+        INNER JOIN mis_price_offer o ON d.offer_id = o.id
+        WHERE o.approve_status = '1'
+        AND o.status = '1'
+        AND o.del_flag = '0'
+        AND d.status = '1'
+        AND d.del_flag = '0'
+        AND d.effective_date &lt;= CURDATE()
+        AND (d.expiry_date IS NULL OR d.expiry_date &gt;= CURDATE())
+        <if test="priceOfferDetailVo.customerId != null and priceOfferDetailVo.customerId != ''">
+            AND o.customer_id = #{priceOfferDetailVo.customerId}
+        </if>
+        <if test="priceOfferDetailVo.salesmanId != null and priceOfferDetailVo.salesmanId != ''">
+            AND o.salesman_id = #{priceOfferDetailVo.salesmanId}
+        </if>
+        <if test="priceOfferDetailVo.productCode != null and priceOfferDetailVo.productCode != ''">
+            AND d.product_code LIKE CONCAT('%', #{priceOfferDetailVo.productCode}, '%')
+        </if>
+        <if test="priceOfferDetailVo.productName != null and priceOfferDetailVo.productName != ''">
+            AND d.product_name LIKE CONCAT('%', #{priceOfferDetailVo.productName}, '%')
+        </if>
+        <if test="priceOfferDetailVo.customProductName != null and priceOfferDetailVo.customProductName != ''">
+            AND d.custom_product_name LIKE CONCAT('%', #{priceOfferDetailVo.customProductName}, '%')
+        </if>
+        ORDER BY d.create_time DESC
+<!--        <choose>-->
+<!--            <when test="priceOfferDetailVo.column == 'productCode'">-->
+<!--                d.product_code ${priceOfferDetailVo.order}-->
+<!--            </when>-->
+<!--            <when test="priceOfferDetailVo.column == 'productName'">-->
+<!--                d.product_name ${priceOfferDetailVo.order}-->
+<!--            </when>-->
+<!--            <when test="priceOfferDetailVo.column == 'unitPrice'">-->
+<!--                d.unit_price ${priceOfferDetailVo.order}-->
+<!--            </when>-->
+<!--            <otherwise>-->
+<!--                d.create_time DESC-->
+<!--            </otherwise>-->
+<!--        </choose>-->
+    </select>
 </mapper>

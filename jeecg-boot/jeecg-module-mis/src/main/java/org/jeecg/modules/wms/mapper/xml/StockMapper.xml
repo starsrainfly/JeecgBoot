@@ -164,6 +164,15 @@
           AND locked_qty >= #{lockQty}
     </update>
 
+    <!-- 直接扣减库存（扫码发货直接出库，不检查锁定数量） -->
+    <update id="directDeduct">
+        UPDATE mis_stock
+        SET quantity = quantity - #{qty},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND (quantity - locked_qty) >= #{qty}
+    </update>
+
     <!-- 查询库存占用情况 -->
     <select id="selectStockOccupancy" resultType="java.util.HashMap">
         SELECT

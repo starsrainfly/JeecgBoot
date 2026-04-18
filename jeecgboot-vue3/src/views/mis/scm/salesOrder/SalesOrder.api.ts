@@ -13,6 +13,7 @@ enum Api {
   exportXls = '/scm/salesOrder/exportXls',
   salesOrderLineList = '/scm/salesOrder/querySalesOrderLineByMainId',
   getMaterialPriceList = '/scm/pricingStrategy/priceSelectList',
+  getPriceOfferList ='/scm/priceOffer/detailPage',
 }
 /**
  * 导出api
@@ -35,6 +36,13 @@ export const salesOrderLineList = Api.salesOrderLineList;
  */
 export const list = (params) =>
   defHttp.get({url: Api.list, params});
+
+export const getPriceOfferPage = (params: any) => {
+  return defHttp.get({
+    url: Api.getPriceOfferList,
+    params,
+  });
+};
 
 /**
  * 删除单个

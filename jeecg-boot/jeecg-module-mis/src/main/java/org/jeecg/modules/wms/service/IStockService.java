@@ -47,6 +47,11 @@ public interface IStockService extends IService<Stock> {
     boolean releaseLockQty(String id, BigDecimal lockQty);
 
     /**
+     * 直接扣减库存（不检查锁定数量）
+     */
+    boolean directDeduct(String id, BigDecimal qty);
+
+    /**
      * 查询库存占用情况
      */
     Map<String, Object> selectStockOccupancy(String warehouseId, String goodsId);

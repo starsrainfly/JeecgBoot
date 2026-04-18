@@ -1,9 +1,11 @@
 import {BasicColumn, FormSchema} from '/@/components/Table';
 import {JVxeColumn, JVxeTypes} from '/@/components/jeecg/JVxeTable/types'
+import {useUserStore} from "@/store/modules/user";
+const userStore = useUserStore();
+const userInfo = userStore.getUserInfo;
+let isAdmin = userInfo.roles?.includes('admin') || userInfo.username === 'admin';
 
 
-import {h} from 'vue'
-import {SearchOutlined} from '@ant-design/icons-vue'
 //列表数据
 export const columns: BasicColumn[] = [
    {
@@ -137,6 +139,9 @@ export const searchFormSchema: FormSchema[] = [
         return{
             setFieldsValue:setFieldsValue,
             code:"scm_customer",
+          param: {
+            salesmanId: userInfo.id,  // 传业务员ID参数
+          },
             fieldConfig: [
                 { source: 'id', target: 'customerId' },
                 { source: 'payment_days', target: 'paymentDays' },
@@ -148,12 +153,14 @@ export const searchFormSchema: FormSchema[] = [
       //colProps: {span: 6},
  	},
 	{
-      label: "业务员id",
+      label: "业务员",
       field: "salesmanId",
       component: 'JSelectMultiple',
       componentProps:{
-          dictCode:"sys_user,realname,id"
+          dictCode:"sys_user where del_flag='0' and status='1',realname,id",
+        disabled:!isAdmin,
       },
+    defaultValue:userInfo.id,
       //colProps: {span: 6},
  	},
 ];
@@ -175,18 +182,29 @@ export const formSchema: FormSchema[] = [
   {
     label: '客户',
     field: 'customerId',
+    component:'input'
+  },
+  {
+    label: '客户',
+    field: 'customerName',
     component: 'JPopup',
     componentProps: ({ formActionType }) => {
         const {setFieldsValue} = formActionType;
         return{
             setFieldsValue:setFieldsValue,
             code:"scm_customer",
+            param: {
+              salesmanId: userInfo.id,  // 传业务员ID参数
+            },
             fieldConfig: [
-                { source: 'id', target: 'customerId' },
-                { source: 'payment_days', target: 'paymentDays' },
+              { source: 'id', target: 'customerId' },
+              { source: 'customer_name', target: 'customerName' },
+              { source: 'payment_days', target: 'paymentDays' },
+              { source: 'receiver_name', target: 'deliveryConsignee' },
+              { source: 'address', target: 'deliveryAddress' },
+              { source: 'receiver_phone', target: 'deliveryPhone' },
             ],
-            multi:true,
-
+            multi:false,
         }
     },
 
@@ -197,12 +215,19 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '业务员id',
+    label: '业务员',
     field: 'salesmanId',
     component: 'JDictSelectTag',
     componentProps:{
-        dictCode:"sys_user,realname,id"
+      dictCode:"sys_user where del_flag='0' and status='1',realname,id",
+      disabled:!isAdmin,
      },
+    defaultValue:userInfo.id,
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入业务员!'},
+      ];
+    },
   },
   {
     label: '币种代码',
@@ -246,27 +271,37 @@ export const formSchema: FormSchema[] = [
     componentProps:{
         dictCode:""
      },
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入收货地址!'},
+      ];
+    },
   },
   {
     label: '收货人',
     field: 'deliveryConsignee',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入收货人!'},
+      ];
+    },
   },
   {
     label: '联系电话',
     field: 'deliveryPhone',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入收货人联系电话!'},
+      ];
+    },
   },
-  {
-    label: '订单总额',
-    field: 'totalAmount',
-    component: 'InputNumber',
-  },
-  {
-    label: '本位币金额',
-    field: 'totalAmountLocal',
-    component: 'InputNumber',
-  },
+  // {
+  //   label: '订单总额',
+  //   field: 'totalAmount',
+  //   component: 'InputNumber',
+  // },
   {
     label: '备注',
     field: 'remark',
@@ -285,24 +320,19 @@ export const formSchema: FormSchema[] = [
 export const salesOrderLineColumns: JVxeColumn[] = [
     {
       title: '产品编码',
-      key: 'itemCode',
-      type: JVxeTypes.popup,
-      popupCode:"mdm_product_select",
-      fieldConfig: [
-        { source: 'id', target: 'itemId' },
-        { source: 'product_code', target: 'itemCode' },
-        { source: 'product_name', target: 'itemName' },
-        { source: 'product_spec', target: 'itemSpec' },
-      ],
-
-
+      key: 'productCode',
+      type: JVxeTypes.slot,
+      slotName: 'productCodeSlot', // 定义插槽名称
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',
+      validateRules: [
+        { required: true, message: '产品编码不能为空' },
+      ],
     },
     {
       title: '产品名称',
-      key: 'itemName',
+      key: 'productName',
       type: JVxeTypes.input,
       width:"200px",
       placeholder: '请输入${title}',
@@ -340,14 +370,14 @@ export const salesOrderLineColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
-    {
-      title: '本币金额',
-      key: 'totalAmountLocal',
-      type: JVxeTypes.inputNumber,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-    },
+    // {
+    //   title: '本币金额',
+    //   key: 'totalAmountLocal',
+    //   type: JVxeTypes.inputNumber,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    // },
     {
       title: '是否赠品',
       key: 'isGift',
@@ -415,14 +445,14 @@ export const salesOrderLineColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
-    {
-      title: '包装单位',
-      key: 'packageCapacityUnit',
-      type: JVxeTypes.input,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-    },
+    // {
+    //   title: '包装单位',
+    //   key: 'packageCapacityUnit',
+    //   type: JVxeTypes.input,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    // },
   ]
 
 

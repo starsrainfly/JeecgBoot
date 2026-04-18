@@ -2,4 +2,102 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.wms.mapper.DeliveryMapper">
 
+    <select id="queryTaskList" resultType="org.jeecg.modules.wms.vo.DeliveryTaskVo">
+        SELECT
+        so.id,
+        so.order_no as orderNo,
+        so.customer_id as customerId,
+        so.customer_name as customerName,
+        so.salesman_id as salesmanId,
+        su.realname as salesmanName,
+        so.order_date as orderDate,
+        so.delivery_date as deliveryDate,
+        so.delivery_consignee as consignee,
+        so.delivery_phone as consigneePhone,
+        so.delivery_address as consigneeAddress,
+        COALESCE(detail_sum.totalQty, 0) as totalQty,
+        COALESCE(delivery_sum.deliveredQty, 0) as deliveredQty,
+        COALESCE(detail_sum.totalQty, 0) - COALESCE(delivery_sum.deliveredQty, 0) as remainingQty,
+        CASE
+        WHEN COALESCE(detail_sum.totalQty, 0) = 0 THEN '0'
+        WHEN COALESCE(delivery_sum.deliveredQty, 0) = 0 THEN '0'
+        WHEN COALESCE(delivery_sum.deliveredQty, 0) >= COALESCE(detail_sum.totalQty, 0) THEN '2'
+        ELSE '1'
+        END as deliveryStatus,
+        <choose>
+            <when test="param.alertEnabled != null and param.alertEnabled == true">
+                CASE
+                WHEN so.delivery_date IS NOT NULL
+                AND DATEDIFF(so.delivery_date, CURDATE()) BETWEEN 0 AND #{param.alertDays}
+                THEN 1
+                ELSE 0
+                END as isUrgent
+            </when>
+            <otherwise>0 as isUrgent</otherwise>
+        </choose>
+        FROM mis_sales_order so
+        LEFT JOIN sys_user su ON so.salesman_id = su.id
+        LEFT JOIN (
+        SELECT order_id, SUM(order_qty) as totalQty
+        FROM mis_sales_order_detail
+        GROUP BY order_id
+        ) detail_sum ON detail_sum.order_id = so.id
+        LEFT JOIN (
+        SELECT m.source_order_id, SUM(d.actual_qty) as deliveredQty
+        FROM mis_delivery_detail d
+        JOIN mis_delivery m ON d.delivery_id = m.id
+        GROUP BY m.source_order_id
+        ) delivery_sum ON delivery_sum.source_order_id = so.id
+        WHERE so.order_status != '2'
+
+        <if test="param.orderNo != null and param.orderNo != ''">
+            AND so.order_no LIKE CONCAT('%', #{param.orderNo}, '%')
+        </if>
+        <if test="param.customerName != null and param.customerName != ''">
+            AND so.customer_name LIKE CONCAT('%', #{param.customerName}, '%')
+        </if>
+        <if test="param.salesmanId != null and param.salesmanId != ''">
+            AND so.salesman_id = #{param.salesmanId}
+        </if>
+        <if test="param.orderDate_begin != null and param.orderDate_begin != ''">
+            AND so.order_date >= #{param.orderDate_begin}
+        </if>
+        <if test="param.orderDate_end != null and param.orderDate_end != ''">
+            AND so.order_date &lt;= #{param.orderDate_end}
+        </if>
+        <if test="param.deliveryDate_begin != null and param.deliveryDate_begin != ''">
+            AND so.delivery_date >= #{param.deliveryDate_begin}
+        </if>
+        <if test="param.deliveryDate_end != null and param.deliveryDate_end != ''">
+            AND so.delivery_date &lt;= #{param.deliveryDate_end}
+        </if>
+        <if test="param.deliveryStatus != null and param.deliveryStatus != ''">
+            AND (
+            CASE
+            WHEN COALESCE(detail_sum.totalQty, 0) = 0 THEN '0'
+            WHEN COALESCE(delivery_sum.deliveredQty, 0) = 0 THEN '0'
+            WHEN COALESCE(delivery_sum.deliveredQty, 0) >= COALESCE(detail_sum.totalQty, 0) THEN '2'
+            ELSE '1'
+            END
+            ) = #{param.deliveryStatus}
+        </if>
+        <if test="param.hideCompleted != null and param.hideCompleted == '1'">
+            AND COALESCE(delivery_sum.deliveredQty, 0) &lt; COALESCE(detail_sum.totalQty, 0)
+        </if>
+        <if test="param.onlyUrgent != null and param.onlyUrgent == '1' and param.alertEnabled != null and param.alertEnabled == true">
+            AND so.delivery_date IS NOT NULL
+            AND DATEDIFF(so.delivery_date, CURDATE()) BETWEEN 0 AND #{param.alertDays}
+        </if>
+
+        ORDER BY
+        <if test="param.alertEnabled != null and param.alertEnabled == true">
+            CASE
+            WHEN so.delivery_date IS NOT NULL
+            AND DATEDIFF(so.delivery_date, CURDATE()) BETWEEN 0 AND #{param.alertDays}
+            THEN 0 ELSE 1
+            END ASC,
+        </if>
+        so.delivery_date ASC,
+        so.order_date ASC
+    </select>
 </mapper>

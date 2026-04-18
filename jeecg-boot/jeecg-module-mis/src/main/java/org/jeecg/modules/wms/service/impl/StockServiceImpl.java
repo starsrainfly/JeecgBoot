@@ -78,6 +78,17 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean directDeduct(String id, BigDecimal qty) {
+        int rows = stockMapper.directDeduct(id, qty);
+        if (rows == 0) {
+            throw new RuntimeException("库存直接扣减失败，可能可用库存不足");
+        }
+        log.info("直接扣减库存：stockId={}, 扣减数量={}", id, qty);
+        return true;
+    }
+
+    @Override
     public Map<String, Object> selectStockOccupancy(String warehouseId, String goodsId) {
         return stockMapper.selectStockOccupancy(warehouseId, goodsId);
     }

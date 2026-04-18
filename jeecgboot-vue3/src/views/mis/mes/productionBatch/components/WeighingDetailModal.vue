@@ -60,7 +60,7 @@
 <script setup>
   import { ref, computed } from 'vue';
   import { BasicModal, useModalInner } from '/@/components/Modal';
-  import { getWeighingDetail } from '../ProductionBatch.api';
+  //import { getWeighingDetail } from '../ProductionBatch.api';
 
   const batchInfo = ref({});
   const bomDataSource = ref([]);

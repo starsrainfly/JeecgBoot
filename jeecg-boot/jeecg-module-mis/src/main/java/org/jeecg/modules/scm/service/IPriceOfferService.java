@@ -1,8 +1,12 @@
 package org.jeecg.modules.scm.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.modules.scm.entity.PriceOfferDetail;
 import org.jeecg.modules.scm.entity.PriceOffer;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.scm.vo.PriceOfferDetailVo;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -49,5 +53,10 @@ public interface IPriceOfferService extends IService<PriceOffer> {
 	 * 审核通过后，禁用历史重复价格
 	 */
 	void disableDuplicateAfterApprove(String offerId);
+
+	/**
+	 * 报价明细分页查询
+	 */
+	IPage<PriceOfferDetailVo> getDetailVoPage(Page<PriceOfferDetailVo> page, PriceOfferDetailVo vo);
 	
 }

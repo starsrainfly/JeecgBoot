@@ -13,4 +13,10 @@
 		FROM  mis_delivery_detail
 		WHERE
 			 delivery_id = #{mainId} 	</select>
+
+	<select id="sumDeliveredQtyBySourceDetailId" resultType="java.math.BigDecimal">
+		SELECT COALESCE(SUM(actual_qty), 0)
+		FROM mis_delivery_detail
+		WHERE source_detail_id = #{sourceDetailId} AND del_flag = '0'
+	</select>
 </mapper>

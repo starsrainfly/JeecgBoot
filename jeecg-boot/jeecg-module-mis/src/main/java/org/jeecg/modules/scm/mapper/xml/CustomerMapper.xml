@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.scm.mapper.CustomerMapper">
+
+    <select id="selectMaxSeq" resultType="java.lang.Integer">
+        SELECT MAX(CAST(SUBSTRING_INDEX(customer_code, '-', -1) AS UNSIGNED))
+        FROM mis_customer
+        WHERE customer_code LIKE #{codePrefix}
+    </select>
+</mapper>

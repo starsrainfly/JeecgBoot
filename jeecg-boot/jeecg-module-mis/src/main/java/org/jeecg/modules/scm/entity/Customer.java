@@ -114,10 +114,10 @@ public class Customer implements Serializable {
     @Schema(description = "审核状态")
     private String approvalStatus;
 	/**付款方式*/
-	@Excel(name = "付款方式", width = 15, dicCode = "payment_type")
-    @Dict(dicCode = "payment_type")
+	@Excel(name = "付款方式", width = 15, dicCode = "payment_method")
+    @Dict(dicCode = "payment_method")
     @Schema(description = "付款方式")
-    private String paymentType;
+    private String paymentMethod;
 	/**审核人*/
 	@Excel(name = "审核人", width = 15)
     @Schema(description = "审核人")

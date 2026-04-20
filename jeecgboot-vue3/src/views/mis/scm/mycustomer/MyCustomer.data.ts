@@ -83,7 +83,11 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'approvalStatus_dictText'
    },
-
+   {
+    title:'审核意见',
+    align:"center",
+    dataIndex:'approvalRemark'
+   },
    {
     title: '审核人',
     align:"center",
@@ -178,6 +182,14 @@ export const searchFormSchema: FormSchema[] = [
       },
       //colProps: {span: 6},
  	},
+  {
+    label: '审核状态',
+    field: 'approvalStatus',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"approval_status",
+    },
+  },
 ];
 //表单数据
 export const formSchema: FormSchema[] = [
@@ -443,22 +455,22 @@ export const customerAddressColumns: JVxeColumn[] = [
     },
   ]
 export const customerQualificationColumns: JVxeColumn[] = [
-    {
-      title: '客户ID',
-      key: 'customerId',
-      type: JVxeTypes.input,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-    },
-    {
-      title: '客户编码（冗余）',
-      key: 'customerCode',
-      type: JVxeTypes.input,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-    },
+    // {
+    //   title: '客户ID',
+    //   key: 'customerId',
+    //   type: JVxeTypes.input,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    // },
+    // {
+    //   title: '客户编码（冗余）',
+    //   key: 'customerCode',
+    //   type: JVxeTypes.input,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    // },
     {
       title: '资质名称',
       key: 'qualificationName',
@@ -548,15 +560,20 @@ export const customerQualificationColumns: JVxeColumn[] = [
       defaultValue:'',
     },
     {
-      title: '资质状态：0-过期 1-有效 2-即将过期',
+      title: '资质状态',
       key: 'qualificationStatus',
-      type: JVxeTypes.input,
+      type: JVxeTypes.select,
+      options:[],
+      dictCode:"status",
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
     },
     {
-      title: '是否关键资质：0-否 1-是',
+      title: '是否关键资质',
       key: 'isKeyQualification',
       type: JVxeTypes.select,
       options:[],
@@ -564,6 +581,9 @@ export const customerQualificationColumns: JVxeColumn[] = [
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
     },
     {
       title: '预警提前天数（预留）',
@@ -571,15 +591,17 @@ export const customerQualificationColumns: JVxeColumn[] = [
       type: JVxeTypes.inputNumber,
       width:"200px",
       placeholder: '请输入${title}',
-      defaultValue:'',
+      defaultValue:'30',
     },
     {
-      title: '预警状态：0-正常 1-预警中 2-已忽略（预留）',
+      title: '预警状态',
       key: 'alertStatus',
-      type: JVxeTypes.input,
+      type: JVxeTypes.select,
+      options:[],
+      dictCode:"scm_alert_status",
       width:"200px",
       placeholder: '请输入${title}',
-      defaultValue:'',
+      defaultValue:'0',
     },
     {
       title: '备注',
@@ -663,7 +685,7 @@ export const customerSalesmanColumns: JVxeColumn[] = [
       key: 'salesmanId',
       type: JVxeTypes.select,
       options:[],
-      dictCode:"",
+      dictCode:"sys_user where del_flag='0' and status='1',realname,id",
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',

@@ -15,7 +15,8 @@ import java.util.Date;
 public class PriceOfferDetailVo implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
+    @Schema(description = "报价ID")
+    private String offerId;
     @Schema(description = "报价明细ID")
     private String offerDetailId;
 

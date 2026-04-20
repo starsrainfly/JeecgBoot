@@ -441,6 +441,8 @@ export const priceOfferDetailColumns: JVxeColumn[] = [
         { source: 'material_code', target: 'packageCode' },
         { source: 'material_name', target: 'packageName' },
         { source: 'description', target: 'packageSpec' },
+        { source: 'package_capacity', target: 'packageCapacity'},
+        { source:'package_capacity_unit',target: 'packageCapacityUnit'},
       ],
 
       width:"200px",
@@ -466,7 +468,22 @@ export const priceOfferDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
-
+    {
+      title: '包装容量',
+      key: 'packageCapacity',
+      type: JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
+    {
+      title: '容量单位',
+      key: 'packageCapacityUnit',
+      type: JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
     {
       title: '数量区间-最小',
       key: 'qtyMin',

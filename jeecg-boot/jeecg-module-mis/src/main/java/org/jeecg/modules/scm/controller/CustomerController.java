@@ -184,13 +184,13 @@ public class CustomerController {
 		 }
 		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
 
-		 customerEntity.setApprovalId(loginUser.getId());  // 记录实际执行人
-		 customerEntity.setApprovalUser(loginUser.getRealname());
-		 customerEntity.setApprovalDate(new DateTime());
-		 customerEntity.setApprovalRemark(customer.getApprovalRemark());
-		 customerEntity.setApprovalStatus(customer.getApprovalStatus());
+		 customer.setApprovalId(loginUser.getId());  // 记录实际执行人
+		 customer.setApprovalUser(loginUser.getRealname());
+		 customer.setApprovalDate(new DateTime());
+//		 customer.setApprovalRemark(customer.getApprovalRemark());
+//		 customer.setApprovalStatus(customer.getApprovalStatus());
 
-		 customerService.updateById(customerEntity);
+		 customerService.updateById(customer);
 
 		 return Result.OK("审核成功");
 	}

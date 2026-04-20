@@ -1,8 +1,8 @@
 package org.jeecg.modules.scm.service.impl;
 
 import org.jeecg.modules.scm.entity.SalesOrder;
-import org.jeecg.modules.scm.entity.SalesOrderLine;
-import org.jeecg.modules.scm.mapper.SalesOrderLineMapper;
+import org.jeecg.modules.scm.entity.SalesOrderDetail;
+import org.jeecg.modules.scm.mapper.SalesOrderDetailMapper;
 import org.jeecg.modules.scm.mapper.SalesOrderMapper;
 import org.jeecg.modules.scm.service.ISalesOrderService;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import java.util.Collection;
 /**
  * @Description: 销售订单主表
  * @Author: jeecg-boot
- * @Date:   2026-02-07
+ * @Date:   2026-04-20
  * @Version: V1.0
  */
 @Service
@@ -25,35 +25,35 @@ public class SalesOrderServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOr
 	@Autowired
 	private SalesOrderMapper salesOrderMapper;
 	@Autowired
-	private SalesOrderLineMapper salesOrderLineMapper;
+	private SalesOrderDetailMapper salesOrderDetailMapper;
 	
 	@Override
 	@Transactional(rollbackFor = Exception.class)
-	public void saveMain(SalesOrder salesOrder, List<SalesOrderLine> salesOrderLineList) {
+	public void saveMain(SalesOrder salesOrder, List<SalesOrderDetail> salesOrderDetailList) {
 		salesOrderMapper.insert(salesOrder);
-		if(salesOrderLineList!=null && salesOrderLineList.size()>0) {
-			for(SalesOrderLine entity:salesOrderLineList) {
+		if(salesOrderDetailList!=null && salesOrderDetailList.size()>0) {
+			for(SalesOrderDetail entity:salesOrderDetailList) {
 				//外键设置
 				entity.setOrderId(salesOrder.getId());
-				salesOrderLineMapper.insert(entity);
+				salesOrderDetailMapper.insert(entity);
 			}
 		}
 	}
 
 	@Override
 	@Transactional(rollbackFor = Exception.class)
-	public void updateMain(SalesOrder salesOrder,List<SalesOrderLine> salesOrderLineList) {
+	public void updateMain(SalesOrder salesOrder,List<SalesOrderDetail> salesOrderDetailList) {
 		salesOrderMapper.updateById(salesOrder);
 		
 		//1.先删除子表数据
-		salesOrderLineMapper.deleteByMainId(salesOrder.getId());
+		salesOrderDetailMapper.deleteByMainId(salesOrder.getId());
 		
 		//2.子表数据重新插入
-		if(salesOrderLineList!=null && salesOrderLineList.size()>0) {
-			for(SalesOrderLine entity:salesOrderLineList) {
+		if(salesOrderDetailList!=null && salesOrderDetailList.size()>0) {
+			for(SalesOrderDetail entity:salesOrderDetailList) {
 				//外键设置
 				entity.setOrderId(salesOrder.getId());
-				salesOrderLineMapper.insert(entity);
+				salesOrderDetailMapper.insert(entity);
 			}
 		}
 	}
@@ -61,7 +61,7 @@ public class SalesOrderServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOr
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void delMain(String id) {
-		salesOrderLineMapper.deleteByMainId(id);
+		salesOrderDetailMapper.deleteByMainId(id);
 		salesOrderMapper.deleteById(id);
 	}
 
@@ -69,7 +69,7 @@ public class SalesOrderServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOr
 	@Transactional(rollbackFor = Exception.class)
 	public void delBatchMain(Collection<? extends Serializable> idList) {
 		for(Serializable id:idList) {
-			salesOrderLineMapper.deleteByMainId(id.toString());
+			salesOrderDetailMapper.deleteByMainId(id.toString());
 			salesOrderMapper.deleteById(id);
 		}
 	}

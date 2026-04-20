@@ -4,6 +4,7 @@
 
     <select id="selectDetailVoPage" resultType="org.jeecg.modules.scm.vo.PriceOfferDetailVo">
         SELECT
+        o.id as offerId,
         d.id AS offerDetailId,
         o.offer_no AS offerNo,
         o.customer_id AS customerId,
@@ -23,6 +24,7 @@
         d.package_name AS packageName,
         d.package_spec AS packageSpec,
         d.package_capacity as packageCapacity,
+        d.package_capacity_unit as packageCapacityUnit,
         d.price_type AS priceType,
         d.qty_min AS qtyMin,
         d.qty_max AS qtyMax,

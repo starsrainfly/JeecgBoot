@@ -74,10 +74,11 @@
     import { JVxeTable } from '/@/components/jeecg/JVxeTable'
     import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods.ts'
     import {formSchema,customerAddressColumns,customerQualificationColumns,customerContactColumns,customerSalesmanColumns} from '../Customer.data';
-    import {saveOrUpdate,customerAddressList,customerQualificationList,customerContactList,customerSalesmanList} from '../Customer.api';
+    import {saveOrUpdate,approve,customerAddressList,customerQualificationList,customerContactList,customerSalesmanList} from '../Customer.api';
     import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
     import {useMessage} from "@/hooks/web/useMessage";
     import { useUserStore } from "@/store/modules/user";
+
     // Emits声明
     const emit = defineEmits(['register','success']);
     const isUpdate = ref(true);
@@ -115,8 +116,8 @@
     })
     const userStore = useUserStore();
     const userInfo = userStore.getUserInfo;
-    const isAdmin = userInfo.roles?.includes('admin') || userInfo.username === 'admin';
-
+    //const isAdmin = userInfo.roles?.includes('admin') || userInfo.username === 'admin';
+    const isAuditMode = ref(false); // 新增：是否为审核模式
 
     //表单配置
     const [registerForm, {setProps,resetFields, setFieldsValue, validate}] = useForm({
@@ -130,10 +131,12 @@
     const [registerModal, {setModalProps, closeModal}] = useModalInner(async (data) => {
         //重置表单
         await reset();
+        // 新增：判断是否为审核模式
+        isAuditMode.value = data?.isAudit === true;
         setModalProps({confirmLoading: false,showCancelBtn:data?.showFooter,showOkBtn:data?.showFooter});
         isUpdate.value = !!data?.isUpdate;
         formDisabled.value = !data?.showFooter;
-        salesmanformDisabled.value = !isAdmin || !data?.showFooter;
+        salesmanformDisabled.value = !data?.showFooter;//!isAdmin ||
         if (unref(isUpdate)) {
             //表单赋值
             await setFieldsValue({
@@ -148,10 +151,27 @@
        setProps({ disabled: !data?.showFooter })
     });
     //方法配置
-    const [handleChangeTabs,handleSubmit,requestSubTableData,formRef] = useJvxeMethod(requestAddOrEdit,classifyIntoFormData,tableRefs,activeKey,refKeys);
+    const [handleChangeTabs,handleSubmit,requestSubTableData,formRef] = useJvxeMethod(
+      handleSubmitMethod,classifyIntoFormData,tableRefs,activeKey,refKeys);
 
+    const submitMethodRef = ref(requestAddOrEdit);
+    // //设置标题
+    // const title = computed(() => (!unref(isUpdate) ? '新增' : !unref(formDisabled) ? '编辑' : '详情'));
+    /**
+     * 获取弹窗标题
+     */
+    function getModalTitle() {
+      if (isAuditMode.value) return '审核';
+      if (!unref(isUpdate)) return '新增';
+      if (!unref(formDisabled)) return '编辑';
+      return '详情';
+    }
     //设置标题
-    const title = computed(() => (!unref(isUpdate) ? '新增' : !unref(formDisabled) ? '编辑' : '详情'));
+    //const title = computed(() => (!unref(isUpdate) ? '新增' : !unref(formDisabled) ? '编辑' : '详情'));
+    const title = computed(() => {
+      return getModalTitle();
+
+    });
 
     async function reset(){
       await resetFields();
@@ -160,6 +180,17 @@
       customerQualificationTable.dataSource = [];
       customerContactTable.dataSource = [];
       customerSalesmanTable.dataSource = [];
+      isAuditMode.value = false;
+      submitMethodRef.value = requestAddOrEdit; // 重置提交方法
+    }
+    async function handleSubmitMethod(values) {
+      if (isAuditMode.value) {
+        console.log('执行审核提交');
+        return requestApprove(values);
+      } else {
+        console.log('执行编辑/新增提交');
+        return requestAddOrEdit(values);
+      }
     }
     function classifyIntoFormData(allValues) {
          let main = Object.assign({}, allValues.formValue)
@@ -192,6 +223,20 @@
         } finally {
             setModalProps({confirmLoading: false});
         }
+    }
+
+    async function requestApprove(values){
+      try {
+        setModalProps({confirmLoading: true});
+        //提交表单
+        await approve(values);
+        //关闭弹窗
+        closeModal();
+        //刷新列表
+        emit('success');
+      } finally {
+        setModalProps({confirmLoading: false});
+      }
     }
 </script>
 

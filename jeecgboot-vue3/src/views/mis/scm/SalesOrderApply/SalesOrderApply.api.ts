@@ -4,18 +4,15 @@ import { useMessage } from "/@/hooks/web/useMessage";
 const { createConfirm } = useMessage();
 
 enum Api {
-  list = '/scm/customer/list',
-  save='/scm/customer/add',
-  edit='/scm/customer/edit',
-  deleteOne = '/scm/customer/delete',
-  deleteBatch = '/scm/customer/deleteBatch',
-  importExcel = '/scm/customer/importExcel',
-  exportXls = '/scm/customer/exportXls',
-  customerAddressList = '/scm/customer/queryCustomerAddressByMainId',
-  customerQualificationList = '/scm/customer/queryCustomerQualificationByMainId',
-  customerContactList = '/scm/customer/queryCustomerContactByMainId',
-  customerSalesmanList = '/scm/customer/queryCustomerSalesmanByMainId',
-  customerApprove = '/scm/customer/approve',
+  list = '/scm/salesOrder/list',
+  save='/scm/salesOrder/add',
+  edit='/scm/salesOrder/edit',
+  deleteOne = '/scm/salesOrder/delete',
+  deleteBatch = '/scm/salesOrder/deleteBatch',
+  importExcel = '/scm/salesOrder/importExcel',
+  exportXls = '/scm/salesOrder/exportXls',
+  salesOrderDetailList = '/scm/salesOrder/querySalesOrderDetailByMainId',
+  getPriceOfferList ='/scm/priceOffer/detailPage',
 }
 /**
  * 导出api
@@ -31,28 +28,20 @@ export const getImportUrl = Api.importExcel;
  * 查询子表数据
  * @param params
  */
-export const customerAddressList = Api.customerAddressList;
-/**
- * 查询子表数据
- * @param params
- */
-export const customerQualificationList = Api.customerQualificationList;
-/**
- * 查询子表数据
- * @param params
- */
-export const customerContactList = Api.customerContactList;
-/**
- * 查询子表数据
- * @param params
- */
-export const customerSalesmanList = Api.customerSalesmanList;
+export const salesOrderDetailList = Api.salesOrderDetailList;
 /**
  * 列表接口
  * @param params
  */
 export const list = (params) =>
   defHttp.get({url: Api.list, params});
+
+export const getPriceOfferPage = (params: any) => {
+  return defHttp.get({
+    url: Api.getPriceOfferList,
+    params,
+  });
+};
 
 /**
  * 删除单个
@@ -87,11 +76,4 @@ export const batchDelete = (params, handleSuccess) => {
 export const saveOrUpdate = (params, isUpdate) => {
   let url = isUpdate ? Api.edit : Api.save;
   return defHttp.post({url: url, params});
-}
-/**
- * 客户审核
- * @param params
- */
-export const approve =(params) =>{
-  return defHttp.post({url:Api.customerApprove, params});
 }

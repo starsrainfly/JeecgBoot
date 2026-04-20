@@ -1,21 +1,21 @@
 package org.jeecg.modules.wms.controller;
 
-import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.jeecg.modules.scm.entity.SalesOrderDetail;
+import org.jeecg.modules.scm.mapper.SalesOrderDetailMapper;
+import org.jeecg.modules.scm.service.ISalesOrderService;
 import org.jeecg.modules.wms.vo.*;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
@@ -43,10 +43,6 @@ import org.jeecg.modules.wms.service.IWarehouseService;
 import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.enums.StockEnum;
-import org.jeecg.modules.scm.entity.SalesOrder;
-import org.jeecg.modules.scm.entity.SalesOrderLine;
-import org.jeecg.modules.scm.service.ISalesOrderService;
-import org.jeecg.modules.scm.mapper.SalesOrderLineMapper;
 import org.jeecg.modules.wms.entity.Warehouse;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +55,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
-import com.alibaba.fastjson.JSON;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import org.jeecg.common.aspect.annotation.AutoLog;
@@ -84,7 +79,7 @@ public class DeliveryController {
 	@Autowired
 	private DeliveryDetailMapper deliveryDetailMapper;
 	@Autowired
-	private SalesOrderLineMapper salesOrderLineMapper;
+	private SalesOrderDetailMapper salesOrderDetailMapper;
 	@Autowired
 	private ISalesOrderService salesOrderService;
 	@Autowired
@@ -360,11 +355,11 @@ public class DeliveryController {
 	@Operation(summary="查询销售订单未发货明细")
 	@GetMapping(value = "/pendingOrderLines")
 	public Result<List<PendingOrderLineVo>> pendingOrderLines(@RequestParam(name="orderId",required=true) String orderId) {
-		List<SalesOrderLine> lines = salesOrderLineMapper.selectByMainId(orderId);
+		List<SalesOrderDetail> lines = salesOrderDetailMapper.selectByMainId(orderId);
 		List<PendingOrderLineVo> result = new ArrayList<>();
-		for (SalesOrderLine line : lines) {
+		for (SalesOrderDetail line : lines) {
 			BigDecimal deliveredQty = deliveryDetailMapper.sumDeliveredQtyBySourceDetailId(line.getId());
-			BigDecimal remainingQty = line.getQuantity().subtract(deliveredQty);
+			BigDecimal remainingQty = line.getOrderQty().subtract(deliveredQty);
 			if (remainingQty.compareTo(BigDecimal.ZERO) > 0) {
 				PendingOrderLineVo vo = new PendingOrderLineVo();
 				BeanUtils.copyProperties(line, vo);
@@ -402,11 +397,11 @@ public class DeliveryController {
 
 		// 1. 查询订单未发货明细
 		List<PendingOrderLineVo> pendingLines = new ArrayList<>();
-		List<SalesOrderLine> lines = salesOrderLineMapper.selectByMainId(orderId);
-		for (SalesOrderLine line : lines) {
+		List<SalesOrderDetail> lines = salesOrderDetailMapper.selectByMainId(orderId);
+		for (SalesOrderDetail line : lines) {
 			BigDecimal deliveredQty = deliveryDetailMapper.sumDeliveredQtyBySourceDetailId(line.getId());
-			BigDecimal remainingQty = line.getQuantity().subtract(deliveredQty);
-			if (remainingQty.compareTo(BigDecimal.ZERO) > 0 && goodsCode.equals(line.getItemCode())) {
+			BigDecimal remainingQty = line.getOrderQty().subtract(deliveredQty);
+			if (remainingQty.compareTo(BigDecimal.ZERO) > 0 && goodsCode.equals(line.getProductCode())) {
 				PendingOrderLineVo vo = new PendingOrderLineVo();
 				BeanUtils.copyProperties(line, vo);
 				vo.setDeliveredQty(deliveredQty);

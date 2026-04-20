@@ -4,9 +4,9 @@
    <BasicTable @register="registerTable" :rowSelection="rowSelection">
      <!--插槽:table标题-->
       <template #tableTitle>
-          <a-button type="primary" v-auth="'scm:mis_customer:add'"  @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
-          <a-button  type="primary" v-auth="'scm:mis_customer:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
-          <j-upload-button  type="primary" v-auth="'scm:mis_customer:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
+          <a-button type="primary" v-auth="'scm:mis_sales_order:add'"  @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
+          <a-button  type="primary" v-auth="'scm:mis_sales_order:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
+          <j-upload-button  type="primary" v-auth="'scm:mis_sales_order:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
           <a-dropdown v-if="selectedRowKeys.length > 0">
               <template #overlay>
                 <a-menu>
@@ -16,7 +16,7 @@
                   </a-menu-item>
                 </a-menu>
               </template>
-              <a-button v-auth="'scm:mis_customer:deleteBatch'">批量操作
+              <a-button v-auth="'scm:mis_sales_order:deleteBatch'">批量操作
                 <Icon icon="mdi:chevron-down"></Icon>
               </a-button>
         </a-dropdown>
@@ -29,29 +29,23 @@
       </template>
       <!--字段回显插槽-->
       <template v-slot:bodyCell="{ column, record, index, text }">
-        <template v-if="column.dataIndex==='provinceCode'">
-          <!--省市区字段回显插槽-->
-          {{ getAreaTextByCode(text) }}
-        </template>
       </template>
-
     </BasicTable>
     <!-- 表单区域 -->
-    <CustomerModal @register="registerModal" @success="handleSuccess"></CustomerModal>
+    <SalesOrderModal @register="registerModal" @success="handleSuccess"></SalesOrderModal>
   </div>
 </template>
 
-<script lang="ts" name="scm-customer" setup>
+<script lang="ts" name="scm-salesOrder" setup>
   import {ref, reactive, computed, unref} from 'vue';
   import {BasicTable, useTable, TableAction} from '/@/components/Table';
   import { useListPage } from '/@/hooks/system/useListPage'
   import {useModal} from '/@/components/Modal';
-  import CustomerModal from './components/CustomerModal.vue'
-  import {columns, searchFormSchema, superQuerySchema} from './Customer.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl, approve} from './Customer.api';
+  import SalesOrderModal from './components/SalesOrderApplyModal.vue'
+  import {columns, searchFormSchema, superQuerySchema} from './SalesOrderApply.data';
+  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './SalesOrderApply.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
-  import { getAreaTextByCode } from '/@/components/Form/src/utils/Area';
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
@@ -60,7 +54,7 @@
    //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
-           title: '客户信息',
+           title: '销售订单主表',
            api: list,
            columns,
            canResize:false,
@@ -75,17 +69,15 @@
                 ],
             },
            actionColumn: {
-               width: 150,
+               width: 120,
                fixed:'right'
            },
            beforeFetch: (params) => {
-
-             console.log('所有参数:', params);
              return Object.assign(params, queryParam);
            },
         },
         exportConfig: {
-            name:"客户信息",
+            name:"销售订单主表",
             url: getExportUrl,
             params: queryParam,
         },
@@ -129,15 +121,6 @@
        showFooter: true,
      });
    }
-  function handleApprove(record: Recordable) {
-    openModal(true, {
-      record,
-      isUpdate: true,
-      showFooter: true,
-      isAudit: true, // 传给 Modal 的关键参数
-      title: '审核'
-    });
-  }
    /**
     * 详情
    */
@@ -170,17 +153,13 @@
       * 操作栏
       */
   function getTableAction(record){
-     const isAudited = record.approvalStatus === '1';
+     const isAudited = record.salesApprovalStatus === '1';
        return [
          {
            label: '编辑',
            onClick: handleEdit.bind(null, record),
-           auth: 'scm:mis_customer:edit'
-         },
-         {
-           label: '审核',
-           onClick: handleApprove.bind(null, record),
-           disabled: isAudited
+           auth: 'scm:mis_sales_order:edit',
+           disabled:isAudited,
          }
        ]
    }
@@ -201,7 +180,8 @@
           confirm: handleDelete.bind(null, record),
           placement: 'topLeft'
         },
-        auth: 'scm:mis_customer:delete'
+        auth: 'scm:mis_sales_order:delete',
+        disabled: record.salesApprovalStatus === '1'
       }
     ]
   }

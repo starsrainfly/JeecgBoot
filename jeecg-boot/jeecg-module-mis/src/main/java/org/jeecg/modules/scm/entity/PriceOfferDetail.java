@@ -89,6 +89,10 @@ public class PriceOfferDetail implements Serializable {
     @Excel(name = "包装容量", width = 15)
     @Schema(description = "包装容量")
     private BigDecimal packageCapacity;
+    /**包装容量*/
+    @Excel(name = "包装容量单位", width = 15)
+    @Schema(description = "包装容量单位")
+    private String packageCapacityUnit;
 	/**价格类型*/
 	@Excel(name = "价格类型", width = 15, dicCode = "mdm_price_type")
     @Schema(description = "价格类型")

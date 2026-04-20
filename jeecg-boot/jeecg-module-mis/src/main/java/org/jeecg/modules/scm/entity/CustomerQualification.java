@@ -34,10 +34,6 @@ public class CustomerQualification implements Serializable {
 	/**客户ID*/
     @Schema(description = "客户ID")
     private String customerId;
-	/**客户编码（冗余）*/
-	@Excel(name = "客户编码（冗余）", width = 15)
-    @Schema(description = "客户编码（冗余）")
-    private String customerCode;
 	/**资质名称*/
 	@Excel(name = "资质名称", width = 15)
     @Schema(description = "资质名称")

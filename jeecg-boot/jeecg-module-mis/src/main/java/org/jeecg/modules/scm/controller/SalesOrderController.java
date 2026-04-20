@@ -3,16 +3,16 @@ package org.jeecg.modules.scm.controller;
 import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
+import org.jeecg.modules.common.service.ISerialNoService;
+import org.jeecg.modules.system.entity.SysUser;
+import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -24,11 +24,11 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
 import org.jeecg.common.util.oConvertUtils;
-import org.jeecg.modules.scm.entity.SalesOrderLine;
+import org.jeecg.modules.scm.entity.SalesOrderDetail;
 import org.jeecg.modules.scm.entity.SalesOrder;
 import org.jeecg.modules.scm.vo.SalesOrderPage;
 import org.jeecg.modules.scm.service.ISalesOrderService;
-import org.jeecg.modules.scm.service.ISalesOrderLineService;
+import org.jeecg.modules.scm.service.ISalesOrderDetailService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -49,7 +49,7 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
  /**
  * @Description: 销售订单主表
  * @Author: jeecg-boot
- * @Date:   2026-02-07
+ * @Date:   2026-04-20
  * @Version: V1.0
  */
 @Tag(name="销售订单主表")
@@ -60,8 +60,11 @@ public class SalesOrderController {
 	@Autowired
 	private ISalesOrderService salesOrderService;
 	@Autowired
-	private ISalesOrderLineService salesOrderLineService;
-	
+	private ISalesOrderDetailService salesOrderDetailService;
+	@Autowired
+	private ISerialNoService serialNoService;
+	@Autowired
+	private ISysUserService userService;
 	/**
 	 * 分页列表查询
 	 *
@@ -101,9 +104,52 @@ public class SalesOrderController {
 	public Result<String> add(@RequestBody SalesOrderPage salesOrderPage) {
 		SalesOrder salesOrder = new SalesOrder();
 		BeanUtils.copyProperties(salesOrderPage, salesOrder);
-		salesOrderService.saveMain(salesOrder, salesOrderPage.getSalesOrderLineList());
+		String orderNo = serialNoService.generateSerialNo(SerialNoPrefixEnum.SALES_ORDER.getPrefix());
+		salesOrder.setOrderNo(orderNo);
+		SysUser salesman = userService.getById(salesOrder.getSalesmanId());
+		if(salesman != null) {
+			salesOrder.setSalesmanName(salesman.getRealname());
+		}
+		salesOrderService.saveMain(salesOrder, salesOrderPage.getSalesOrderDetailList());
 		return Result.OK("添加成功！");
 	}
+	 @AutoLog(value = "销售订单主表-业务审核")
+	 @Operation(summary="销售订单主表-业务审核")
+	 @RequestMapping(value = "/salesApprove", method = {RequestMethod.PUT,RequestMethod.POST})
+	public Result<String> salesApprove(@RequestBody SalesOrderPage salesOrderPage) {
+		 SalesOrder salesOrder = new SalesOrder();
+		 BeanUtils.copyProperties(salesOrderPage, salesOrder);
+		 SalesOrder salesOrderEntity = salesOrderService.getById(salesOrder.getId());
+		 if(salesOrderEntity==null) {
+			 return Result.error("未找到对应数据");
+		 }
+
+		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+		 salesOrder.setSalesApproverId(loginUser.getId());
+		 salesOrder.setSalesApproverName(loginUser.getRealname());
+		 salesOrder.setSalesApproveTime(new Date());
+
+		 salesOrderService.updateById(salesOrder);
+		 return Result.OK("业务审核成功!");
+	}
+	 @AutoLog(value = "销售订单主表-财务审核")
+	 @Operation(summary="销售订单主表-财务审核")
+	 @RequestMapping(value = "/financeApprove", method = {RequestMethod.PUT,RequestMethod.POST})
+	 public Result<String> financeApprove(@RequestBody SalesOrderPage salesOrderPage) {
+		 SalesOrder salesOrder = new SalesOrder();
+		 BeanUtils.copyProperties(salesOrderPage, salesOrder);
+		 SalesOrder salesOrderEntity = salesOrderService.getById(salesOrder.getId());
+		 if(salesOrderEntity==null) {
+			 return Result.error("未找到对应数据");
+		 }
+
+		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+		 salesOrder.setFinanceApproverId(loginUser.getId());
+		 salesOrder.setFinanceApproverName(loginUser.getRealname());
+		 salesOrder.setSalesApproveTime(new Date());
+
+		 return Result.OK("财务审核成功!");
+	 }
 	
 	/**
 	 *  编辑
@@ -122,7 +168,7 @@ public class SalesOrderController {
 		if(salesOrderEntity==null) {
 			return Result.error("未找到对应数据");
 		}
-		salesOrderService.updateMain(salesOrder, salesOrderPage.getSalesOrderLineList());
+		salesOrderService.updateMain(salesOrder, salesOrderPage.getSalesOrderDetailList());
 		return Result.OK("编辑成功!");
 	}
 	
@@ -182,10 +228,10 @@ public class SalesOrderController {
 	 */
 	//@AutoLog(value = "销售订单明细表通过主表ID查询")
 	@Operation(summary="销售订单明细表主表ID查询")
-	@GetMapping(value = "/querySalesOrderLineByMainId")
-	public Result<List<SalesOrderLine>> querySalesOrderLineListByMainId(@RequestParam(name="id",required=true) String id) {
-		List<SalesOrderLine> salesOrderLineList = salesOrderLineService.selectByMainId(id);
-		return Result.OK(salesOrderLineList);
+	@GetMapping(value = "/querySalesOrderDetailByMainId")
+	public Result<List<SalesOrderDetail>> querySalesOrderDetailListByMainId(@RequestParam(name="id",required=true) String id) {
+		List<SalesOrderDetail> salesOrderDetailList = salesOrderDetailService.selectByMainId(id);
+		return Result.OK(salesOrderDetailList);
 	}
 
     /**
@@ -215,8 +261,8 @@ public class SalesOrderController {
       for (SalesOrder main : salesOrderList) {
           SalesOrderPage vo = new SalesOrderPage();
           BeanUtils.copyProperties(main, vo);
-          List<SalesOrderLine> salesOrderLineList = salesOrderLineService.selectByMainId(main.getId());
-          vo.setSalesOrderLineList(salesOrderLineList);
+          List<SalesOrderDetail> salesOrderDetailList = salesOrderDetailService.selectByMainId(main.getId());
+          vo.setSalesOrderDetailList(salesOrderDetailList);
           pageList.add(vo);
       }
 
@@ -253,7 +299,7 @@ public class SalesOrderController {
               for (SalesOrderPage page : list) {
                   SalesOrder po = new SalesOrder();
                   BeanUtils.copyProperties(page, po);
-                  salesOrderService.saveMain(po, page.getSalesOrderLineList());
+                  salesOrderService.saveMain(po, page.getSalesOrderDetailList());
               }
               return Result.OK("文件导入成功！数据行数:" + list.size());
           } catch (Exception e) {

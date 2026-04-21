@@ -1,5 +1,6 @@
 import { BasicColumn } from '/@/components/Table';
 import { FormSchema } from '/@/components/Table';
+import { h } from 'vue';
 
 // ==================== 待发货任务列 ====================
 export const taskColumns: BasicColumn[] = [
@@ -89,7 +90,7 @@ export const taskSearchFormSchema: FormSchema[] = [
     field: 'salesmanId',
     component: 'JDictSelectTag',
     componentProps: {
-      dict: 'sys_user where del_flag='0' and status='1',realname,id',
+      dict: "sys_user where del_flag='0' and status='1',realname,id",
     },
     colProps: { span: 6 },
   },
@@ -135,19 +136,19 @@ export const pendingLineColumns: BasicColumn[] = [
   {
     title: '产品编码',
     align: 'center',
-    dataIndex: 'itemCode',
+    dataIndex: 'productCode',
     width: 120,
   },
   {
     title: '产品名称',
     align: 'center',
-    dataIndex: 'itemName',
+    dataIndex: 'productName',
     width: 150,
   },
   {
     title: '规格型号',
     align: 'center',
-    dataIndex: 'itemSpec',
+    dataIndex: 'productSpec',
     width: 120,
   },
   {
@@ -254,6 +255,14 @@ export const stockColumns: BasicColumn[] = [
     dataIndex: 'locationId_dictText',
     width: 120,
   },
+  {
+    title: '操作',
+    align: 'center',
+    key: 'action',
+    width: 80,
+    fixed: 'right',
+    slots: { customRender: 'stockAction' },
+  },
 ];
 
 // ==================== 弹窗内：本次发货明细列 ====================
@@ -326,7 +335,7 @@ export const logisticsFormSchema: FormSchema[] = [
       dictCode: 'wms_logistics_type',
     },
     dynamicRules: () => [{ required: true, message: '请选择物流类型' }],
-    colProps: { span: 8 },
+    colProps: { xs: 24, sm: 12, md: 8 },
   },
   {
     label: '物流公司',
@@ -343,27 +352,20 @@ export const logisticsFormSchema: FormSchema[] = [
       multi: false,
     }),
     dynamicRules: () => [{ required: true, message: '请选择物流公司' }],
-    colProps: { span: 8 },
-  },
-  {
-    label: '物流单号',
-    field: 'logisticsNo',
-    component: 'Input',
-    dynamicRules: () => [{ required: true, message: '请输入物流单号' }],
-    colProps: { span: 8 },
+    colProps: { xs: 24, sm: 12, md: 8 },
   },
   {
     label: '物流费用',
     field: 'logisticsCost',
     component: 'InputNumber',
     dynamicRules: () => [{ required: true, message: '请输入物流费用' }],
-    colProps: { span: 8 },
+    colProps: { xs: 24, sm: 12, md: 8 },
   },
   {
     label: '司机电话',
     field: 'driverPhone',
     component: 'Input',
-    colProps: { span: 8 },
+    colProps: { xs: 24, sm: 12, md: 8 },
   },
   {
     label: '发货时间',
@@ -374,34 +376,34 @@ export const logisticsFormSchema: FormSchema[] = [
       valueFormat: 'YYYY-MM-DD HH:mm:ss',
     },
     dynamicRules: () => [{ required: true, message: '请选择发货时间' }],
-    colProps: { span: 8 },
+    colProps: { xs: 24, sm: 12, md: 8 },
   },
   {
     label: '收货人',
     field: 'consignee',
     component: 'Input',
     dynamicRules: () => [{ required: true, message: '请输入收货人' }],
-    colProps: { span: 8 },
+    colProps: { xs: 24, sm: 12, md: 8 },
   },
   {
     label: '联系电话',
     field: 'consigneePhone',
     component: 'Input',
     dynamicRules: () => [{ required: true, message: '请输入联系电话' }],
-    colProps: { span: 8 },
+    colProps: { xs: 24, sm: 12, md: 8 },
   },
   {
     label: '收货地址',
     field: 'consigneeAddress',
     component: 'Input',
     dynamicRules: () => [{ required: true, message: '请输入收货地址' }],
-    colProps: { span: 16 },
+    colProps: { xs: 24, sm: 12, md: 8 },
   },
   {
     label: '备注',
     field: 'remark',
     component: 'InputTextArea',
-    colProps: { span: 24 },
+    colProps: { xs: 24, sm: 24, md: 24 },
   },
   // 隐藏字段
   {
@@ -441,6 +443,7 @@ export const logisticsFormSchema: FormSchema[] = [
     show: false,
   },
 ];
+
 
 // ==================== 高级查询 ====================
 export const superQuerySchema = {

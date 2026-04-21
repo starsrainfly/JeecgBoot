@@ -13,6 +13,7 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.jeecg.modules.scm.entity.SalesOrder;
 import org.jeecg.modules.scm.entity.SalesOrderDetail;
 import org.jeecg.modules.scm.mapper.SalesOrderDetailMapper;
 import org.jeecg.modules.scm.service.ISalesOrderService;
@@ -354,20 +355,31 @@ public class DeliveryController {
 	 */
 	@Operation(summary="查询销售订单未发货明细")
 	@GetMapping(value = "/pendingOrderLines")
-	public Result<List<PendingOrderLineVo>> pendingOrderLines(@RequestParam(name="orderId",required=true) String orderId) {
+	public Result<PendingOrderInfoVo> pendingOrderLines(
+			@RequestParam(name="orderId",required=true) String orderId) {
+		PendingOrderInfoVo result = new PendingOrderInfoVo();
+
+		// 1. 查询订单主表
+		SalesOrder order = salesOrderService.getById(orderId);
+		result.setOrder(order);
+
+		// 2. 查询未发货明细
 		List<SalesOrderDetail> lines = salesOrderDetailMapper.selectByMainId(orderId);
-		List<PendingOrderLineVo> result = new ArrayList<>();
+		List<PendingOrderLineVo> lineVos = new ArrayList<>();
+
 		for (SalesOrderDetail line : lines) {
 			BigDecimal deliveredQty = deliveryDetailMapper.sumDeliveredQtyBySourceDetailId(line.getId());
 			BigDecimal remainingQty = line.getOrderQty().subtract(deliveredQty);
+
 			if (remainingQty.compareTo(BigDecimal.ZERO) > 0) {
 				PendingOrderLineVo vo = new PendingOrderLineVo();
 				BeanUtils.copyProperties(line, vo);
 				vo.setDeliveredQty(deliveredQty);
 				vo.setRemainingQty(remainingQty);
-				result.add(vo);
+				lineVos.add(vo);
 			}
 		}
+		result.setLines(lineVos);
 		return Result.OK(result);
 	}
 
@@ -592,5 +604,40 @@ public class DeliveryController {
 
 		return Result.OK("扫码发货成功，已生成发货单" + delivery.getDeliveryNo() + "和出库单" + stockOut.getStockOutNo());
 	}
+
+	 /**
+	  * 根据订单ID查询所有未发货产品的FIFO库存
+	  */
+	 @Operation(summary = "查询订单可用库存")
+	 @GetMapping(value = "/orderStocks")
+	 public Result<List<Stock>> orderStocks(
+			 @RequestParam(name = "orderId", required = true) String orderId) {
+
+		 // 1. 查询订单未发货明细的产品编码
+		 List<SalesOrderDetail> lines = salesOrderDetailMapper.selectByMainId(orderId);
+		 List<String> productCodes = new ArrayList<>();
+
+		 for (SalesOrderDetail line : lines) {
+			 BigDecimal deliveredQty = deliveryDetailMapper.sumDeliveredQtyBySourceDetailId(line.getId());
+			 BigDecimal remainingQty = line.getOrderQty().subtract(deliveredQty);
+			 if (remainingQty.compareTo(BigDecimal.ZERO) > 0) {
+				 productCodes.add(line.getProductCode());
+			 }
+		 }
+
+		 if (productCodes.isEmpty()) {
+			 return Result.OK(new ArrayList<>());
+		 }
+
+		 // 2. 查询这些产品的可用库存（FIFO）
+		 QueryWrapper<Stock> qw = new QueryWrapper<>();
+		 qw.in("goods_code", productCodes);
+		 qw.eq("del_flag", "0");
+		 qw.apply("(quantity - locked_qty) > 0");
+		 qw.orderByAsc("stock_in_time", "create_time");
+
+		 List<Stock> stocks = stockService.list(qw);
+		 return Result.OK(stocks);
+	 }
 
 }

@@ -116,22 +116,48 @@ export const searchFormSchema: FormSchema[] = [
   },
 ];
 
+// ==================== 弹窗内：订单选择表单 ====================
+export const orderSelectFormSchema: FormSchema[] = [
+  {
+    label: '销售订单',
+    field: 'orderNo',
+    component: 'JPopup',
+    componentProps: {
+      code: 'scm_sales_order_for_plan',
+      fieldConfig: [
+        { source: 'id', target: 'sourceOrderId' },
+        { source: 'order_no', target: 'orderNo' },
+        { source: 'customer_id', target: 'customerId' },
+        { source: 'customer_name', target: 'customerName' },
+        { source: 'delivery_consignee', target: 'consignee' },
+        { source: 'delivery_phone', target: 'consigneePhone' },
+        { source: 'delivery_address', target: 'consigneeAddress' },
+
+      ],
+      multi: false,
+    },
+    dynamicRules: () => [{ required: true, message: '请选择销售订单!' }],
+    colProps: { span: 8 },
+  },
+
+];
+
 // ==================== 弹窗内：未发货订单明细列 ====================
 export const orderLineColumns: BasicColumn[] = [
   {
     title: '产品编码',
     align: 'center',
-    dataIndex: 'itemCode',
+    dataIndex: 'productCode',
   },
   {
     title: '产品名称',
     align: 'center',
-    dataIndex: 'itemName',
+    dataIndex: 'productName',
   },
   {
     title: '规格型号',
     align: 'center',
-    dataIndex: 'itemSpec',
+    dataIndex: 'productSpec',
   },
   {
     title: '单位',

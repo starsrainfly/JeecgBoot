@@ -4,8 +4,7 @@
       ref="inputRef"
       v-bind="$attrs"
       :value="props.value"
-      @update:value="emit('update:value', $event)"
-      @change="(e) => emit('change', e.target.value)"
+      @update:value="onInputChange"
       @keydown="onKeydown"
       placeholder="请输入或扫描（支持扫码枪）"
     />
@@ -52,6 +51,13 @@
   let lastKeyTime = 0;
   const SCAN_THRESHOLD_MS = 80; // 按键间隔小于80ms视为扫码枪
 
+  function onInputChange(val: string) {
+    emit('update:value', val);
+    // 关键：同时发出 change 事件，确保父组件能捕获
+    emit('change', val);
+  }
+
+
   function onKeydown(e: KeyboardEvent) {
     const now = Date.now();
     const timeDiff = now - lastKeyTime;
@@ -97,10 +103,14 @@
       html5QrCode = new Html5Qrcode('scan-reader');
       await html5QrCode.start(
         { facingMode: 'environment' },
-        { fps: 20, qrbox: { width: 250, height: 250 } },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText: string) => {
-          console.log('=== ScanInput 摄像头识别 ===');
-          console.log('识别内容:', decodedText);
+          console.error('===== 扫码回调进入 =====');
+          console.error('decodedText:', decodedText);
+          console.error('emit 函数存在:', typeof emit === 'function');
+
+          onInputChange(decodedText);
+          console.log("emit change");
           scanTip.value = '识别成功：' + decodedText;
           emit('update:value', decodedText);
           emit('change', decodedText);

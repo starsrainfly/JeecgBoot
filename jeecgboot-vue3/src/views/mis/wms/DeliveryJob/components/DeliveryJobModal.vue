@@ -9,22 +9,17 @@
     @ok="handleSubmit"
   >
     <div class="delivery-modal-body">
-      <!-- 顶部：订单选择 + 扫码 -->
+      <!-- 顶部：订单选择表单 -->
+      <a-row :gutter="16" class="mb-4">
+        <a-col :span="24">
+          <BasicForm @register="registerOrderForm" />
+        </a-col>
+      </a-row>
+
+      <!-- 扫码 -->
       <a-row :gutter="16" class="mb-4">
         <a-col :span="8">
-          <a-form-item label="销售订单" required :labelCol="{ span: 6 }"
-                       :wrapperCol="{ span: 18 }">
-            <JPopup
-              v-model:value="selectedOrder.orderNo"
-              code="scm_sales_order_for_plan"
-              :fieldConfig="orderPopupConfig"
-              @change="handleOrderChange"
-            />
-          </a-form-item>
-        </a-col>
-        <a-col :span="8">
-          <a-form-item label="产品扫码" :labelCol="{ span: 6 }"
-                       :wrapperCol="{ span: 18 }">
+          <a-form-item label="产品扫码" :labelCol="{ span: 6 }" :wrapperCol="{ span: 18 }">
             <a-input-search
               ref="productScanInput"
               v-model:value="scanCodeVal"
@@ -63,17 +58,10 @@
         <BasicTable @register="registerDeliveryTable">
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'actualQty'">
-              <a-input-number
-                v-model:value="record.actualQty"
-                :min="0.01"
-                :step="1"
-                style="width: 100%"
-              />
+              <a-input-number v-model:value="record.actualQty" :min="0.01" :step="1" style="width: 100%" />
             </template>
             <template v-if="column.key === 'action'">
-              <a-button type="link" danger size="small" @click="handleDeleteItem(record)">
-                删除
-              </a-button>
+              <a-button type="link" danger size="small" @click="handleDeleteItem(record)">删除</a-button>
             </template>
           </template>
         </BasicTable>
@@ -88,7 +76,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive, computed, unref } from 'vue';
+  import { ref, reactive, computed, watch, unref } from 'vue';
   import { BasicModal, useModalInner } from '/@/components/Modal';
   import { BasicTable, useTable } from '/@/components/Table';
   import { BasicForm, useForm } from '/@/components/Form';
@@ -99,12 +87,12 @@
     stockColumns,
     deliveryItemColumns,
     logisticsFormSchema,
+    orderSelectFormSchema,
   } from '../DeliveryJob.data';
   import { getPendingOrderLines, scanCode, scanDeliver } from '../DeliveryJob.api';
   import ScanInput from './ScanInput.vue';
   import JPopup from '/@/components/Form/src/jeecg/components/JPopup.vue';
 
-  // 注册自定义扫码组件到 BasicForm
   add('ScanInput', ScanInput);
 
   const emit = defineEmits(['register', 'success']);
@@ -112,7 +100,15 @@
 
   const title = computed(() => '扫码发货');
 
-  // ========== 订单选择 ==========
+  // ========== 订单选择表单 ==========
+  const [registerOrderForm, { getFieldsValue: getOrderFields, setFieldsValue: setOrderFields, resetFields: resetOrderFields }] = useForm({
+    schemas: orderSelectFormSchema,
+    showActionButtonGroup: false,
+    baseColProps: { span: 8 },
+    labelWidth: 100,
+  });
+
+  // 当前选中的订单信息（从表单同步）
   const selectedOrder = reactive<any>({
     id: '',
     orderNo: '',
@@ -123,16 +119,6 @@
     consigneeAddress: '',
   });
 
-  const orderPopupConfig = [
-    { source: 'id', target: 'id' },
-    { source: 'order_no', target: 'orderNo' },
-    { source: 'customer_id', target: 'customerId' },
-    { source: 'customer_name', target: 'customerName' },
-    { source: 'delivery_consignee', target: 'consignee' },
-    { source: 'delivery_phone', target: 'consigneePhone' },
-    { source: 'delivery_address', target: 'consigneeAddress' },
-  ];
-
   // ========== 扫码 ==========
   const scanCodeVal = ref('');
   const scanMsg = ref('');
@@ -140,7 +126,6 @@
   const matchedStocks = ref<any[]>([]);
   const matchedOrderLines = ref<any[]>([]);
 
-  // ===== 产品扫码-扫码枪支持 =====
   let productScanBuffer = '';
   let productScanLastTime = 0;
   const PRODUCT_SCAN_THRESHOLD_MS = 80;
@@ -149,7 +134,6 @@
     const now = Date.now();
     const diff = now - productScanLastTime;
     productScanLastTime = now;
-
     if (e.key === 'Enter') {
       if (productScanBuffer.length > 0 && diff < PRODUCT_SCAN_THRESHOLD_MS) {
         e.preventDefault();
@@ -161,9 +145,7 @@
       productScanBuffer = '';
       return;
     }
-    if (diff > PRODUCT_SCAN_THRESHOLD_MS) {
-      productScanBuffer = '';
-    }
+    if (diff > PRODUCT_SCAN_THRESHOLD_MS) productScanBuffer = '';
     productScanBuffer += e.key;
   }
 
@@ -171,7 +153,6 @@
   const orderLineData = ref<any[]>([]);
   const deliveryItems = ref<any[]>([]);
 
-  // 未发货订单明细表格
   const [registerOrderTable] = useTable({
     dataSource: orderLineData,
     columns: orderLineColumns,
@@ -180,7 +161,6 @@
     showIndexColumn: false,
   });
 
-  // FIFO库存表格
   const [registerStockTable, { setTableData: setStockData }] = useTable({
     columns: stockColumns,
     canResize: false,
@@ -188,12 +168,9 @@
     showIndexColumn: false,
     rowSelection: { type: 'radio' },
     clickToRowSelect: true,
-    onRowClick: (record) => {
-      addStockToDelivery(record);
-    },
+    onRowClick: (record) => addStockToDelivery(record),
   });
 
-  // 本次发货明细表格
   const [registerDeliveryTable, { setTableData: setDeliveryData }] = useTable({
     dataSource: deliveryItems,
     columns: [
@@ -206,12 +183,63 @@
   });
 
   // 物流表单
-  const [registerLogisticsForm, { setFieldsValue, validate, resetFields }] = useForm({
+  const [registerLogisticsForm, { setFieldsValue: setLogisticsFields, validate: validateLogistics, resetFields: resetLogisticsFields }] = useForm({
     schemas: logisticsFormSchema,
     showActionButtonGroup: false,
     baseColProps: { span: 8 },
     labelWidth: 100,
   });
+
+  // ========== 核心：监听订单表单变化 ==========
+  let lastOrderId = '';
+
+  watch(
+    () => getOrderFields(),
+    async (vals) => {
+      if (!vals) return;
+      const newOrderId = vals.sourceOrderId;
+
+      // 防止重复触发
+      if (!newOrderId || newOrderId === lastOrderId) return;
+      lastOrderId = newOrderId;
+
+      // 同步到 selectedOrder
+      Object.assign(selectedOrder, {
+        id: newOrderId,
+        orderNo: vals.orderNo || '',
+        customerId: vals.customerId || '',
+        customerName: vals.customerName || '',
+        consignee: vals.consignee || '',
+        consigneePhone: vals.consigneePhone || '',
+        consigneeAddress: vals.consigneeAddress || '',
+      });
+
+      // 加载未发货明细
+      const res = await getPendingOrderLines({ orderId: newOrderId });
+
+      orderLineData.value = res?.lines || res || [];
+
+      // 设置物流表单默认值
+      const now = new Date();
+      const fmt = (n: number) => String(n).padStart(2, '0');
+      const defaultTime = `${now.getFullYear()}-${fmt(now.getMonth() + 1)}-${fmt(now.getDate())} ${fmt(now.getHours())}:${fmt(now.getMinutes())}:${fmt(now.getSeconds())}`;
+
+      await setLogisticsFields({
+        sourceOrderId: newOrderId,
+        sourceOrderNo: vals.orderNo,
+        customerId: vals.customerId,
+        customerName: vals.customerName,
+        consignee: vals.consignee,
+        consigneePhone: vals.consigneePhone,
+        consigneeAddress: vals.consigneeAddress,
+        deliveryTime: defaultTime,
+      });
+
+      setStockData([]);
+      scanMsg.value = '';
+    },
+    { deep: true, immediate: false }
+  );
 
   // ========== Modal 生命周期 ==========
   const [registerModal, { setModalProps, closeModal }] = useModalInner(async () => {
@@ -220,62 +248,21 @@
   });
 
   async function resetAll() {
-    selectedOrder.id = '';
-    selectedOrder.orderNo = '';
-    selectedOrder.customerId = '';
-    selectedOrder.customerName = '';
-    selectedOrder.consignee = '';
-    selectedOrder.consigneePhone = '';
-    selectedOrder.consigneeAddress = '';
+    lastOrderId = '';
+    await resetOrderFields();
+    Object.assign(selectedOrder, {
+      id: '', orderNo: '', customerId: '', customerName: '',
+      consignee: '', consigneePhone: '', consigneeAddress: '',
+    });
     orderLineData.value = [];
     setStockData([]);
     clearItems();
     scanMsg.value = '';
     scanCodeVal.value = '';
-    await resetFields();
+    await resetLogisticsFields();
   }
 
-  // ========== 方法 ==========
-  async function handleOrderChange(_val: string, rows: any) {
-    const e = Array.isArray(rows) ? rows[0] : rows;
-    if (!e || !e.id) {
-      orderLineData.value = [];
-      setStockData([]);
-      return;
-    }
-    selectedOrder.id = e.id;
-    selectedOrder.orderNo = e.order_no || e.orderNo || '';
-    selectedOrder.customerId = e.customer_id || e.customerId || '';
-    selectedOrder.customerName = e.customer_name || e.customerName || '';
-    selectedOrder.consignee = e.delivery_consignee || e.deliveryConsignee || e.consignee || '';
-    selectedOrder.consigneePhone = e.delivery_phone || e.deliveryPhone || e.consigneePhone || '';
-    selectedOrder.consigneeAddress = e.delivery_address || e.deliveryAddress || e.consigneeAddress || '';
-
-    // 加载未发货明细
-    const res = await getPendingOrderLines({ orderId: e.id });
-    orderLineData.value = res || [];
-
-    // 设置物流表单默认值
-    const now = new Date();
-    const fmt = (n: number) => String(n).padStart(2, '0');
-    const defaultTime = `${now.getFullYear()}-${fmt(now.getMonth() + 1)}-${fmt(now.getDate())} ${fmt(
-      now.getHours()
-    )}:${fmt(now.getMinutes())}:${fmt(now.getSeconds())}`;
-    await setFieldsValue({
-      sourceOrderId: selectedOrder.id,
-      sourceOrderNo: selectedOrder.orderNo,
-      customerId: selectedOrder.customerId,
-      customerName: selectedOrder.customerName,
-      consignee: selectedOrder.consignee,
-      consigneePhone: selectedOrder.consigneePhone,
-      consigneeAddress: selectedOrder.consigneeAddress,
-      deliveryTime: defaultTime,
-    });
-
-    setStockData([]);
-    scanMsg.value = '';
-  }
-
+  // ========== 扫码方法 ==========
   async function handleScan() {
     if (!selectedOrder.id) {
       createMessage.warning('请先选择销售订单');
@@ -287,19 +274,14 @@
       return;
     }
     try {
-      const res = await scanCode({
-        scanCode: code,
-        orderId: selectedOrder.id,
-      });
+      const res = await scanCode({ scanCode: code, orderId: selectedOrder.id });
       if (res && res.matched) {
         scanMsg.value = res.msg || '匹配成功';
         scanType.value = 'success';
         matchedStocks.value = res.stocks || [];
         matchedOrderLines.value = res.orderLines || [];
         setStockData(matchedStocks.value);
-        if (matchedStocks.value.length > 0) {
-          addStockToDelivery(matchedStocks.value[0]);
-        }
+        if (matchedStocks.value.length > 0) addStockToDelivery(matchedStocks.value[0]);
       } else {
         scanMsg.value = res?.msg || '未匹配';
         scanType.value = 'error';
@@ -315,9 +297,7 @@
   }
 
   function addStockToDelivery(stock: any) {
-    if (!stock || !matchedOrderLines.value || matchedOrderLines.value.length === 0) {
-      return;
-    }
+    if (!stock || !matchedOrderLines.value?.length) return;
     const orderLine = matchedOrderLines.value[0];
     const currentSum = deliveryItems.value
       .filter((i) => i.sourceDetailId === orderLine.id)
@@ -336,9 +316,7 @@
         iconType: 'warning',
         title: '超发提醒',
         content: `该产品剩余可发数量为 ${remaining}，本次累计将发 ${currentSum + addQty}，是否继续？`,
-        onOk: () => {
-          doAddItem(stock, orderLine, addQty);
-        },
+        onOk: () => doAddItem(stock, orderLine, addQty),
       });
     } else {
       doAddItem(stock, orderLine, addQty);
@@ -398,7 +376,7 @@
       createMessage.warning('请至少添加一条发货明细');
       return;
     }
-    const values = await validate();
+    const values = await validateLogistics();
     const validItems = deliveryItems.value.filter((i) => Number(i.actualQty) > 0);
     if (validItems.length === 0) {
       createMessage.warning('请填写有效的发货数量');
@@ -406,10 +384,7 @@
     }
     const params = {
       ...values,
-      scanItems: validItems.map((i) => ({
-        ...i,
-        actualQty: Number(i.actualQty),
-      })),
+      scanItems: validItems.map((i) => ({ ...i, actualQty: Number(i.actualQty) })),
     };
     try {
       setModalProps({ confirmLoading: true });
@@ -424,11 +399,3 @@
     }
   }
 </script>
-
-<style lang="less" scoped>
-  .delivery-modal-body {
-    .mb-4 {
-      margin-bottom: 16px;
-    }
-  }
-</style>

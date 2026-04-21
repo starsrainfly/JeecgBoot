@@ -78,7 +78,7 @@ public class LogisticsCompanyController extends JeecgController<LogisticsCompany
         customeRuleMap.put("status", QueryRuleEnum.LIKE_WITH_OR);
         QueryWrapper<LogisticsCompany> queryWrapper = QueryGenerator.initQueryWrapper(logisticsCompany, req.getParameterMap(),customeRuleMap);
 		// 【添加默认排序】
-		queryWrapper.orderByAsc("sortOrder");  // 按sort_order升序
+		queryWrapper.orderByAsc("sort_order");  // 按sort_order升序
 		Page<LogisticsCompany> page = new Page<LogisticsCompany>(pageNo, pageSize);
 		IPage<LogisticsCompany> pageList = logisticsCompanyService.page(page, queryWrapper);
 		return Result.OK(pageList);
@@ -261,18 +261,18 @@ public class LogisticsCompanyController extends JeecgController<LogisticsCompany
 			 }
 
 			 // ========== 3. 仅长度匹配（最后兜底） ==========
-			 for (LogisticsCompany company : list) {
-				 if (StringUtils.isNotBlank(company.getTrackingLengths())) {
-					 String[] lengths = company.getTrackingLengths().split(",");
-					 for (String len : lengths) {
-						 try {
-							 if (noLength == Integer.parseInt(len.trim())) {
-								 return Result.OK(company);
-							 }
-						 } catch (NumberFormatException e) {}
-					 }
-				 }
-			 }
+//			 for (LogisticsCompany company : list) {
+//				 if (StringUtils.isNotBlank(company.getTrackingLengths())) {
+//					 String[] lengths = company.getTrackingLengths().split(",");
+//					 for (String len : lengths) {
+//						 try {
+//							 if (noLength == Integer.parseInt(len.trim())) {
+//								 return Result.OK(company);
+//							 }
+//						 } catch (NumberFormatException e) {}
+//					 }
+//				 }
+//			 }
 
 			 return Result.error("未识别到对应的快递公司");
 		 }

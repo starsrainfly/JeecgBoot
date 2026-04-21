@@ -75,6 +75,21 @@ public class LogisticsCompany implements Serializable {
 	@Dict(dicCode = "status")
     @Schema(description = "状态")
     private String status;
+
+    // ========== 新增：单号识别规则字段 ==========
+    /**单号正则规则（多个用逗号分隔）*/
+    @Excel(name = "单号正则规则", width = 30)
+    @Schema(description = "单号正则规则，多个规则用逗号分隔，如：^SF[A-Z0-9]{13}$,^1[0-9]{12}$")
+    private String trackingPatterns;
+    /**单号前缀标识（用于快速匹配）*/
+    @Excel(name = "单号前缀", width = 15)
+    @Schema(description = "单号前缀，多个用逗号分隔，如：SF,JD,YT")
+    private String trackingPrefixes;
+    /**单号长度规则（多个用逗号分隔）*/
+    @Excel(name = "单号长度", width = 15)
+    @Schema(description = "单号长度，多个用逗号分隔，如：15,13,12")
+    private String trackingLengths;
+
 	/**删除*/
 	@Excel(name = "删除", width = 15)
     @Schema(description = "删除")

@@ -10,6 +10,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
@@ -183,5 +185,96 @@ public class LogisticsCompanyController extends JeecgController<LogisticsCompany
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, LogisticsCompany.class);
     }
+
+	 	 /**
+	  * 根据物流单号识别快递公司
+	  * 支持通过前缀、长度、正则三种方式匹配
+	  */
+		 @Operation(summary = "物流单号识别快递公司")
+		 @GetMapping(value = "/identifyByTrackingNo")
+		 public Result<LogisticsCompany> identifyByTrackingNo(@RequestParam("trackingNo") String trackingNo) {
+			 if (oConvertUtils.isEmpty(trackingNo)) {
+				 return Result.error("物流单号不能为空");
+			 }
+
+			 String upperNo = trackingNo.toUpperCase().trim();
+			 int noLength = upperNo.length();
+
+			 // 查询所有启用的
+			 QueryWrapper<LogisticsCompany> wrapper = new QueryWrapper<>();
+			 wrapper.eq("status", "1");
+			 wrapper.eq("del_flag", "0");
+			 wrapper.orderByAsc("sort_order");
+			 List<LogisticsCompany> list = logisticsCompanyService.list(wrapper);
+
+			 // ========== 1. 前缀+长度 联合匹配（最准确） ==========
+			 for (LogisticsCompany company : list) {
+				 boolean prefixMatch = false;
+				 boolean lengthMatch = false;
+
+				 // 检查前缀
+				 if (StringUtils.isNotBlank(company.getTrackingPrefixes())) {
+					 String[] prefixes = company.getTrackingPrefixes().split(",");
+					 for (String prefix : prefixes) {
+						 if (upperNo.startsWith(prefix.trim().toUpperCase())) {
+							 prefixMatch = true;
+							 break;
+						 }
+					 }
+				 }
+
+				 // 检查长度
+				 if (StringUtils.isNotBlank(company.getTrackingLengths())) {
+					 String[] lengths = company.getTrackingLengths().split(",");
+					 for (String len : lengths) {
+						 try {
+							 if (noLength == Integer.parseInt(len.trim())) {
+								 lengthMatch = true;
+								 break;
+							 }
+						 } catch (NumberFormatException e) {}
+					 }
+				 }
+
+				 // 前缀和长度都匹配
+				 if (prefixMatch && lengthMatch) {
+					 return Result.OK(company);
+				 }
+			 }
+
+			 // ========== 2. 纯正则匹配（无固定前缀的单号） ==========
+			 for (LogisticsCompany company : list) {
+				 if (StringUtils.isNotBlank(company.getTrackingPatterns())) {
+					 String[] patterns = company.getTrackingPatterns().split(";");
+					 for (String pattern : patterns) {
+						 String p = pattern.trim();
+						 if (StringUtils.isBlank(p)) continue;
+						 try {
+							 if (upperNo.matches(p)) {
+								 return Result.OK(company);
+							 }
+						 } catch (Exception e) {
+							 log.warn("正则表达式错误：{}, 单号：{}", p, trackingNo);
+						 }
+					 }
+				 }
+			 }
+
+			 // ========== 3. 仅长度匹配（最后兜底） ==========
+			 for (LogisticsCompany company : list) {
+				 if (StringUtils.isNotBlank(company.getTrackingLengths())) {
+					 String[] lengths = company.getTrackingLengths().split(",");
+					 for (String len : lengths) {
+						 try {
+							 if (noLength == Integer.parseInt(len.trim())) {
+								 return Result.OK(company);
+							 }
+						 } catch (NumberFormatException e) {}
+					 }
+				 }
+			 }
+
+			 return Result.error("未识别到对应的快递公司");
+		 }
 
 }

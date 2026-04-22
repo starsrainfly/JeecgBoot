@@ -124,6 +124,7 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'salesApproverName'
    },
+
    {
     title: '财务审批时间',
     align:"center",
@@ -209,6 +210,15 @@ export const searchFormSchema: FormSchema[] = [
     defaultValue: userInfo.id,
       //colProps: {span: 6},
  	},
+  {
+    label: '业务审批状态',
+    field: 'salesApproveStatus',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"approval_status"
+    },
+
+  },
 ];
 //表单数据
 export const formSchema: FormSchema[] = [
@@ -506,14 +516,7 @@ export const formSchema: FormSchema[] = [
       readonly: true,
     },
   },
-  // {
-  //   label: '销售审批状态',
-  //   field: 'salesApproveStatus',
-  //   component: 'JDictSelectTag',
-  //   componentProps:{
-  //       dictCode:"approval_status"
-  //    },
-  // },
+
   // {
   //   label: '财务审批状态',
   //   field: 'financeApproveStatus',
@@ -539,11 +542,6 @@ export const formSchema: FormSchema[] = [
   // {
   //   label: '销售审批人',
   //   field: 'salesApproverName',
-  //   component: 'Input',
-  // },
-  // {
-  //   label: '业务审批意见',
-  //   field: 'salesApproveRemark',
   //   component: 'Input',
   // },
   // {
@@ -613,7 +611,24 @@ export const formSchema: FormSchema[] = [
     field: 'remark',
     component: 'Input',
   },
-
+  {
+    label: '业务审批状态',
+    field: 'salesApproveStatus',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"approval_status"
+    },
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入审批状态!'},
+      ];
+    },
+  },
+  {
+    label: '业务审批意见',
+    field: 'salesApproveRemark',
+    component: 'Input',
+  },
 	// TODO 主键隐藏字段，目前写死为ID
 	{
 	  label: '',

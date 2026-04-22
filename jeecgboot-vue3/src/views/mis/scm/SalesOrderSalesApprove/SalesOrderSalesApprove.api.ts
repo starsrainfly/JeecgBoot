@@ -1,0 +1,96 @@
+import {defHttp} from '/@/utils/http/axios';
+import { useMessage } from "/@/hooks/web/useMessage";
+
+const { createConfirm } = useMessage();
+
+enum Api {
+  list = '/scm/salesOrder/list',
+  save='/scm/salesOrder/add',
+  edit='/scm/salesOrder/edit',
+  deleteOne = '/scm/salesOrder/delete',
+  deleteBatch = '/scm/salesOrder/deleteBatch',
+  importExcel = '/scm/salesOrder/importExcel',
+  exportXls = '/scm/salesOrder/exportXls',
+  salesOrderDetailList = '/scm/salesOrder/querySalesOrderDetailByMainId',
+  getPriceOfferList ='/scm/priceOffer/detailPage',
+  salesApprove = '/scm/salesOrder/salesApprove',
+  financeApprove ='/scm/salesOrder/financeApprove',
+}
+/**
+ * 导出api
+ * @param params
+ */
+export const getExportUrl = Api.exportXls;
+
+/**
+ * 导入api
+ */
+export const getImportUrl = Api.importExcel;
+/**
+ * 查询子表数据
+ * @param params
+ */
+export const salesOrderDetailList = Api.salesOrderDetailList;
+/**
+ * 列表接口
+ * @param params
+ */
+export const list = (params) =>
+  defHttp.get({url: Api.list, params});
+
+export const getPriceOfferPage = (params: any) => {
+  return defHttp.get({
+    url: Api.getPriceOfferList,
+    params,
+  });
+};
+
+/**
+ * 删除单个
+ */
+export const deleteOne = (params,handleSuccess) => {
+  return defHttp.delete({url: Api.deleteOne, params}, {joinParamsToUrl: true}).then(() => {
+    handleSuccess();
+  });
+}
+/**
+ * 批量删除
+ * @param params
+ */
+export const batchDelete = (params, handleSuccess) => {
+  createConfirm({
+    iconType: 'warning',
+    title: '确认删除',
+    content: '是否删除选中数据',
+    okText: '确认',
+    cancelText: '取消',
+    onOk: () => {
+      return defHttp.delete({url: Api.deleteBatch, data: params}, {joinParamsToUrl: true}).then(() => {
+        handleSuccess();
+      });
+    }
+  });
+}
+/**
+ * 保存或者更新
+ * @param params
+ */
+export const saveOrUpdate = (params, isUpdate) => {
+  let url = isUpdate ? Api.edit : Api.save;
+  return defHttp.post({url: url, params});
+}
+/**
+ * 业务审核
+ * @param params
+ */
+export const salesApprove = (params) =>{
+  return defHttp.post({url:Api.salesApprove, params});
+}
+
+/**
+ * 财务审核
+ * @param params
+ */
+export const financeApprove = (params) =>{
+  return defHttp.post({url:Api.financeApprove, params});
+}

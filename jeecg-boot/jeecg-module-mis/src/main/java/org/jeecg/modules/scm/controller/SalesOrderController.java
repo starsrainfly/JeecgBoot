@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import cn.hutool.core.date.DateTime;
+import org.jeecg.modules.common.enums.ApproveStatusEnum;
+import org.jeecg.modules.common.enums.SalesOrderStatusEnum;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.system.entity.SysUser;
@@ -110,6 +113,7 @@ public class SalesOrderController {
 		if(salesman != null) {
 			salesOrder.setSalesmanName(salesman.getRealname());
 		}
+		salesOrder.setOrderStatus(SalesOrderStatusEnum.APPROVE.getCode());
 		salesOrderService.saveMain(salesOrder, salesOrderPage.getSalesOrderDetailList());
 		return Result.OK("添加成功！");
 	}
@@ -127,8 +131,8 @@ public class SalesOrderController {
 		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
 		 salesOrder.setSalesApproverId(loginUser.getId());
 		 salesOrder.setSalesApproverName(loginUser.getRealname());
-		 salesOrder.setSalesApproveTime(new Date());
-
+		 salesOrder.setSalesApproveTime(new DateTime());
+         salesOrder.setOrderStatus(SalesOrderStatusEnum.APPROVE.getCode());
 		 salesOrderService.updateById(salesOrder);
 		 return Result.OK("业务审核成功!");
 	}
@@ -142,11 +146,19 @@ public class SalesOrderController {
 		 if(salesOrderEntity==null) {
 			 return Result.error("未找到对应数据");
 		 }
-
+		 //审核状态为空或审核中则不处理
+         if(salesOrder.getFinanceApproveStatus() == null ||
+		 salesOrder.getFinanceApproveStatus().equals(ApproveStatusEnum.PENDING.getCode())) {
+			 return Result.error("审核状态不能为审核中");
+		 }
 		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
 		 salesOrder.setFinanceApproverId(loginUser.getId());
 		 salesOrder.setFinanceApproverName(loginUser.getRealname());
-		 salesOrder.setSalesApproveTime(new Date());
+		 salesOrder.setSalesApproveTime(new DateTime());
+		 //审核通过时 修改订单状态为待发货
+		 if(salesOrder.getFinanceApproveStatus().equals(ApproveStatusEnum.PASS.getCode())) {
+			 salesOrder.setOrderStatus(SalesOrderStatusEnum.WAIT_DELIVERY.getCode());
+		 }
 
 		 return Result.OK("财务审核成功!");
 	 }

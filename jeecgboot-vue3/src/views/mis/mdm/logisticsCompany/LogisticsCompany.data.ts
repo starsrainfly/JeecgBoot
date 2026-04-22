@@ -55,6 +55,24 @@ export const columns: BasicColumn[] = [
     sorter: true,
     dataIndex: 'status_dictText'
    },
+  {
+    title: '单号长度',
+    align:"center",
+    sorter: true,
+    dataIndex: 'trackingLengths'
+  },
+  {
+    title: '正则表达式',
+    align:"center",
+    sorter: true,
+    dataIndex: 'trackingPatterns'
+  },
+  {
+    title: '前缀',
+    align:"center",
+    sorter: true,
+    dataIndex: 'trackingPrefixes'
+  },
 ];
 //查询数据
 export const searchFormSchema: FormSchema[] = [
@@ -176,6 +194,21 @@ export const formSchema: FormSchema[] = [
                  { required: true, message: '请输入状态!'},
           ];
      },
+  },
+  {
+    label: '单号长度',
+    component: 'Input',
+    field: 'trackingLengths'
+  },
+  {
+    label: '正则表达式',
+    component: 'Input',
+    field: 'trackingPatterns'
+  },
+  {
+    label: '前缀',
+    component: 'Input',
+    field: 'trackingPrefixes'
   },
 	// TODO 主键隐藏字段，目前写死为ID
 	{

@@ -217,7 +217,14 @@ export const searchFormSchema: FormSchema[] = [
     componentProps:{
       dictCode:"approval_status"
     },
-
+  },
+  {
+    label: '财务审批状态',
+    field: 'financeApproveStatus',
+    component: 'JDictSelectTag',
+    componentProps:{
+        dictCode:"approval_status"
+     },
   },
 ];
 //表单数据

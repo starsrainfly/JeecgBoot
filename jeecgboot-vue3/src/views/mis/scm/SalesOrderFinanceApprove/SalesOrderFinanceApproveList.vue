@@ -162,13 +162,14 @@
       * 操作栏
       */
   function getTableAction(record){
-     const isAudited = record.salesApproveStatus === '1';
+     const isAudited = record.financeApproveStatus === '1';
+     const isSalesAudited = record.salesApproveStatus === '1';
        return [
          {
            label: '编辑',
            onClick: handleEdit.bind(null, record),
            auth: 'scm:mis_sales_order:edit',
-           disabled:isAudited,
+           disabled:isSalesAudited,
          },
          {
            label: '审核',

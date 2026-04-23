@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.scm.mapper.SalesPaymentPlanMapper">
+
+    <select id="queryPageList" resultType="org.jeecg.modules.scm.vo.SalesPaymentPlanVo">
+        SELECT
+        p.*,
+        c.customer_name
+        FROM mis_sales_payment_plan p
+        LEFT JOIN mis_customer c ON p.customer_id = c.id
+        WHERE p.del_flag = '0'
+        <if test="vo.planNo != null and vo.planNo != ''">
+            AND p.plan_no LIKE CONCAT('%', #{vo.planNo}, '%')
+        </if>
+        <if test="vo.salesOrderNo != null and vo.salesOrderNo != ''">
+            AND o.sales_order_no LIKE CONCAT('%', #{vo.salesOrderNo}, '%')
+        </if>
+          <if test="vo.customerId != null and vo.customerId != ''">
+              AND p.customer_id = #{vo.customerId}
+          </if>
+        <if test="vo.customerName != null and vo.customerName != ''">
+            AND c.customer_name LIKE CONCAT('%', #{vo.customerName}, '%')
+        </if>
+        <if test="vo.salesmanId != null and vo.salesmanId != ''">
+            AND p.salesman_id = #{vo.salesmanId}
+        </if>
+        <if test="vo.stageName != null and vo.stageName != ''">
+            AND p.stage_name LIKE CONCAT('%', #{vo.stageName}, '%')
+        </if>
+        <if test="vo.planStatus != null and vo.planStatus != ''">
+            AND p.plan_status = #{vo.planStatus}
+        </if>
+        <!-- JEECGBOOT 自动处理日期范围 -->
+        <if test="vo.planDate_begin != null">
+            AND p.plan_date &gt;= #{vo.planDate_begin}
+        </if>
+        <if test="vo.planDate_end != null">
+            AND p.plan_date &lt;= #{vo.planDate_end}
+        </if>
+        ORDER BY p.create_time DESC
+    </select>
+</mapper>

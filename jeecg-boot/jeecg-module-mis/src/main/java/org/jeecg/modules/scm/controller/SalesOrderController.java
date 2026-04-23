@@ -14,6 +14,8 @@ import org.jeecg.modules.common.enums.ApproveStatusEnum;
 import org.jeecg.modules.common.enums.SalesOrderStatusEnum;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
+import org.jeecg.modules.scm.entity.SalesPaymentPlan;
+import org.jeecg.modules.scm.service.ISalesPaymentPlanService;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
@@ -34,6 +36,7 @@ import org.jeecg.modules.scm.service.ISalesOrderService;
 import org.jeecg.modules.scm.service.ISalesOrderDetailService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.multipart.MultipartFile;
@@ -68,6 +71,8 @@ public class SalesOrderController {
 	private ISerialNoService serialNoService;
 	@Autowired
 	private ISysUserService userService;
+	@Autowired
+	private ISalesPaymentPlanService paymentPlanService;
 	/**
 	 * 分页列表查询
 	 *
@@ -138,6 +143,7 @@ public class SalesOrderController {
 	}
 	 @AutoLog(value = "销售订单主表-财务审核")
 	 @Operation(summary="销售订单主表-财务审核")
+	 @Transactional(rollbackFor = Exception.class)
 	 @RequestMapping(value = "/financeApprove", method = {RequestMethod.PUT,RequestMethod.POST})
 	 public Result<String> financeApprove(@RequestBody SalesOrderPage salesOrderPage) {
 		 SalesOrder salesOrder = new SalesOrder();
@@ -154,10 +160,31 @@ public class SalesOrderController {
 		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
 		 salesOrder.setFinanceApproverId(loginUser.getId());
 		 salesOrder.setFinanceApproverName(loginUser.getRealname());
-		 salesOrder.setSalesApproveTime(new DateTime());
+		 salesOrder.setFinanceApproveTime(new DateTime());
 		 //审核通过时 修改订单状态为待发货
 		 if(salesOrder.getFinanceApproveStatus().equals(ApproveStatusEnum.PASS.getCode())) {
 			 salesOrder.setOrderStatus(SalesOrderStatusEnum.WAIT_DELIVERY.getCode());
+			 //添加收款计划
+			 SalesPaymentPlan salesPaymentPlan = new SalesPaymentPlan();
+			 String planNo = serialNoService.generateSerialNo(SerialNoPrefixEnum.RECEIVABLE_PLAN.getPrefix());
+			 salesPaymentPlan.setPlanNo(planNo);
+			 salesPaymentPlan.setPlanName(salesOrder.getOrderNo() + "-收款计划");
+ 			 salesPaymentPlan.setSalesmanId(salesOrder.getSalesmanId());
+
+			 salesPaymentPlan.setCustomerId(salesOrder.getCustomerId());
+			 salesPaymentPlan.setPaymentDays(salesOrder.getPaymentDays());
+			 salesPaymentPlan.setPaymentMethod(salesOrder.getPaymentMethod());
+			 salesPaymentPlan.setPlanAmount(salesOrder.getOrderTotal());
+			 salesPaymentPlan.setPlanDate(salesOrder.getReceivableDate());
+			 salesPaymentPlan.setUnpaidAmount(salesOrder.getOrderTotal());
+
+			 salesPaymentPlan.setSalesOrderId(salesOrder.getId());
+			 salesPaymentPlan.setSalesOrderNo(salesOrder.getOrderNo());
+
+			 salesPaymentPlan.setCreateBy(loginUser.getRealname());
+			 salesPaymentPlan.setCreateTime(new DateTime());
+			 paymentPlanService.save(salesPaymentPlan);
+			 salesOrderService.updateById(salesOrder);
 		 }
 
 		 return Result.OK("财务审核成功!");

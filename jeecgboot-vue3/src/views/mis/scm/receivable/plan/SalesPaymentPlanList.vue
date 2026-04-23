@@ -4,9 +4,9 @@
    <BasicTable @register="registerTable" :rowSelection="rowSelection">
      <!--插槽:table标题-->
       <template #tableTitle>
-          <a-button type="primary" v-auth="'scm:mis_sales_order:add'"  @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
-          <a-button  type="primary" v-auth="'scm:mis_sales_order:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
-          <j-upload-button  type="primary" v-auth="'scm:mis_sales_order:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
+          <a-button type="primary" v-auth="'scm:mis_sales_payment_plan:add'" @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
+          <a-button  type="primary" v-auth="'scm:mis_sales_payment_plan:exportXls'" preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
+          <j-upload-button type="primary" v-auth="'scm:mis_sales_payment_plan:importExcel'" preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
           <a-dropdown v-if="selectedRowKeys.length > 0">
               <template #overlay>
                 <a-menu>
@@ -16,7 +16,7 @@
                   </a-menu-item>
                 </a-menu>
               </template>
-              <a-button v-auth="'scm:mis_sales_order:deleteBatch'">批量操作
+              <a-button v-auth="'scm:mis_sales_payment_plan:deleteBatch'">批量操作
                 <Icon icon="mdi:chevron-down"></Icon>
               </a-button>
         </a-dropdown>
@@ -32,64 +32,63 @@
       </template>
     </BasicTable>
     <!-- 表单区域 -->
-    <SalesOrderModal @register="registerModal" @success="handleSuccess"></SalesOrderModal>
+    <SalesPaymentPlanModal @register="registerModal" @success="handleSuccess"></SalesPaymentPlanModal>
   </div>
 </template>
 
-<script lang="ts" name="scm-salesOrder" setup>
+<script lang="ts" name="scm-salesPaymentPlan" setup>
   import {ref, reactive, computed, unref} from 'vue';
   import {BasicTable, useTable, TableAction} from '/@/components/Table';
-  import { useListPage } from '/@/hooks/system/useListPage'
   import {useModal} from '/@/components/Modal';
-  import SalesOrderModal from './components/SalesOrderApplyModal.vue'
-  import {columns, searchFormSchema, superQuerySchema} from './SalesOrderApply.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './SalesOrderApply.api';
-  import {downloadFile} from '/@/utils/common/renderUtils';
+  import { useListPage } from '/@/hooks/system/useListPage'
+  import SalesPaymentPlanModal from './components/SalesPaymentPlanModal.vue'
+  import {columns, searchFormSchema, superQuerySchema} from './SalesPaymentPlan.data';
+  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './SalesPaymentPlan.api';
+  import { downloadFile } from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
-  import {useMessage} from "@/hooks/web/useMessage";
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
-  const { createMessage } = useMessage();
   //注册model
   const [registerModal, {openModal}] = useModal();
-   //注册table数据
+  //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
-           title: '销售订单主表',
+           title: '销售收款计划',
            api: list,
            columns,
            canResize:false,
            formConfig: {
-                //labelWidth: 120,
-                schemas: searchFormSchema,
-                autoSubmitOnEnter:true,
-                showAdvancedButton:true,
-                fieldMapToNumber: [
-                ],
-                fieldMapToTime: [
-                ],
+              //labelWidth: 120,
+              schemas: searchFormSchema,
+              autoSubmitOnEnter:true,
+              showAdvancedButton:true,
+              fieldMapToNumber: [
+              ],
+              fieldMapToTime: [
+                ['planDate', ['planDate_begin', 'planDate_end'], 'YYYY-MM-DD'],
+              ],
             },
            actionColumn: {
                width: 120,
                fixed:'right'
-           },
-           beforeFetch: (params) => {
-             return Object.assign(params, queryParam);
-           },
-        },
-        exportConfig: {
-            name:"销售订单主表",
+            },
+            beforeFetch: (params) => {
+              return Object.assign(params, queryParam);
+            },
+      },
+       exportConfig: {
+            name:"销售收款计划",
             url: getExportUrl,
             params: queryParam,
-        },
-        importConfig: {
+          },
+          importConfig: {
             url: getImportUrl,
             success: handleSuccess
-        },
-    })
+          },
+  })
 
-  const [registerTable, {reload},{ rowSelection, selectedRowKeys, getSelectRows }] = tableContext
+  const [registerTable, {reload},{ rowSelection, selectedRowKeys }] = tableContext
 
   // 高级查询配置
   const superQueryConfig = reactive(superQuerySchema);
@@ -103,7 +102,6 @@
     });
     reload();
   }
-
    /**
     * 新增事件
     */
@@ -143,19 +141,7 @@
     * 批量删除事件
     */
   async function batchHandleDelete() {
-     // 1. 获取选中行的审核状态
-     console.log("selectedRowKeys:",selectedRowKeys)
-     console.log("rowSelection.selectedRows",rowSelection.selectedRows);
-     const auditedRows = rowSelection.selectedRows.filter(row => row.salesApproveStatus === '1');
-
-     if (auditedRows.length > 0) {
-       // 提示哪些不能删
-       const orderNos = auditedRows.map(row => row.orderNo).join(', ');
-       createMessage.warning(`以下订单已审核，不能删除：${orderNos}`);
-       return; // 终止删除
-     }
-
-    await batchDelete({ids: selectedRowKeys.value},handleSuccess);
+     await batchDelete({ids: selectedRowKeys.value}, handleSuccess);
    }
    /**
     * 成功回调
@@ -167,38 +153,34 @@
       * 操作栏
       */
   function getTableAction(record){
-     const isAudited = record.salesApproveStatus === '1';
        return [
          {
            label: '编辑',
            onClick: handleEdit.bind(null, record),
-           auth: 'scm:mis_sales_order:edit',
-           disabled:isAudited,
+           auth: 'scm:mis_sales_payment_plan:edit'
+         }
+       ]
+   }
+     /**
+        * 下拉操作栏
+        */
+  function getDropDownAction(record){
+       return [
+         {
+           label: '详情',
+           onClick: handleDetail.bind(null, record),
+         }, {
+           label: '删除',
+           popConfirm: {
+             title: '是否确认删除',
+             confirm: handleDelete.bind(null, record),
+             placement: 'topLeft',
+           },
+           auth: 'scm:mis_sales_payment_plan:delete'
          }
        ]
    }
 
-
-  /**
-   * 下拉操作栏
-   */
-  function getDropDownAction(record){
-    return [
-      {
-        label: '详情',
-        onClick: handleDetail.bind(null, record),
-      }, {
-        label: '删除',
-        popConfirm: {
-          title: '是否确认删除',
-          confirm: handleDelete.bind(null, record),
-          placement: 'topLeft'
-        },
-        auth: 'scm:mis_sales_order:delete',
-        disabled: record.salesApproveStatus === '1'
-      }
-    ]
-  }
 
 
 </script>

@@ -204,7 +204,7 @@ export const searchFormSchema: FormSchema[] = [
       field: "salesmanId",
       component: 'JSelectMultiple',
       componentProps:{
-          dictCode:"sys_user,realname,id",
+        dictCode:"sys_user where del_flag='0' and status='1',realname,id",
         disabled:!isAdmin,
       },
     defaultValue: userInfo.id,
@@ -346,7 +346,7 @@ export const formSchema: FormSchema[] = [
     field: 'salesmanId',
     component: 'JDictSelectTag',
     componentProps:{
-        dictCode:"sys_user,realname,id",
+      dictCode:"sys_user where del_flag='0' and status='1',realname,id",
       disabled:!isAdmin,
      },
     defaultValue:userInfo.id,
@@ -525,14 +525,6 @@ export const formSchema: FormSchema[] = [
   },
 
   // {
-  //   label: '财务审批状态',
-  //   field: 'financeApproveStatus',
-  //   component: 'JDictSelectTag',
-  //   componentProps:{
-  //       dictCode:"approval_status"
-  //    },
-  // },
-  // {
   //   label: '销售审批时间',
   //   field: 'salesApproveTime',
   //   component: 'DatePicker',
@@ -561,11 +553,7 @@ export const formSchema: FormSchema[] = [
   //   field: 'financeApproverName',
   //   component: 'Input',
   // },
-  // {
-  //   label: '财务审批意见',
-  //   field: 'financeApproveRemark',
-  //   component: 'Input',
-  // },
+
   // {
   //   label: '订单状态',
   //   field: 'orderStatus',
@@ -634,6 +622,24 @@ export const formSchema: FormSchema[] = [
   {
     label: '业务审批意见',
     field: 'salesApproveRemark',
+    component: 'Input',
+  },
+  {
+    label: '财务审批状态',
+    field: 'financeApproveStatus',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"approval_status"
+    },
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入审批状态!'},
+      ];
+    },
+  },
+  {
+    label: '财务审批意见',
+    field: 'financeApproveRemark',
     component: 'Input',
   },
 	// TODO 主键隐藏字段，目前写死为ID

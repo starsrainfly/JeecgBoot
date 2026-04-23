@@ -204,7 +204,7 @@ export const searchFormSchema: FormSchema[] = [
       field: "salesmanId",
       component: 'JSelectMultiple',
       componentProps:{
-          dictCode:"sys_user,realname,id",
+        dictCode:"sys_user where del_flag='0' and status='1',realname,id",
         disabled:!isAdmin,
       },
     defaultValue: userInfo.id,

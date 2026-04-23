@@ -4,9 +4,9 @@
    <BasicTable @register="registerTable" :rowSelection="rowSelection">
      <!--插槽:table标题-->
       <template #tableTitle>
-          <a-button type="primary" v-auth="'scm:mis_sales_order:add'"  @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
-          <a-button  type="primary" v-auth="'scm:mis_sales_order:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
-          <j-upload-button  type="primary" v-auth="'scm:mis_sales_order:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
+          <a-button type="primary" v-auth="'scm:mis_receipt_order:add'"  @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
+          <a-button  type="primary" v-auth="'scm:mis_receipt_order:exportXls'"  preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
+          <j-upload-button  type="primary" v-auth="'scm:mis_receipt_order:importExcel'"  preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
           <a-dropdown v-if="selectedRowKeys.length > 0">
               <template #overlay>
                 <a-menu>
@@ -16,7 +16,7 @@
                   </a-menu-item>
                 </a-menu>
               </template>
-              <a-button v-auth="'scm:mis_sales_order:deleteBatch'">批量操作
+              <a-button v-auth="'scm:mis_receipt_order:deleteBatch'">批量操作
                 <Icon icon="mdi:chevron-down"></Icon>
               </a-button>
         </a-dropdown>
@@ -32,31 +32,29 @@
       </template>
     </BasicTable>
     <!-- 表单区域 -->
-    <SalesOrderModal @register="registerModal" @success="handleSuccess"></SalesOrderModal>
+    <ReceiptOrderModal @register="registerModal" @success="handleSuccess"></ReceiptOrderModal>
   </div>
 </template>
 
-<script lang="ts" name="scm-salesOrder" setup>
+<script lang="ts" name="scm-receiptOrder" setup>
   import {ref, reactive, computed, unref} from 'vue';
   import {BasicTable, useTable, TableAction} from '/@/components/Table';
   import { useListPage } from '/@/hooks/system/useListPage'
   import {useModal} from '/@/components/Modal';
-  import SalesOrderModal from './components/SalesOrderApplyModal.vue'
-  import {columns, searchFormSchema, superQuerySchema} from './SalesOrderApply.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './SalesOrderApply.api';
+  import ReceiptOrderModal from './components/ReceiptOrderModal.vue'
+  import {columns, searchFormSchema, superQuerySchema} from './ReceiptOrder.data';
+  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './ReceiptOrder.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
-  import {useMessage} from "@/hooks/web/useMessage";
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
-  const { createMessage } = useMessage();
   //注册model
   const [registerModal, {openModal}] = useModal();
    //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
-           title: '销售订单主表',
+           title: '收款单',
            api: list,
            columns,
            canResize:false,
@@ -68,6 +66,7 @@
                 fieldMapToNumber: [
                 ],
                 fieldMapToTime: [
+                   ['receiptDate', ['receiptDate_begin', 'receiptDate_end'], 'YYYY-MM-DD'],
                 ],
             },
            actionColumn: {
@@ -79,7 +78,7 @@
            },
         },
         exportConfig: {
-            name:"销售订单主表",
+            name:"收款单",
             url: getExportUrl,
             params: queryParam,
         },
@@ -89,7 +88,7 @@
         },
     })
 
-  const [registerTable, {reload},{ rowSelection, selectedRowKeys, getSelectRows }] = tableContext
+  const [registerTable, {reload},{ rowSelection, selectedRowKeys }] = tableContext
 
   // 高级查询配置
   const superQueryConfig = reactive(superQuerySchema);
@@ -143,19 +142,7 @@
     * 批量删除事件
     */
   async function batchHandleDelete() {
-     // 1. 获取选中行的审核状态
-     console.log("selectedRowKeys:",selectedRowKeys)
-     console.log("rowSelection.selectedRows",rowSelection.selectedRows);
-     const auditedRows = rowSelection.selectedRows.filter(row => row.salesApproveStatus === '1');
-
-     if (auditedRows.length > 0) {
-       // 提示哪些不能删
-       const orderNos = auditedRows.map(row => row.orderNo).join(', ');
-       createMessage.warning(`以下订单已审核，不能删除：${orderNos}`);
-       return; // 终止删除
-     }
-
-    await batchDelete({ids: selectedRowKeys.value},handleSuccess);
+     await batchDelete({ids: selectedRowKeys.value},handleSuccess);
    }
    /**
     * 成功回调
@@ -167,13 +154,11 @@
       * 操作栏
       */
   function getTableAction(record){
-     const isAudited = record.salesApproveStatus === '1';
        return [
          {
            label: '编辑',
            onClick: handleEdit.bind(null, record),
-           auth: 'scm:mis_sales_order:edit',
-           disabled:isAudited,
+           auth: 'scm:mis_receipt_order:edit'
          }
        ]
    }
@@ -194,8 +179,7 @@
           confirm: handleDelete.bind(null, record),
           placement: 'topLeft'
         },
-        auth: 'scm:mis_sales_order:delete',
-        disabled: record.salesApproveStatus === '1'
+        auth: 'scm:mis_receipt_order:delete'
       }
     ]
   }

@@ -14,12 +14,12 @@
           :height="340"
           :rowNumber="true"
           :rowSelection="true"
-          :disabled="formDisabled"
+          :disabled="formDisabled || isAuditMode"
           :toolbar="true"
           @edit-closed="handleCellValueChange"
           >
           <!-- 插槽名对应 slotName productCode 报价单弹窗-->
-          <template #productCodeSlot="{ row, rowIndex }">
+          <template #productCodeSlot="{ row, rowIndex }" v-if="!isAuditMode">
             <a-input-group compact>
               <a-input
                 v-model:value="row.productCode"
@@ -30,11 +30,15 @@
               <a-button type="primary" @click="openPriceModal(row, rowIndex)">选择</a-button>
             </a-input-group>
           </template>
+          <!-- 审核模式下显示纯文本 -->
+          <template #productCodeSlot="{ row }" v-else>
+            <span>{{ row.productCode }}</span>
+          </template>
         </JVxeTable>
       </a-tab-pane>
     </a-tabs>
     <!-- 报价选择弹窗 -->
-    <PriceOfferModal @register="registerPriceModal" @success="onPriceSelected" />
+    <PriceOfferModal v-if="!isAuditMode" @register="registerPriceModal" @success="onPriceSelected" />
   </BasicModal>
 </template>
 
@@ -143,7 +147,7 @@
     };
 
     //表单配置
-    const [registerForm, {setProps,resetFields, setFieldsValue, validate,getFieldsValue}] = useForm({
+    const [registerForm, {setProps,resetFields, setFieldsValue, validate,getFieldsValue, updateSchema}] = useForm({
         schemas: formSchema,
         showActionButtonGroup: false,
         baseColProps: {span: 6},
@@ -160,6 +164,29 @@
           title:data?.title || getModalTitle()});
         isUpdate.value = !!data?.isUpdate;
         formDisabled.value = !data?.showFooter;
+      // ==================== 关键修复：审核模式下设置字段禁用 ====================
+      if (isAuditMode.value) {
+        // 审核模式下，只有 approveStatus 和 approveRemark 可编辑，其他都禁用
+        const editableFields = ['financeApproveStatus', 'financeApproveRemark','id'];
+
+        // 构建新的 schema，使用 dynamicDisabled 函数控制每个字段
+        const auditSchema = formSchema.map(schema => {
+          const canEdit = editableFields.includes(schema.field);
+          return {
+            ...schema,
+            // 使用 dynamicDisabled 函数返回布尔值
+            dynamicDisabled: () => !canEdit,
+            // 同时设置 disabled 属性作为备用
+            disabled: !canEdit
+          };
+        });
+
+        // 更新 schema
+        await updateSchema(auditSchema);
+
+        // 强制刷新表单
+        await nextTick();
+      }
         if (unref(isUpdate)) {
             //表单赋值
             await setFieldsValue({

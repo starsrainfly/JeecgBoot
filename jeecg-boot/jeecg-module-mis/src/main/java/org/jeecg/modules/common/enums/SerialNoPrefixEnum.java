@@ -9,9 +9,10 @@ public enum SerialNoPrefixEnum {
     PRODUCTION_ORDER("MO", "生产订单"),
     PRODUCTION_WORK_ORDER("WO","生产工单"),
     PRODUCTION_BATCH_ORDER("BT","批次单号"),
-    RECEIPT_PLAN("RP", "收款计划"), // 新增
-    PAYMENT_PLAN("PP", "付款计划"), // 预留
-    RECEIPT_COLLECTION("RC","收款单号"),
+    RECEIVABLE_PLAN("SK", "应收计划"),      // 销售收款计划
+    PAYABLE_PLAN("FK", "应付计划"),         // 采购付款计划
+    RECEIPT_VOUCHER("RC", "收款单"),        // 实际收款单据
+    PAYMENT_VOUCHER("PV", "付款单"),        // 实际付款单据
     PURCHASE_ORDER("PO", "采购订单"),
     STOCK_IN("RI","入库单"),
     STOCK_OUT("DO","出库单"),

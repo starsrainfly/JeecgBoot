@@ -15,6 +15,7 @@
         d.product_code AS productCode,
         d.product_name AS productName,
         d.product_spec AS productSpec,
+        d.product_color as productColor,
         d.custom_product_code AS customProductCode,
         d.custom_product_name AS customProductName,
         d.custom_product_spec AS customProductSpec,

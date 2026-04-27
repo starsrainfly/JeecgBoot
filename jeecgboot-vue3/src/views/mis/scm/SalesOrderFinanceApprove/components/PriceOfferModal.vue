@@ -158,6 +158,7 @@
       { title: '产品编码', dataIndex: 'productCode', width: 120 },
       { title: '产品名称', dataIndex: 'productName', width: 180 },
       { title: '产品规格', dataIndex: 'productSpec', width: 120 },
+      { title: '产品颜色', dataIndex: 'productColor', width: 120 },
       { title: '定制编码', dataIndex: 'customProductCode', width: 100 },
       { title: '定制名称', dataIndex: 'customProductName', width: 150 },
       { title: '定制规格', dataIndex: 'customProductSpec', width: 120 },

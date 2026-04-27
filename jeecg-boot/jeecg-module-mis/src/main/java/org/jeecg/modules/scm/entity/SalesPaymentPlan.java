@@ -104,6 +104,14 @@ public class SalesPaymentPlan implements Serializable {
     @Schema(description = "删除标识")
     @TableLogic
     private String delFlag;
+    /**公司ID*/
+    @Excel(name = "公司ID", width = 15)
+    @Schema(description = "公司ID")
+    private String companyId;
+    /**公司名称*/
+    @Excel(name = "公司名称", width = 15)
+    @Schema(description = "公司名称")
+    private String companyName;
 	/**创建人*/
     @Schema(description = "创建人")
     private String createBy;

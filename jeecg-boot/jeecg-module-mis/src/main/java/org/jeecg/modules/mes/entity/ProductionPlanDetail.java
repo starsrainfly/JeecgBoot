@@ -62,10 +62,14 @@ public class ProductionPlanDetail implements Serializable {
 	@Excel(name = "产品规格", width = 15)
     @Schema(description = "产品规格")
     private String productSpec;
+    /**产品颜色*/
+    @Excel(name = "产品颜色", width = 15)
+    @Schema(description = "产品颜色")
+    private String productColor;
 	/**订单数量*/
 	@Excel(name = "订单数量", width = 15)
     @Schema(description = "订单数量")
-    private java.math.BigDecimal demandQty;
+    private java.math.BigDecimal orderQty;
 	/**分配数量*/
 	@Excel(name = "分配数量", width = 15)
     @Schema(description = "分配数量")

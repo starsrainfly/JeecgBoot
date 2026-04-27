@@ -33,7 +33,7 @@ public class ProductionPlanPage {
 	/**计划编号*/
 	@Excel(name = "计划编号", width = 15)
 	@Schema(description = "计划编号")
-    private String planCode;
+    private String planNo;
 	/**产品编码*/
 	@Excel(name = "产品编码", width = 15)
 	@Schema(description = "产品编码")
@@ -46,6 +46,10 @@ public class ProductionPlanPage {
 	@Excel(name = "产品名称", width = 15)
 	@Schema(description = "产品名称")
     private String productName;
+	/**产品颜色*/
+	@Excel(name = "产品颜色", width = 15)
+	@Schema(description = "产品颜色")
+	private String productColor;
 	/**计划生产数量（kg）*/
 	@Excel(name = "计划生产数量（kg）", width = 15)
 	@Schema(description = "计划生产数量（kg）")
@@ -107,6 +111,15 @@ public class ProductionPlanPage {
 	@Excel(name = "是否删除", width = 15)
 	@Schema(description = "是否删除")
     private String delFlag;
+	/**公司ID*/
+	@Excel(name = "公司ID", width = 15)
+	@Dict(dictTable = "sys_depart where del_flag='0' and org_category='1' and org_type='1'", dicText = "depart_name", dicCode = "id")
+	@Schema(description = "公司ID")
+	private String companyId;
+	/**公司名称*/
+	@Excel(name = "公司名称", width = 15)
+	@Schema(description = "公司名称")
+	private String companyName;
 	@ExcelCollection(name="生产计划明细表")
 	@Schema(description = "生产计划明细表")
 	private List<ProductionPlanDetail> productionPlanDetailList;

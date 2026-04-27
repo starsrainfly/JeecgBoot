@@ -132,6 +132,7 @@
     { title: '计划编号', dataIndex: 'planNo', width: 120 },
     { title: '产品编码', dataIndex: 'productCode', width: 100 },
     { title: '产品名称', dataIndex: 'productName', width: 150 },
+    {title: '产品颜色', dataIndex: 'productColor', width: 120},
     { title: '内包装', dataIndex: 'packageName', width: 120 },
     { title: '计划分配量', dataIndex: 'allocatedQty', width: 100 },
     {

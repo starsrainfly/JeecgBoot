@@ -67,11 +67,11 @@ public class Product implements Serializable {
 	@Excel(name = "特点", width = 15)
     @Schema(description = "特点")
     private String characteristic;
+	/**颜色*/
+	@Excel(name = "颜色", width = 15)
+    @Schema(description = "颜色")
+    private String productColor;
 
-//	/**颜色*/
-//	@Excel(name = "颜色", width = 15)
-//    @Schema(description = "颜色")
-//    private String color;
 //	/**用途*/
 //	@Excel(name = "用途", width = 15)
 //    @Schema(description = "用途")

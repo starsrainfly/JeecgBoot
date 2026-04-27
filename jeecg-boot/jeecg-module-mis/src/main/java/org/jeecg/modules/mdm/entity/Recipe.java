@@ -86,6 +86,10 @@ public class Recipe implements Serializable {
     @Excel(name = "总占比", width = 15)
     @Schema(description = "总占比")
     private BigDecimal proportionTotal;
+    /**颜色*/
+    @Excel(name = "颜色", width = 15)
+    @Schema(description = "颜色")
+    private String color;
 	/**是否删除*/
 	@Excel(name = "是否删除", width = 15)
     @Schema(description = "是否删除")

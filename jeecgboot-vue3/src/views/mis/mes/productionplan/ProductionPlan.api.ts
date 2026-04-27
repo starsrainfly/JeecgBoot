@@ -64,6 +64,14 @@ export const batchDelete = (params, handleSuccess) => {
   });
 }
 /**
+ * 保存或者更新
+ * @param params
+ */
+export const saveOrUpdate = (params, isUpdate) => {
+  let url = isUpdate ? Api.edit : Api.save;
+  return defHttp.post({url: url, params});
+}
+/**
  * 计划发布
  */
 export const publishPlan = (params,handleSuccess) => {
@@ -84,17 +92,9 @@ export const publishPlanBatch = (params, handleSuccess) =>{
     okText: '确认',
     cancelText: '取消',
     onOk: () => {
-      return defHttp.delete({url: Api.publishBatch, data: params}, {joinParamsToUrl: true}).then(() => {
+      return defHttp.post({url: Api.publishBatch, data: params}, {joinParamsToUrl: true}).then(() => {
         handleSuccess();
       });
     }
   });
-}
-/**
- * 保存或者更新
- * @param params
- */
-export const saveOrUpdate = (params, isUpdate) => {
-  let url = isUpdate ? Api.edit : Api.save;
-  return defHttp.post({url: url, params});
 }

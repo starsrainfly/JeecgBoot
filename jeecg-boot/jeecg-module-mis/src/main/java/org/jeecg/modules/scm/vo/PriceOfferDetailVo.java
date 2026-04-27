@@ -47,6 +47,8 @@ public class PriceOfferDetailVo implements Serializable {
 
     @Schema(description = "产品规格")
     private String productSpec;
+    @Schema(description = "产品颜色")
+    private String productColor;
 
     @Schema(description = "客户定制编码")
     private String customProductCode;
@@ -75,6 +77,9 @@ public class PriceOfferDetailVo implements Serializable {
 
     @Schema(description = "包装容量")
     private BigDecimal packageCapacity;
+
+    @Schema(description = "包装容量单位")
+    private String packageCapacityUnit;
 
     @Schema(description = "价格类型")
     @Dict(dicCode = "mdm_price_type")

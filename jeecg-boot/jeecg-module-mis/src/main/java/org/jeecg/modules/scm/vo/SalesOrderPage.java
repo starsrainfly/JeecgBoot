@@ -72,6 +72,18 @@ public class SalesOrderPage {
 	@Excel(name = "业务员", width = 15)
 	@Schema(description = "业务员")
     private String salesmanName;
+	/**公司ID*/
+	@Excel(name = "公司ID", width = 15)
+	@Schema(description = "公司ID")
+	private String companyId;
+	/**公司编码*/
+	@Excel(name = "公司编码", width = 15)
+	@Schema(description = "公司编码")
+	private String companyCode;
+	/**公司名称*/
+	@Excel(name = "公司名称", width = 15)
+	@Schema(description = "公司名称")
+	private String companyName;
 	/**币种代码*/
 	@Excel(name = "币种代码", width = 15, dictTable = "mis_currency", dicText = "currency_name", dicCode = "currency_code")
     @Dict(dictTable = "mis_currency", dicText = "currency_name", dicCode = "currency_code")

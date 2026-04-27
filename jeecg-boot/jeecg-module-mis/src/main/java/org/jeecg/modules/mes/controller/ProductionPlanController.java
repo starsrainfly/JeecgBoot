@@ -17,6 +17,8 @@ import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.common.utils.SerialNoUtils;
 import org.jeecg.modules.mes.vo.ProductionPlanDetailVo;
+import org.jeecg.modules.system.entity.SysDepart;
+import org.jeecg.modules.system.service.ISysDepartService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -67,6 +69,8 @@ public class ProductionPlanController {
 	private IProductionPlanDetailService productionPlanDetailService;
 	 @Autowired
 	 private ISerialNoService serialNoService;
+	 @Autowired
+	 private ISysDepartService departService;
 	/**
 	 * 分页列表查询
 	 *
@@ -125,6 +129,12 @@ public class ProductionPlanController {
 		ProductionPlan productionPlan = new ProductionPlan();
 		BeanUtils.copyProperties(productionPlanPage, productionPlan);
 		productionPlan.setPlanNo(serialNoService.generateSerialNo(SerialNoPrefixEnum.PRODUCTION_PLAN.getPrefix()));
+		if(productionPlan.getCompanyId() != null){
+			SysDepart depart =  departService.getDepartById(productionPlan.getCompanyId());
+			if(depart != null){
+				productionPlan.setCompanyName(depart.getDepartName());
+			}
+		}
 		productionPlanService.saveMain(productionPlan, productionPlanPage.getProductionPlanDetailList());
 		return Result.OK("添加成功！");
 	}
@@ -146,6 +156,13 @@ public class ProductionPlanController {
 		if(productionPlanEntity==null) {
 			return Result.error("未找到对应数据");
 		}
+		if(productionPlan.getCompanyId() != null){
+			SysDepart depart =  departService.getDepartById(productionPlan.getCompanyId());
+			if(depart != null){
+				productionPlan.setCompanyName(depart.getDepartName());
+			}
+		}
+
 		productionPlanService.updateMain(productionPlan, productionPlanPage.getProductionPlanDetailList());
 		return Result.OK("编辑成功!");
 	}

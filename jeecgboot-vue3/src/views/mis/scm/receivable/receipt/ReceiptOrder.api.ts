@@ -73,7 +73,7 @@ export const saveOrUpdate = (params, isUpdate) => {
 // 查询收款计划列表（用于弹窗选择）
 export function getPlanList(params) {
   return defHttp.get({
-    url: '/scm/salesPaymentPlan/list',
+    url: '/scm/salesPaymentPlan_unused/list',
     params,
   });
 }

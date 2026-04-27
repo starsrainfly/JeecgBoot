@@ -49,6 +49,11 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'productName'
    },
+  {
+    title:'产品颜色',
+    align:'center',
+    dataIndex:'productColor'
+  },
    {
     title: '计划设备编码',
     align:"center",
@@ -273,6 +278,12 @@ export const formSchema: FormSchema[] = [
   {
     label: '产品名称',
     field: 'productName',
+    component: 'Input',
+    dynamicDisabled:true
+  },
+  {
+    label: '产品颜色',
+    field: 'productColor',
     component: 'Input',
     dynamicDisabled:true
   },

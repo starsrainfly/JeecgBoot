@@ -16,7 +16,9 @@ import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.scm.entity.SalesPaymentPlan;
 import org.jeecg.modules.scm.service.ISalesPaymentPlanService;
+import org.jeecg.modules.system.entity.SysDepart;
 import org.jeecg.modules.system.entity.SysUser;
+import org.jeecg.modules.system.service.ISysDepartService;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
@@ -73,6 +75,8 @@ public class SalesOrderController {
 	private ISysUserService userService;
 	@Autowired
 	private ISalesPaymentPlanService paymentPlanService;
+	@Autowired
+	private ISysDepartService departService;
 	/**
 	 * 分页列表查询
 	 *
@@ -117,6 +121,13 @@ public class SalesOrderController {
 		SysUser salesman = userService.getById(salesOrder.getSalesmanId());
 		if(salesman != null) {
 			salesOrder.setSalesmanName(salesman.getRealname());
+		}
+		if(salesOrder.getCompanyCode() != null){
+			SysDepart depart =  departService.queryCompByOrgCode(salesOrder.getCompanyCode());
+			if(depart != null){
+				salesOrder.setCompanyId(depart.getId());
+				salesOrder.setCompanyName(depart.getDepartName());
+			}
 		}
 		salesOrder.setOrderStatus(SalesOrderStatusEnum.APPROVE.getCode());
 		salesOrderService.saveMain(salesOrder, salesOrderPage.getSalesOrderDetailList());
@@ -171,6 +182,9 @@ public class SalesOrderController {
 			 salesPaymentPlan.setPlanName(salesOrder.getOrderNo() + "-收款计划");
  			 salesPaymentPlan.setSalesmanId(salesOrder.getSalesmanId());
 
+			  salesPaymentPlan.setCompanyId(salesOrder.getCompanyId());
+			  salesPaymentPlan.setCompanyName(salesOrder.getCompanyName());
+
 			 salesPaymentPlan.setCustomerId(salesOrder.getCustomerId());
 			 salesPaymentPlan.setPaymentDays(salesOrder.getPaymentDays());
 			 salesPaymentPlan.setPaymentMethod(salesOrder.getPaymentMethod());
@@ -206,6 +220,17 @@ public class SalesOrderController {
 		SalesOrder salesOrderEntity = salesOrderService.getById(salesOrder.getId());
 		if(salesOrderEntity==null) {
 			return Result.error("未找到对应数据");
+		}
+		SysUser salesman = userService.getById(salesOrder.getSalesmanId());
+		if(salesman != null) {
+			salesOrder.setSalesmanName(salesman.getRealname());
+		}
+		if(salesOrder.getCompanyCode() != null){
+			SysDepart depart =  departService.queryCompByOrgCode(salesOrder.getCompanyCode());
+			if(depart != null){
+				salesOrder.setCompanyId(depart.getId());
+				salesOrder.setCompanyName(depart.getDepartName());
+			}
 		}
 		salesOrderService.updateMain(salesOrder, salesOrderPage.getSalesOrderDetailList());
 		return Result.OK("编辑成功!");

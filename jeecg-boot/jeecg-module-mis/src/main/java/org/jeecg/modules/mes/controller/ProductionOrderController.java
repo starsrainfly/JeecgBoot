@@ -20,6 +20,8 @@ import org.jeecg.modules.common.utils.SerialNoUtils;
 import org.jeecg.modules.mdm.entity.Product;
 import org.jeecg.modules.mdm.service.IProductService;
 import org.jeecg.modules.mdm.service.IRecipeService;
+import org.jeecg.modules.system.entity.SysDepart;
+import org.jeecg.modules.system.service.ISysDepartService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -73,6 +75,8 @@ public class ProductionOrderController {
 	 private ISerialNoService serialNoService;
 	 @Autowired
 	 private IProductService productService;
+	 @Autowired
+	 private ISysDepartService departService;
 	/**
 	 * 分页列表查询
 	 *
@@ -142,6 +146,13 @@ public class ProductionOrderController {
 		if(productEntity==null) {
 			return Result.error("未找到对应产品数据");
 		}
+		if(productionOrder.getCompanyId() != null){
+			SysDepart depart =  departService.getDepartById(productionOrder.getCompanyId());
+			if(depart != null){
+				productionOrder.setCompanyName(depart.getDepartName());
+			}
+		}
+
 		productionOrder.setRecipeId(productEntity.getRecipeId());
 		productionOrder.setRecipeCode(productEntity.getRecipeCode());
 		productionOrder.setRecipeName(productEntity.getRecipeName());
@@ -167,6 +178,12 @@ public class ProductionOrderController {
 		ProductionOrder productionOrderEntity = productionOrderService.getById(productionOrder.getId());
 		if(productionOrderEntity==null) {
 			return Result.error("未找到对应数据");
+		}
+		if(productionOrder.getCompanyId() != null){
+			SysDepart depart =  departService.getDepartById(productionOrder.getCompanyId());
+			if(depart != null){
+				productionOrder.setCompanyName(depart.getDepartName());
+			}
 		}
 		productionOrderService.updateMain(productionOrder, productionOrderPage.getProductionOrderDetailList());
 		return Result.OK("编辑成功!");

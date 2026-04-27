@@ -52,9 +52,50 @@ public class SerialNoServiceImpl implements ISerialNoService {
                 log.warn("单号生成器计算 TTL 异常，Key: {}, 强制设置为 24h", redisKey);
             }
 
+            // 3. 格式化流水号 ( 4 位)
+            // JeecgBoot 通常引入了 Apache Commons Lang，可直接用 StringUtils
+            String seqPart = StringUtils.leftPad(sequence.toString(), 4, '0');
+
+            String orderNo = prefix + datePart + seqPart;
+
+            // 注意：JeecgBoot 日志通常使用 log.info 或 log.debug
+            log.debug("生成单号成功：{}, Key: {}, Seq: {}", orderNo, redisKey, sequence);
+
+            return orderNo;
+
+        } catch (Exception e) {
+            log.error("生成单号失败，prefix: {}", prefix, e);
+            throw new RuntimeException("单号生成服务异常", e);
+        }
+    }
+
+    @Override
+    public String generateSerialNo(String prefix, int sequenceLength) {
+        if (StringUtils.isBlank(prefix)) {
+            throw new IllegalArgumentException("单号前缀不能为空");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        String datePart = now.format(DATE_FORMATTER);
+        String redisKey = prefix + datePart;
+
+        try {
+            // 1. 原子自增
+            Long sequence = redisUtil.incr(redisKey, 1);
+
+            // 2. 设置过期时间 (修正后的逻辑：先 incr 后 expire)
+            long ttlSeconds = getSecondsUntilMidnight(now);
+            if (ttlSeconds > 0) {
+                redisUtil.expire(redisKey, ttlSeconds);
+            } else {
+                // 兜底策略
+                redisUtil.expire(redisKey, 86400);
+                log.warn("单号生成器计算 TTL 异常，Key: {}, 强制设置为 24h", redisKey);
+            }
+
             // 3. 格式化流水号 ( 5 位)
             // JeecgBoot 通常引入了 Apache Commons Lang，可直接用 StringUtils
-            String seqPart = StringUtils.leftPad(sequence.toString(), 5, '0');
+            String seqPart = StringUtils.leftPad(sequence.toString(), sequenceLength, '0');
 
             String orderNo = prefix + datePart + seqPart;
 

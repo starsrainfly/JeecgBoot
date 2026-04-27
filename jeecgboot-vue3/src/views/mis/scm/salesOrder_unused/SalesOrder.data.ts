@@ -4,7 +4,8 @@ import {useUserStore} from "@/store/modules/user";
 const userStore = useUserStore();
 const userInfo = userStore.getUserInfo;
 let isAdmin = userInfo.roles?.includes('admin') || userInfo.username === 'admin';
-
+const orgCode = userStore.getUserInfo?.orgCode;
+const companyCode = orgCode ? orgCode.substring(0, 2) : '';
 
 //列表数据
 export const columns: BasicColumn[] = [
@@ -21,6 +22,11 @@ export const columns: BasicColumn[] = [
       text = !text ? "" : (text.length > 10 ? text.substr(0,10) : text);
       return text;
     },
+   },
+   {
+    title:'公司',
+    align:'center',
+    dataIndex:'companyName',
    },
    {
     title: '客户',
@@ -121,6 +127,16 @@ export const searchFormSchema: FormSchema[] = [
       component: 'Input',
       //colProps: {span: 6},
  	},
+  {
+    label:'公司',
+    field:'companyCode',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"sys_depart where del_flag='0' and status='1' and org_category='1',depart_name,org_code",
+
+    },
+    defaultValue:companyCode,
+  },
 	{
       label: "订单日期",
       field: "orderDate",
@@ -180,9 +196,26 @@ export const formSchema: FormSchema[] = [
     },    
   },
   {
+    label:'公司',
+    field:'companyCode',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"sys_depart where del_flag='0' and status='1' and org_category='1',depart_name,org_code",
+
+    },
+    defaultValue:companyCode,
+
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请选择公司!'},
+      ];
+    },
+  },
+  {
     label: '客户',
     field: 'customerId',
-    component:'input'
+    component:'JDictSelectTag',
+    show:false,
   },
   {
     label: '客户',

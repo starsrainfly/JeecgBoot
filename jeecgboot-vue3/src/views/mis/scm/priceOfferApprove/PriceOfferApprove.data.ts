@@ -325,6 +325,7 @@ export const priceOfferDetailColumns: JVxeColumn[] = [
         { source: 'product_code', target: 'productCode' },
         { source: 'product_name', target: 'productName' },
         { source: 'product_spec', target: 'productSpec' },
+        { source: 'product_color',target: 'productColor'},
       ],
 
       width:"200px",
@@ -350,6 +351,14 @@ export const priceOfferDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
+  {
+    title:'产品颜色',
+    key:'productColor',
+    type:JVxeTypes.input,
+    width:"200px",
+    placeholder: '请输入${title}',
+    defaultValue:'',
+  },
   {
     title: '定制编码',
     key: 'customProductCode',

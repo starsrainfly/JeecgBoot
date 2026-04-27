@@ -45,6 +45,10 @@ public class ProductionOrderPage {
 	@Excel(name = "产品名称", width = 15)
 	@Schema(description = "产品名称")
     private String productName;
+	/**产品颜色*/
+	@Excel(name = "产品颜色", width = 15)
+	@Schema(description = "产品颜色")
+	private String productColor;
 	/**配方id*/
 	@Excel(name = "配方id", width = 15)
 	@Schema(description = "配方id")
@@ -100,6 +104,20 @@ public class ProductionOrderPage {
     @DateTimeFormat(pattern="yyyy-MM-dd")
 	@Schema(description = "交货日期")
     private Date deliveryDate;
+	/**实际开工*/
+	@Excel(name = "下达时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+	@DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+	@Schema(description = "下达时间")
+	private Date releaseTime;
+	/**公司ID*/
+	@Excel(name = "公司ID", width = 15)
+	@Schema(description = "公司ID")
+	private String companyId;
+	/**公司名称*/
+	@Excel(name = "公司名称", width = 15)
+	@Schema(description = "公司名称")
+	private String companyName;
 	/**状态0草稿1已下达，2部分完成3已完成*/
 	@Excel(name = "状态0草稿1已下达，2部分完成3已完成", width = 15, dicCode = "mes_production_status")
     @Dict(dicCode = "mes_production_status")

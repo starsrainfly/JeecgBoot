@@ -7,6 +7,8 @@ import dayjs from "dayjs";
 const userStore = useUserStore();
 const userInfo = userStore.getUserInfo;
 let isAdmin = userInfo.roles?.includes('admin') || userInfo.username === 'admin';
+const orgCode = userStore.getUserInfo?.orgCode;
+const companyCode = orgCode ? orgCode.substring(0, 3) : '';
 
 //列表数据
 export const columns: BasicColumn[] = [
@@ -20,6 +22,11 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'orderType_dictText'
    },
+  {
+    title:'公司',
+    align:'center',
+    dataIndex:'companyName',
+  },
    {
     title: '订单日期',
     align:"center",
@@ -183,6 +190,16 @@ export const searchFormSchema: FormSchema[] = [
       component: 'Input',
       //colProps: {span: 6},
  	},
+  {
+    label:'公司',
+    field:'companyCode',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"sys_depart where del_flag='0' and org_category='1' and org_type='1',depart_name,org_code",
+
+    },
+   // defaultValue:companyCode,
+  },
 	{
       label: "订单日期",
       field: "orderDate",
@@ -228,6 +245,11 @@ export const formSchema: FormSchema[] = [
         dictCode:"scm_order_type"
      },
     defaultValue:'NORMAL',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请选择订单类型!'},
+      ];
+    },
   },
   {
     label: '订单日期',
@@ -272,6 +294,22 @@ export const formSchema: FormSchema[] = [
                  { required: true, message: '请输入交货日期!'},
           ];
      },
+  },
+  {
+    label:'公司',
+    field:'companyCode',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"sys_depart where del_flag='0' and org_category='1' and org_type='1',depart_name,org_code",
+
+    },
+    defaultValue:companyCode,
+
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请选择公司!'},
+      ];
+    },
   },
   {
     label:'客户id',
@@ -658,12 +696,23 @@ export const salesOrderDetailColumns: JVxeColumn[] = [
       ],
     },
     {
+      title:'产品颜色',
+      key:'productColor',
+      type:JVxeTypes.input,
+      width:"120",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
+    },
+    {
       title: '单位',
       key: 'unit',
       type: JVxeTypes.select,
       options:[],
       dictCode:"mis_unit where del_flag='0' and status='1',unit,unit",
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:"kg",
       validateRules: [
@@ -674,7 +723,7 @@ export const salesOrderDetailColumns: JVxeColumn[] = [
       title: '数量',
       key: 'orderQty',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
       validateRules: [
@@ -685,7 +734,7 @@ export const salesOrderDetailColumns: JVxeColumn[] = [
       title: '单价',
       key: 'unitPrice',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
       validateRules: [
@@ -696,7 +745,7 @@ export const salesOrderDetailColumns: JVxeColumn[] = [
       title: '税率(%)',
       key: 'taxRate',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"80px",
       placeholder: '请输入${title}',
       defaultValue:13,
       validateRules: [
@@ -708,7 +757,7 @@ export const salesOrderDetailColumns: JVxeColumn[] = [
       title: '金额',
       key: 'detailAmount',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
       disabled:true,
@@ -724,7 +773,7 @@ export const salesOrderDetailColumns: JVxeColumn[] = [
       title: '税额',
       key: 'taxAmount',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:0,
       disabled:true,
@@ -759,7 +808,7 @@ export const salesOrderDetailColumns: JVxeColumn[] = [
       title: '包装名称',
       key: 'packageName',
       type: JVxeTypes.input,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
     },
@@ -767,7 +816,7 @@ export const salesOrderDetailColumns: JVxeColumn[] = [
       title: '包装规格',
       key: 'packageSpec',
       type: JVxeTypes.input,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
     },
@@ -775,10 +824,18 @@ export const salesOrderDetailColumns: JVxeColumn[] = [
       title: '包装容量',
       key: 'packageCapacity',
       type: JVxeTypes.inputNumber,
-      width:"200px",
+      width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
     },
+  {
+    title: '容量单位',
+    key: 'packageCapacityUnit',
+    type: JVxeTypes.input,
+    width:"100px",
+    placeholder: '请输入${title}',
+    defaultValue:'',
+  },
     {
       title: '备注',
       key: 'remark',
@@ -880,5 +937,6 @@ export const superQuerySchema = {
  */
 export function getBpmFormSchema(_formData): FormSchema[]{
 // 默认和原始表单保持一致 如果流程中配置了权限数据，这里需要单独处理formSchema
+
   return formSchema;
 }

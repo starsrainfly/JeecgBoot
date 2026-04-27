@@ -14,7 +14,7 @@
                     <Icon icon="ant-design:delete-outlined"></Icon>
                     删除
                   </a-menu-item>
-				   <a-menu-item key="2" @click="batchHandlePublish">
+                  <a-menu-item key="2" @click="batchHandlePublish">
                     <Icon icon="ant-design:delete-outlined"></Icon>
                     发布计划
                   </a-menu-item>
@@ -47,20 +47,16 @@
   import {useModal} from '/@/components/Modal';
   import ProductionPlanModal from './components/ProductionPlanModal.vue'
   import {columns, searchFormSchema, superQuerySchema} from './ProductionPlan.data';
-  import {
-    list,
-    deleteOne,
-    batchDelete,
-    getImportUrl,
-    getExportUrl,
-    planPublish,
-    publishPlanBatch
-  } from './ProductionPlan.api';
+  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './ProductionPlan.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
+  import {publishPlan,publishPlanBatch} from "@/views/mis/mes/productionplan - 副本/ProductionPlan.api";
+  import {useMessage} from "@/hooks/web/useMessage";
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
+  const { createMessage } = useMessage();
+
   //注册model
   const [registerModal, {openModal}] = useModal();
    //注册table数据
@@ -156,20 +152,21 @@
      await batchDelete({ids: selectedRowKeys.value},handleSuccess);
    }
 
-   async function batchHandlePublish(){
-     await publishPlanBatch({planIds:selectedRowKeys.value},handleSuccess);
-   }
-     /**
-    * 计划发布
-    */
+  async function batchHandlePublish(){
+    await publishPlanBatch({planIds:selectedRowKeys.value},handleSuccess);
+  }
+  /**
+   * 计划发布
+   */
   async function handlePublish(record){
     const publishFlag = record.planStatus;
     if(publishFlag != "0"){
-      //createMessage.error('已经发布或执行中不可再次发布');
+      createMessage.error('已经发布或执行中不可再次发布');
       return ;
     }
     await publishPlan({planId:record.id}, handleSuccess)
   }
+
    /**
     * 成功回调
     */
@@ -180,11 +177,13 @@
       * 操作栏
       */
   function getTableAction(record){
+    const isPublished = record.planStatus != '0'
        return [
          {
            label: '编辑',
            onClick: handleEdit.bind(null, record),
-           auth: 'mes:mis_production_plan:edit'
+           auth: 'mes:mis_production_plan:edit',
+           disabled: isPublished
          }
        ]
    }
@@ -194,6 +193,7 @@
    * 下拉操作栏
    */
   function getDropDownAction(record){
+    const isPublished = record.planStatus != '0'
     return [
       {
         label: '详情',
@@ -205,9 +205,10 @@
           confirm: handleDelete.bind(null, record),
           placement: 'topLeft'
         },
-        auth: 'mes:mis_production_plan:delete'
+        auth: 'mes:mis_production_plan:delete',
+        disabled:isPublished,
       },
-	   {
+      {
         label:'发布计划',
         popConfirm: {
           title: '是否确认发布计划',

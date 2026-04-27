@@ -172,4 +172,8 @@ public class ProductionOrderDetail implements Serializable {
     @Excel(name = "产品名称", width = 15)
     @Schema(description = "产品名称")
     private String productName;
+    /**产品颜色*/
+    @Excel(name = "产品颜色", width = 15)
+    @Schema(description = "产品颜色")
+    private String productColor;
 }

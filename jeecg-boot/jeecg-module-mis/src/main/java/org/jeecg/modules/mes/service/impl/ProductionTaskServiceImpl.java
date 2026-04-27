@@ -67,6 +67,9 @@ public class ProductionTaskServiceImpl extends ServiceImpl<ProductionTaskMapper,
             task.setProductId(batch.getProductId());
             task.setProductCode(batch.getProductCode());
             task.setProductName(batch.getProductName());
+            task.setProductColor(batch.getProductColor());
+            task.setCompanyId(batch.getCompanyId());
+            task.setCompanyName(batch.getCompanyName());
             task.setQcRequired(step.getQcRequired());
             task.setStatus("PENDING");
             if("1".equals(step.getIsMaterialStep())){

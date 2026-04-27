@@ -158,6 +158,7 @@
       { title: '产品编码', dataIndex: 'productCode', width: 120 },
       { title: '产品名称', dataIndex: 'productName', width: 180 },
       { title: '产品规格', dataIndex: 'productSpec', width: 120 },
+      { title: '产品颜色', dataIndex: 'productColor', width: 120 },
       { title: '定制编码', dataIndex: 'customProductCode', width: 100 },
       { title: '定制名称', dataIndex: 'customProductName', width: 150 },
       { title: '定制规格', dataIndex: 'customProductSpec', width: 120 },
@@ -166,6 +167,7 @@
       { title: '包装名称', dataIndex: 'packageName', width: 100 },
       {title:'包装规格',dataIndex:'packageSpec',width:100},
       {title:'包装容量', dataIndex:'packageCapacity', width:100},
+      {title:'容量单位',dataIndex:'packageCapacityUnit',width:100},
       { title: '价格类型', dataIndex: 'priceType_dictText', width: 100 },
       { title: '数量区间', dataIndex: 'qtyRange', width: 120, customRender: ({ record }) => {
           return `${record.qtyMin || 0} ~ ${record.qtyMax || '∞'}`;

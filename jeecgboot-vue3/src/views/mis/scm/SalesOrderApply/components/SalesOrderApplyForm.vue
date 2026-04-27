@@ -88,7 +88,7 @@
         await saveOrUpdate(values, true);
       }
 
-      const queryByIdUrl = '/scm/salesOrder/queryById';
+      const queryByIdUrl = '/scm/salesOrder_unused/queryById';
       async function initFormData(){
         let params = {id: props.formData.dataId};
         const data = await defHttp.get({url: queryByIdUrl, params});

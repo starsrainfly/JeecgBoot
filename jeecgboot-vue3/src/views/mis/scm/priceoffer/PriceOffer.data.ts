@@ -1,12 +1,7 @@
-import {BasicColumn} from '/@/components/Table';
-import {FormSchema} from '/@/components/Table';
-import { rules} from '/@/utils/helper/validator';
-import { render } from '/@/utils/common/renderUtils';
-import {JVxeTypes,JVxeColumn} from '/@/components/jeecg/JVxeTable/types'
-import { getWeekMonthQuarterYear } from '/@/utils';
-import { useUserStore } from '/@/store/modules/user';
+import {BasicColumn, FormSchema} from '/@/components/Table';
+import {JVxeColumn, JVxeTypes} from '/@/components/jeecg/JVxeTable/types'
+import {useUserStore} from '/@/store/modules/user';
 import {getRateByCode} from "@/views/mis/scm/priceoffer/PriceOffer.api";
-import {message} from "ant-design-vue";
 
 const userStore = useUserStore();
 
@@ -135,6 +130,9 @@ export const formSchema: FormSchema[] = [
     label: '报价单号',
     field: 'offerNo',
     component: 'Input',
+    componentProps:{
+      readonly:true,
+    },
   },
   {
     label: '报价日期',
@@ -168,6 +166,9 @@ export const formSchema: FormSchema[] = [
                 { source: 'id', target: 'customerId' },
                 { source: 'customer_name', target: 'customerName' },
             ],
+          param:{
+            salesmanId:userInfo.id
+          },
             multi:false
         }
     },
@@ -203,6 +204,7 @@ export const formSchema: FormSchema[] = [
     label: '币种代码',
     field: 'currencyCode',
     component: 'JDictSelectTag',
+
     componentProps: ({ formActionType }) => {
       const { setFieldsValue } = formActionType;
       return {
@@ -221,6 +223,9 @@ export const formSchema: FormSchema[] = [
         },
       };
     },
+
+    defaultValue:'CNY',
+
     dynamicRules: ({model,schema}) => {
           return [
                  { required: true, message: '请输入币种代码!'},
@@ -231,6 +236,7 @@ export const formSchema: FormSchema[] = [
     label: '汇率',
     field: 'exchangeRate',
     component: 'InputNumber',
+    defaultValue:1,
     dynamicRules: ({model,schema}) => {
       return [
         { required: true, message: '请输入币种汇率!'},
@@ -320,6 +326,7 @@ export const priceOfferDetailColumns: JVxeColumn[] = [
         { source: 'product_code', target: 'productCode' },
         { source: 'product_name', target: 'productName' },
         { source: 'product_spec', target: 'productSpec' },
+        { source: 'product_color', target: 'productColor'},
       ],
 
       width:"200px",
@@ -345,14 +352,22 @@ export const priceOfferDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
-  {
-    title: '定制编码',
-    key: 'customProductCode',
-    type: JVxeTypes.input,
-    width:"200px",
-    placeholder: '请输入${title}',
-    defaultValue:'',
-  },
+    {
+      title:'产品颜色',
+      key:'productColor',
+      type:JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
+    {
+      title: '定制编码',
+      key: 'customProductCode',
+      type: JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
     {
       title: '定制名称',
       key: 'customProductName',

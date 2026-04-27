@@ -38,8 +38,8 @@
       </template>
 
       <!--字段回显插槽-->
-      <template v-slot:bodyCell="{ column, record, index, text }">
-      </template>
+<!--      <template v-slot:bodyCell="{ column, record, index, text }">-->
+<!--      </template>-->
 
      <!-- 订单号渲染为可点击链接 -->
      <template #bodyCell="{ column, record }">

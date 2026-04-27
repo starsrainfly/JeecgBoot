@@ -3,15 +3,15 @@
     <BasicForm @register="registerForm" ref="formRef"/>
     <!-- 子表单区域 -->
     <a-tabs v-model:activeKey="activeKey" animated  @change="handleChangeTabs">
-      <a-tab-pane tab="销售订单明细表" key="salesOrderLine" :forceRender="true">
+      <a-tab-pane tab="生产计划明细表" key="productionPlanDetail" :forceRender="true">
         <JVxeTable
           keep-source
           resizable
-          ref="salesOrderLine"
-          v-if="salesOrderLineTable.show"
-          :loading="salesOrderLineTable.loading"
-          :columns="salesOrderLineTable.columns"
-          :dataSource="salesOrderLineTable.dataSource"
+          ref="productionPlanDetail"
+          v-if="productionPlanDetailTable.show"
+          :loading="productionPlanDetailTable.loading"
+          :columns="productionPlanDetailTable.columns"
+          :dataSource="productionPlanDetailTable.dataSource"
           :height="340"
           :rowNumber="true"
           :rowSelection="true"
@@ -35,11 +35,11 @@
   import { propTypes } from '/@/utils/propTypes';
   import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods';
   import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils';
-  import {getBpmFormSchema,salesOrderLineColumns} from '../SalesOrder.data';
-  import {saveOrUpdate,salesOrderLineList} from '../SalesOrder.api';
+  import {getBpmFormSchema,productionPlanDetailColumns} from '../ProductionPlan.data';
+  import {saveOrUpdate,productionPlanDetailList} from '../ProductionPlan.api';
 
   export default defineComponent({
-    name: "SalesOrderForm",
+    name: "ProductionPlanForm",
     components:{
       BasicForm,
     },
@@ -52,7 +52,7 @@
         labelWidth: 150,
         schemas: getBpmFormSchema(props.formData),
         showActionButtonGroup: false,
-        baseColProps: {span: 6}
+        baseColProps: {span: 8}
       });
 
       const formDisabled = computed(()=>{
@@ -62,14 +62,14 @@
         return true;
       });
 
-      const refKeys = ref(['salesOrderLine', ]);
-      const activeKey = ref('salesOrderLine');
-      const salesOrderLine = ref();
-      const tableRefs = {salesOrderLine, };
-      const salesOrderLineTable = reactive({
+      const refKeys = ref(['productionPlanDetail', ]);
+      const activeKey = ref('productionPlanDetail');
+      const productionPlanDetail = ref();
+      const tableRefs = {productionPlanDetail, };
+      const productionPlanDetailTable = reactive({
         loading: false,
         dataSource: [],
-        columns:salesOrderLineColumns,
+        columns:productionPlanDetailColumns,
         show: false
       })
 
@@ -79,7 +79,7 @@
         let main = Object.assign({}, allValues.formValue)
         return {
           ...main, // 展开
-          salesOrderLineList: allValues.tablesValue[0].tableData,
+          productionPlanDetailList: allValues.tablesValue[0].tableData,
         }
       }
 
@@ -88,14 +88,14 @@
         await saveOrUpdate(values, true);
       }
 
-      const queryByIdUrl = '/scm/salesOrder/queryById';
+      const queryByIdUrl = '/mes/productionPlan/queryById';
       async function initFormData(){
         let params = {id: props.formData.dataId};
         const data = await defHttp.get({url: queryByIdUrl, params});
         //设置表单的值
         await setFieldsValue({...data});
-        requestSubTableData(salesOrderLineList, {id: data.id}, salesOrderLineTable, ()=>{
-          salesOrderLineTable.show = true;
+        requestSubTableData(productionPlanDetailList, {id: data.id}, productionPlanDetailTable, ()=>{
+          productionPlanDetailTable.show = true;
         });
         //默认是禁用
         await setProps({disabled: formDisabled.value})
@@ -110,8 +110,8 @@
         handleSubmit,
         activeKey,
         handleChangeTabs,
-        salesOrderLine,
-        salesOrderLineTable,
+        productionPlanDetail,
+        productionPlanDetailTable,
       }
     }
   });

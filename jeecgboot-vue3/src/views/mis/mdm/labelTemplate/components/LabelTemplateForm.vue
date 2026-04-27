@@ -12,11 +12,11 @@
     import {computed, defineComponent} from 'vue';
     import {defHttp} from '/@/utils/http/axios';
     import { propTypes } from '/@/utils/propTypes';
-    import {getBpmFormSchema} from '../SalesPaymentPlan.data';
-    import {saveOrUpdate} from '../SalesPaymentPlan.api';
+    import {getBpmFormSchema} from '../LabelTemplate.data';
+    import {saveOrUpdate} from '../LabelTemplate.api';
     
     export default defineComponent({
-        name: "SalesPaymentPlanForm",
+        name: "LabelTemplateForm",
         components:{
             BasicForm
         },
@@ -40,7 +40,7 @@
             });
 
             let formData = {};
-            const queryByIdUrl = '/scm/salesPaymentPlan/queryById';
+            const queryByIdUrl = '/mdm/labelTemplate/queryById';
             async function initFormData(){
                 let params = {id: props.formData.dataId};
                 const data = await defHttp.get({url: queryByIdUrl, params});

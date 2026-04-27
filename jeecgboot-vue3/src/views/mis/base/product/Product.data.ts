@@ -18,6 +18,12 @@ export const columns: BasicColumn[] = [
     dataIndex: 'productName'
    },
    {
+    title: '颜色',
+    align: 'left',
+    sorter: true,
+    dataIndex: 'color'
+   },
+   {
     title: '型号规格',
     align: 'center',
     dataIndex: 'productSpec'
@@ -65,6 +71,11 @@ export const searchFormSchema: FormSchema[] = [
     label: "型号规格",
     field: "productSpec",
     component: 'JInput',
+  },
+  {
+    label:'颜色',
+    field:"color",
+    component:'JInput',
   },
 	{
       label: "配方编码",
@@ -143,10 +154,11 @@ export const formSchema: FormSchema[] = [
             setFieldsValue:setFieldsValue,
             code:"mis_recipe_select",
             fieldConfig: [
-                { source: 'id', target: 'recipeId' },
-                { source: 'recipe_code', target: 'recipeCode' },
+              { source: 'id', target: 'recipeId' },
+              { source: 'recipe_code', target: 'recipeCode' },
               { source: 'recipe_name', target: 'recipeName' },
               { source: 'version', target: 'recipeVersion' },
+              { source: 'color', target: 'productColor' },
             ],
             multi:false
         }
@@ -167,6 +179,16 @@ export const formSchema: FormSchema[] = [
     componentProps:{
       readOnly:true
     }
+  },
+  {
+    label: '配方颜色',
+    field: 'productColor',
+    component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入配方颜色!'},
+      ];
+    },
   },
   {
     label: '产品描述',

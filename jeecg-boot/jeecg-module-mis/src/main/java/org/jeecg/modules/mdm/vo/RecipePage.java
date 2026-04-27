@@ -76,6 +76,10 @@ public class RecipePage {
 	@Excel(name = "注意事项", width = 15)
 	@Schema(description = "注意事项")
     private String notes;
+	/**颜色*/
+	@Excel(name = "颜色", width = 15)
+	@Schema(description = "颜色")
+	private String color;
 	/**状态*/
 	@Excel(name = "状态", width = 15, dicCode = "status")
     @Dict(dicCode = "status")

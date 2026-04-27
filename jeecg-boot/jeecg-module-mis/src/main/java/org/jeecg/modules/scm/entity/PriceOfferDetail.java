@@ -53,6 +53,10 @@ public class PriceOfferDetail implements Serializable {
 	@Excel(name = "产品规格", width = 15)
     @Schema(description = "产品规格")
     private String productSpec;
+    /**产品颜色*/
+    @Excel(name = "产品颜色", width = 15)
+    @Schema(description = "产品颜色")
+    private String productColor;
     /**客户定制编码*/
     @Excel(name = "客户定制编码", width = 15)
     @Schema(description = "客户定制编码")

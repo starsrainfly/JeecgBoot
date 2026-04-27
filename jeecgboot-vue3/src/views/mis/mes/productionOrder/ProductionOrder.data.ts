@@ -24,6 +24,12 @@ export const columns: BasicColumn[] = [
     sorter: true,
     dataIndex: 'productName'
    },
+  {
+    title:'产品颜色',
+    align:'center',
+    sorter:true,
+    dataIndex:'productColor'
+  },
    {
     title: '计划产量(Kg)',
     align:"center",
@@ -101,6 +107,11 @@ export const columns: BasicColumn[] = [
       return text;
     },
    },
+  {
+    title:'公司',
+    align:'center',
+    dataIndex:'companyName'
+  },
    {
     title: '状态',
     align:"center",
@@ -136,6 +147,15 @@ export const searchFormSchema: FormSchema[] = [
       component: 'Input',
       //colProps: {span: 6},
  	},
+  {
+    label:'公司',
+    field:'companyId',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"sys_depart where del_flag='0' and org_category='1' and org_type='1',depart_name,id",
+
+    },
+  },
 	// {
   //     label: "内包装",
   //     field: "innerPackageId",
@@ -172,6 +192,21 @@ export const formSchema: FormSchema[] = [
     component: 'Input',
   },
   {
+    label:'公司',
+    field:'companyId',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"sys_depart where del_flag='0' and org_category='1' and org_type='1',depart_name,id",
+
+    },
+    // defaultValue:companyCode,
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入公司!'},
+      ];
+    },
+  },
+  {
     label:'产品id',
     field:'productId',
     component:'Input',
@@ -191,8 +226,9 @@ export const formSchema: FormSchema[] = [
                 { source: 'product_code', target: 'productCode' },
                 { source: 'product_name', target: 'productName' },
                 { source: 'recipe_id', target: 'recipeId' },
+                {source: 'product_color',target: 'productColor'},
             ],
-            multi:true
+            multi:false
         }
     },
 
@@ -206,6 +242,14 @@ export const formSchema: FormSchema[] = [
     label: '产品名称',
     field: 'productName',
     component: 'Input',
+    componentProps:{
+      readonly:true,
+    }
+  },
+  {
+    label:'产品颜色',
+    field:'productColor',
+    component:'Input',
     componentProps:{
       readonly:true,
     }
@@ -364,6 +408,14 @@ export const productionOrderDetailColumns: JVxeColumn[] = [
     width:"200px",
     disabled:true,
    // show:false
+  },
+  {
+    title:'产品颜色',
+    key:'productColor',
+    type:JVxeTypes.input,
+    width:"200px",
+    disabled:true,
+    // show:false
   },
     {
       title: '销售订单',

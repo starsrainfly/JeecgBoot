@@ -52,6 +52,10 @@ public class SalesOrderDetail implements Serializable {
 	@Excel(name = "规格型号", width = 15)
     @Schema(description = "规格型号")
     private String productSpec;
+    /**产品颜色*/
+    @Excel(name = "产品颜色", width = 15)
+    @Schema(description = "产品颜色")
+    private String productColor;
 	/**单位*/
 	@Excel(name = "单位", width = 15, dictTable = "mis_unit where del_flag='0' and status='1'", dicText = "unit", dicCode = "unit")
     @Schema(description = "单位")

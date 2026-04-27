@@ -16,6 +16,8 @@ import javax.servlet.http.HttpServletResponse;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.jeecg.modules.mes.entity.ProductionBatchMaterialActual;
 import org.jeecg.modules.mes.service.IProductionBatchMaterialActualService;
+import org.jeecg.modules.system.entity.SysDepart;
+import org.jeecg.modules.system.service.ISysDepartService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -66,6 +68,8 @@ public class ProductionBatchController {
 	private IProductionBatchBomService productionBatchBomService;
 	@Autowired
 	private IProductionBatchMaterialActualService materialActualService;
+	 @Autowired
+	 private ISysDepartService departService;
 	/**
 	 * 分页列表查询
 	 *
@@ -122,6 +126,14 @@ public class ProductionBatchController {
 	public Result<String> add(@RequestBody ProductionBatchPage productionBatchPage) {
 		ProductionBatch productionBatch = new ProductionBatch();
 		BeanUtils.copyProperties(productionBatchPage, productionBatch);
+		if(productionBatch.getCompanyId() != null){
+			SysDepart depart =  departService.getDepartById(productionBatch.getCompanyId());
+			if(depart != null){
+				productionBatch.setCompanyCode(depart.getOrgCode());
+				productionBatch.setCompanyName(depart.getDepartName());
+			}
+		}
+
 		productionBatchService.saveMain(productionBatch, productionBatchPage.getProductionBatchBomList());
 		return Result.OK("添加成功！");
 	}
@@ -142,6 +154,13 @@ public class ProductionBatchController {
 		ProductionBatch productionBatchEntity = productionBatchService.getById(productionBatch.getId());
 		if(productionBatchEntity==null) {
 			return Result.error("未找到对应数据");
+		}
+		if(productionBatch.getCompanyId() != null){
+			SysDepart depart =  departService.getDepartById(productionBatch.getCompanyId());
+			if(depart != null){
+				productionBatch.setCompanyCode(depart.getOrgCode());
+				productionBatch.setCompanyName(depart.getDepartName());
+			}
 		}
 		productionBatchService.updateMain(productionBatch, productionBatchPage.getProductionBatchBomList());
 		return Result.OK("编辑成功!");

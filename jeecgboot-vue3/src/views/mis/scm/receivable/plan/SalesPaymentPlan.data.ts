@@ -3,6 +3,12 @@ import {FormSchema} from '/@/components/Table';
 import { rules} from '/@/utils/helper/validator';
 import { render } from '/@/utils/common/renderUtils';
 import { getWeekMonthQuarterYear } from '/@/utils';
+import {useUserStore} from "@/store/modules/user";
+const userStore = useUserStore();
+const userInfo = userStore.getUserInfo;
+let isAdmin = userInfo.roles?.includes('admin') || userInfo.username === 'admin';
+const orgCode = userStore.getUserInfo?.orgCode;
+const companyCode = orgCode ? orgCode.substring(0, 3) : '';
 //列表数据
 export const columns: BasicColumn[] = [
    {
@@ -16,6 +22,11 @@ export const columns: BasicColumn[] = [
     dataIndex: 'planName',
      width:240
    },
+  {
+    title:'公司',
+    align:'center',
+    dataIndex:'companyName',
+  },
    // {
    //  title: '关联订单id',
    //  align:"center",
@@ -116,6 +127,16 @@ export const searchFormSchema: FormSchema[] = [
 
   },
   {
+    label:'公司',
+    field:'companyId',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"sys_depart where del_flag='0' and org_category='1' and org_type='1',depart_name,id",
+
+    },
+    // defaultValue:companyCode,
+  },
+  {
     label: "客户id",
     field: 'customerId',
     component:'Input',
@@ -211,6 +232,7 @@ export const formSchema: FormSchema[] = [
           { source: 'salesman_id', target: 'salesmanId' },
           { source: 'customer_id', target: 'customerId' },
           { source: 'customer_name', target: 'customerName' },
+          {source: 'company_id', target:'companyId'},
         ],
         multi:false
       }
@@ -220,6 +242,21 @@ export const formSchema: FormSchema[] = [
                  { required: true, message: '请输入销售订单号!'},
           ];
      },
+  },
+  {
+    label:'公司',
+    field:'companyId',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode:"sys_depart where del_flag='0' and org_category='1' and org_type='1',depart_name,id",
+
+    },
+    // defaultValue:companyCode,
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入公司!'},
+      ];
+    },
   },
   {
     label:'客户id',

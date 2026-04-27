@@ -13,6 +13,8 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.jeecg.modules.scm.entity.SalesOrder;
 import org.jeecg.modules.scm.entity.SalesOrderDetail;
 import org.jeecg.modules.scm.mapper.SalesOrderDetailMapper;
@@ -394,16 +396,58 @@ public class DeliveryController {
 		ScanStockVo result = new ScanStockVo();
 		result.setScanCode(scanCode);
 
-		// 解析扫码内容：支持 goodsCode 或 goodsCode|batchNo 或 goodsCode|batchNo|stockId
-		String goodsCode = scanCode;
+		// ========== 解析扫码内容 ==========
+		String goodsCode = null;
 		String batchNo = null;
-		if (scanCode != null && scanCode.contains("|")) {
-			String[] parts = scanCode.split("\\|");
-			goodsCode = parts[0];
-			if (parts.length > 1) {
-				batchNo = parts[1];
+
+		if (scanCode == null || scanCode.trim().isEmpty()) {
+			result.setMatched(false);
+			result.setMsg("扫码内容为空");
+			return Result.OK(result);
+		}
+
+		String code = scanCode.trim();
+		if (code.startsWith("{")) {
+			// ===== 新系统 JSON 格式 =====
+			try {
+				JSONObject json = JSON.parseObject(code);
+				goodsCode = json.getString("p");
+				batchNo = json.getString("b");
+			} catch (Exception e) {
+				result.setMatched(false);
+				result.setMsg("二维码格式错误");
+				return Result.OK(result);
+			}
+		} else if (code.contains(";")) {
+			// ===== 老系统 ; 分隔格式 =====
+			// 格式：orderNo;productNo;batchNo;productDate;deliverDate;singleWeight
+			String[] parts = code.split(";");
+			if (parts.length >= 3) {
+				// parts[0] = orderNo（订单号，忽略）
+				// parts[1] = productNo（产品编码）
+				// parts[2] = batchNo（批次号）
+				goodsCode = parts[1];
+				batchNo = parts[2];
 			}
 		}
+
+		// 解析扫码内容：支持 goodsCode 或 goodsCode|batchNo 或 goodsCode|batchNo|stockId
+//		String goodsCode = scanCode;
+//		String batchNo = null;
+//		if (scanCode != null && scanCode.contains("|")) {
+//			String[] parts = scanCode.split("\\|");
+//			goodsCode = parts[0];
+//			if (parts.length > 1) {
+//				batchNo = parts[1];
+//			}
+//		}
+       // 校验
+		if (oConvertUtils.isEmpty(goodsCode)) {
+			result.setMatched(false);
+			result.setMsg("二维码缺少产品编码");
+			return Result.OK(result);
+		}
+
 		result.setGoodsCode(goodsCode);
 		result.setBatchNo(batchNo);
 

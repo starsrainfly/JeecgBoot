@@ -96,6 +96,10 @@ public class ProductionTask implements Serializable {
 	@Excel(name = "产品名称", width = 15)
     @Schema(description = "产品名称")
     private String productName;
+    /**产品颜色*/
+    @Excel(name = "产品颜色", width = 15)
+    @Schema(description = "产品颜色")
+    private String productColor;
 	/**计划设备id*/
 	@Excel(name = "计划设备id", width = 15)
     @Schema(description = "计划设备id")
@@ -175,6 +179,14 @@ public class ProductionTask implements Serializable {
     @Excel(name = "质检来源工单id", width = 15)
     @Schema(description = "质检来源工单id")
     private String sourceTaskId;
+    /**公司ID*/
+    @Excel(name = "公司ID", width = 15)
+    @Schema(description = "公司ID")
+    private String companyId;
+    /**公司名称*/
+    @Excel(name = "公司名称", width = 15)
+    @Schema(description = "公司名称")
+    private String companyName;
 	/**状态*/
 	@Excel(name = "状态", width = 15, dicCode = "mes_step_status")
 	@Dict(dicCode = "mes_step_status")

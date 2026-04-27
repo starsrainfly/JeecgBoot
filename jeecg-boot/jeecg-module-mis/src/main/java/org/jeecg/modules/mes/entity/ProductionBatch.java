@@ -58,6 +58,10 @@ public class ProductionBatch implements Serializable {
     @Excel(name = "产品编码", width = 15)
     @Schema(description = "产品编码")
     private String productCode;
+    /**产品颜色*/
+    @Excel(name = "产品颜色", width = 15)
+    @Schema(description = "产品颜色")
+    private String productColor;
     @Excel(name = "配方id", width = 15)
     @Schema(description = "配方id")
     private String recipeId;
@@ -70,6 +74,18 @@ public class ProductionBatch implements Serializable {
     @Excel(name = "配方版本", width = 15)
     @Schema(description = "配方版本")
     private String recipeVersion;
+    /**公司ID*/
+    @Excel(name = "公司ID", width = 15)
+    @Schema(description = "公司ID")
+    private String companyId;
+    /**公司编码*/
+    @Excel(name = "公司编码", width = 15)
+    @Schema(description = "公司编码")
+    private String companyCode;
+    /**公司名称*/
+    @Excel(name = "公司名称", width = 15)
+    @Schema(description = "公司名称")
+    private String companyName;
 	/**计划生产量(Kg)*/
 	@Excel(name = "计划生产量(Kg)", width = 15)
     @Schema(description = "计划生产量(Kg)")

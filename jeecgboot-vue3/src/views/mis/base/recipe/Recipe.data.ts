@@ -13,6 +13,11 @@ export const columns: BasicColumn[] = [
     dataIndex: 'recipeName'
    },
    {
+    title: '颜色',
+    align:"center",
+    dataIndex: 'color'
+   },
+   {
     title: '版本',
     align:"center",
     dataIndex: 'version'
@@ -86,6 +91,11 @@ export const searchFormSchema: FormSchema[] = [
     field: "recipeName",
     component: 'JInput',
   },
+  {
+    label: "颜色",
+    field: "color",
+    component: 'JInput',
+  },
 	{
       label: "状态",
       field: "status",
@@ -125,6 +135,16 @@ export const formSchema: FormSchema[] = [
                  { required: true, message: '请输入配方名称!'},
           ];
      },
+  },
+  {
+    label:'颜色',
+    field:'color',
+    component:'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入颜色!'},
+      ];
+    },
   },
   {
     label: '版本',

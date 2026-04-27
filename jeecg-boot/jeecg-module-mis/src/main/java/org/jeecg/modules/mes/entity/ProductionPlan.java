@@ -49,6 +49,10 @@ public class ProductionPlan implements Serializable {
 	@Excel(name = "产品名称", width = 15)
     @Schema(description = "产品名称")
     private String productName;
+    /**产品颜色*/
+    @Excel(name = "产品颜色", width = 15)
+    @Schema(description = "产品颜色")
+    private String productColor;
 	/**计划生产数量（kg）*/
 	@Excel(name = "计划生产数量（kg）", width = 15)
     @Schema(description = "计划生产数量（kg）")
@@ -91,6 +95,15 @@ public class ProductionPlan implements Serializable {
     @Dict(dicCode = "mes_plan_status")
     @Schema(description = "计划状态")
     private String planStatus;
+    /**公司ID*/
+    @Excel(name = "公司ID", width = 15)
+    @Dict(dictTable = "sys_depart where del_flag='0' and org_category='1' and org_type='1'", dicText = "depart_name", dicCode = "id")
+    @Schema(description = "公司ID")
+    private String companyId;
+    /**公司名称*/
+    @Excel(name = "公司名称", width = 15)
+    @Schema(description = "公司名称")
+    private String companyName;
 	/**创建人*/
     @Schema(description = "创建人")
     private String createBy;

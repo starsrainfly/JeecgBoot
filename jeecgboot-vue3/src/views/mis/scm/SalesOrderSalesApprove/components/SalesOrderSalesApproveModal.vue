@@ -99,6 +99,7 @@
       row.productId = record.productId;
       row.productCode = record.productCode;
       row.productName = record.productName;
+      row.productColor = record.productColor;
       row.customProductCode = record.customProductCode;
       row.customProductName = record.customProductName;
       row.customProductSpec = record.customProductSpec;

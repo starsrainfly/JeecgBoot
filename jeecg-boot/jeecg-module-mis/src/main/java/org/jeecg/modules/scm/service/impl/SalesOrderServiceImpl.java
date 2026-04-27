@@ -35,6 +35,7 @@ public class SalesOrderServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOr
 			for(SalesOrderDetail entity:salesOrderDetailList) {
 				//外键设置
 				entity.setOrderId(salesOrder.getId());
+				entity.setId(null);
 				salesOrderDetailMapper.insert(entity);
 			}
 		}
@@ -51,6 +52,7 @@ public class SalesOrderServiceImpl extends ServiceImpl<SalesOrderMapper, SalesOr
 		//2.子表数据重新插入
 		if(salesOrderDetailList!=null && salesOrderDetailList.size()>0) {
 			for(SalesOrderDetail entity:salesOrderDetailList) {
+				entity.setId(null);
 				//外键设置
 				entity.setOrderId(salesOrder.getId());
 				salesOrderDetailMapper.insert(entity);

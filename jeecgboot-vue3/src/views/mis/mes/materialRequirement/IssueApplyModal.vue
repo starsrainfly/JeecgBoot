@@ -69,7 +69,7 @@
             <a-input-number
               v-model:value="record.applyQty"
               :min="0"
-              :max="record.pendingQty * 2"  // 允许超量但限制倍数
+              :max="record.pendingQty * 2"
             @change="(val) => handleQtyChange(record, val)"
             style="width: 100px"
             />

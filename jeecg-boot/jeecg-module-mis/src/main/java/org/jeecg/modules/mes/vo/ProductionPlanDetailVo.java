@@ -29,6 +29,10 @@ public class ProductionPlanDetailVo extends ProductionPlanDetail {
     @ExcelCollection(name="产品名称")
     @Schema(description = "产品名称")
     private String productName;
+    /** 产品颜色（冗余显示） */
+    @ExcelCollection(name="产品颜色")
+    @Schema(description = "产品颜色")
+    private String productColor;
 
     /** 包装名称（冗余显示） */
     @ExcelCollection(name="包装名称")

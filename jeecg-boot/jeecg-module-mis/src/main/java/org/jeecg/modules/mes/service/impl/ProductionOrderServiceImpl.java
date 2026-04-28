@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -371,9 +372,20 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 		batch.setProductId(order.getProductId());
 		batch.setProductCode(order.getProductCode());
 		batch.setProductName(order.getProductName());
+		batch.setProductColor(order.getProductColor());
 		batch.setPlannedQty(plannedQty);
 		batch.setShelfLife(order.getShelfLife());
-		batch.setProductColor(order.getProductColor());
+		batch.setCompanyId(order.getCompanyId());
+		batch.setCompanyName(order.getCompanyName());
+		batch.setProductionDate(order.getReleaseTime());
+
+		if(batch.getProductionDate() != null && batch.getShelfLife() != null){
+			Calendar calendar = Calendar.getInstance();
+			calendar.setTime(batch.getProductionDate());
+			calendar.add(Calendar.DATE, batch.getShelfLife());
+			batch.setExpiryDate(calendar.getTime()); //设置失效日期
+		}
+
 		batch.setStatus("0");
 		return batch;
 	}

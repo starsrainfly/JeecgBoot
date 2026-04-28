@@ -3,6 +3,7 @@ package org.jeecg.modules.system.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
@@ -583,6 +584,23 @@ public class SysDepartController {
 		result.setSuccess(true);
 		result.setResult(deptList);
 		return result;
+	}
+
+	/**
+	 * 通过id查询
+	 *
+	 * @param id
+	 * @return
+	 */
+	//@AutoLog(value = "部门-通过id查询")
+	@Operation(summary="部门-通过id查询")
+	@GetMapping(value = "/queryById")
+	public Result<SysDepart> queryById(@RequestParam(name="id",required=true) String id) {
+		SysDepart sysDepart = sysDepartService.getById(id);
+		if(sysDepart==null) {
+			return Result.error("未找到对应数据");
+		}
+		return Result.OK(sysDepart);
 	}
 
 	@GetMapping("/getMyDepartList")

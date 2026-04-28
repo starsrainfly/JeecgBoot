@@ -19,7 +19,8 @@ public enum SerialNoPrefixEnum {
     RETURN_ORDER("RO","退货单号"),
     MATERIAL_REQUISITION("MR", "物料需求单"),
     DELIVERY_NOTE_ORDER("DN","发货单"),
-    QUOTATION_ORDER("QT", "报价单");
+    QUOTATION_ORDER("QT", "报价单"),
+    LABEL_PRINT("LP","标签打印单号");
 
     private final String prefix;
     private final String description;

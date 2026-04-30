@@ -2,6 +2,7 @@ package org.jeecg.modules.wms.entity;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.util.Date;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -50,6 +51,10 @@ public class StockIn implements Serializable {
 	@Excel(name = "供应商", width = 15)
     @Schema(description = "供应商")
     private String supplierName;
+    /**总金额*/
+    @Excel(name = "总金额", width = 15)
+    @Schema(description = "总金额")
+    private BigDecimal totalAmount;
 	/**客户id*/
 	@Excel(name = "客户id", width = 15)
     @Schema(description = "客户id")

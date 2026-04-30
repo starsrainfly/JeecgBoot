@@ -21,6 +21,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -49,6 +50,14 @@ public class StockInServiceImpl extends ServiceImpl<StockInMapper, StockIn> impl
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void saveMain(StockIn stockIn, List<StockInDetail> stockInDetailList) {
+		if(stockInDetailList != null && stockInDetailList.size() > 0){
+			// 汇总主表金额
+			BigDecimal totalAmount = stockInDetailList.stream()
+					.map(d -> d.getTotalAmount() != null ? d.getTotalAmount() : BigDecimal.ZERO)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+			stockIn.setTotalAmount(totalAmount);
+		}
+
 		stockInMapper.insert(stockIn);
 		if(stockInDetailList!=null && stockInDetailList.size()>0) {
 			for(StockInDetail entity:stockInDetailList) {
@@ -63,6 +72,12 @@ public class StockInServiceImpl extends ServiceImpl<StockInMapper, StockIn> impl
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void updateMain(StockIn stockIn,List<StockInDetail> stockInDetailList) {
+		if(stockInDetailList != null && stockInDetailList.size() > 0){
+			BigDecimal totalAmount = stockInDetailList.stream()
+					.map(d -> d.getTotalAmount() != null ? d.getTotalAmount() : BigDecimal.ZERO)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+			stockIn.setTotalAmount(totalAmount);
+		}
 		stockInMapper.updateById(stockIn);
 		
 		//1.先删除子表数据
@@ -102,9 +117,16 @@ public class StockInServiceImpl extends ServiceImpl<StockInMapper, StockIn> impl
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void approveStockIn(StockInPage stockInPage, LoginUser loginUser) {
+		// 如果审核时重新加载明细，可再算一次金额
+//		List<StockInDetail> details = stockInDetailMapper.selectByMainId(stockInPage.getId());
+//		BigDecimal totalAmount = details.stream()
+//				.map(d -> d.getTotalAmount() != null ? d.getTotalAmount() : BigDecimal.ZERO)
+//				.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+
 		StockIn stockIn = new StockIn();
 		BeanUtils.copyProperties(stockInPage, stockIn);
-
+		//stockIn.setTotalAmount(totalAmount); //重新计算总金额
 		stockIn.setApproveId(loginUser.getId());  // 记录实际执行人
 		stockIn.setApproveName(loginUser.getRealname());
 		stockIn.setApproveTime(new DateTime());

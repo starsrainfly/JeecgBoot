@@ -27,8 +27,8 @@ spring:
     clean-disabled: true
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 20MB
+      max-request-size: 20MB
   mail:
     # 定时任务发送邮件
     timeJobSend: false
@@ -204,14 +204,16 @@ jeecg:
   #签名拦截接口
   signUrls: /sys/dict/getDictItems/*,/sys/dict/loadDict/*,/sys/dict/loadDictOrderByValue/*,/sys/dict/loadDictItem/*,/sys/dict/loadTreeData,/sys/api/queryTableDictItemsByCode,/sys/api/queryFilterTableDictInfo,/sys/api/queryTableDictByKeys,/sys/api/translateDictFromTable,/sys/api/translateDictFromTableByKeys,/sys/sendChangePwdSms,/sys/user/sendChangePhoneSms,/sys/sms,/desform/api/sendVerifyCode
   # local\minio\alioss
-  uploadType: alioss
+  uploadType: local
   # 前端访问地址
   domainUrl:
-    pc: http://localhost:3100
-    app: http://localhost:8051
+    pc: https://mis.qifu-tech.com
+    #http://localhost:3100
+    app: https://mis.qifu-tech.com
+    #http://localhost:8051
   path:
     #文件上传根目录 设置
-    upload: ./upload
+    upload: D:/qifu_mis/upload
     #webapp文件路径
     webapp: /opt/jeecg-boot/webapp
   shiro:

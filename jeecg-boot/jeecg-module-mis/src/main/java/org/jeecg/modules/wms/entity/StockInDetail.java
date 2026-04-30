@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableLogic;
+import org.jeecg.common.aspect.annotation.Dict;
 import org.jeecg.common.constant.ProvinceCityArea;
 import org.jeecg.common.util.SpringContextUtils;
 import lombok.Data;
@@ -41,6 +42,7 @@ public class StockInDetail implements Serializable {
 	/**类型（物料、产品）*/
 	@Excel(name = "类型（物料、产品）", width = 15, dicCode = "wms_item_type")
     @Schema(description = "类型（物料、产品）")
+    @Dict(dicCode = "wms_item_type")
     private String goodsType;
 	/**物料id*/
 	@Excel(name = "物料id", width = 15)

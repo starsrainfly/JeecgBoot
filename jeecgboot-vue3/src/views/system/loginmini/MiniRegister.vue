@@ -4,7 +4,7 @@
       <div class="aui-form">
         <div class="aui-image">
           <div class="aui-image-text">
-            <img :src="jeecgAdTextImg" alt="" />
+            <img :src="jeecg_ad" alt="" />
           </div>
         </div>
         <div class="aui-formBox">
@@ -91,7 +91,7 @@
   import { SmsEnum } from '/@/views/sys/login/useLogin';
   import { useMessage } from '/@/hooks/web/useMessage';
   import logoImg from '/@/assets/loginmini/icon/jeecg_logo.png';
-  import jeecgAdTextImg from '/@/assets/loginmini/icon/jeecg_ad_text.png';
+  import jeecgAdTextImg from '/@/assets/loginmini/icon/jeecg_ad.png';
   import eyeKImg from '/@/assets/loginmini/icon/icon-eye-k.png';
   import eyeGImg from '/@/assets/loginmini/icon/icon-eye-g.png';
   import { useI18n } from "/@/hooks/web/useI18n";

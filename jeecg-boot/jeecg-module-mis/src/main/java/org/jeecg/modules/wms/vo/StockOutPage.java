@@ -1,5 +1,6 @@
 package org.jeecg.modules.wms.vo;
 
+import java.math.BigDecimal;
 import java.util.List;
 import org.jeecg.modules.wms.entity.StockOut;
 import org.jeecg.modules.wms.entity.StockOutDetail;
@@ -72,6 +73,14 @@ public class StockOutPage {
 	@Excel(name = "仓库", width = 15)
 	@Schema(description = "仓库")
     private String warehouseName;
+	/**成本总额*/
+	@Excel(name = "成本总额", width = 15)
+	@Schema(description = "成本总额")
+	private BigDecimal totalCost;
+	/**销售总额*/
+	@Excel(name = "销售总额", width = 15)
+	@Schema(description = "销售总额")
+	private BigDecimal totalSales;
 	/**操作人id*/
 	@Excel(name = "操作人id", width = 15)
 	@Schema(description = "操作人id")

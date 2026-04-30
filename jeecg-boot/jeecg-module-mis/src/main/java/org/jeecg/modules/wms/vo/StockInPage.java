@@ -1,5 +1,6 @@
 package org.jeecg.modules.wms.vo;
 
+import java.math.BigDecimal;
 import java.util.List;
 import org.jeecg.modules.wms.entity.StockIn;
 import org.jeecg.modules.wms.entity.StockInDetail;
@@ -46,6 +47,10 @@ public class StockInPage {
 	@Excel(name = "供应商", width = 15)
 	@Schema(description = "供应商")
     private String supplierName;
+	/**总金额*/
+	@Excel(name = "总金额", width = 15)
+	@Schema(description = "总金额")
+	private BigDecimal totalAmount;
 	/**客户id*/
 	@Excel(name = "客户id", width = 15)
 	@Schema(description = "客户id")

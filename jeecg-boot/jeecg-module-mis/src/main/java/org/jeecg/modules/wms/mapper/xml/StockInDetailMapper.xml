@@ -13,4 +13,74 @@
 		FROM  mis_stock_in_detail
 		WHERE
 			 stock_in_id = #{mainId} 	</select>
+
+    <select id="listDetailAll" resultType="org.jeecg.modules.wms.vo.StockInDetailVo">
+		SELECT
+		d.*,
+		m.stock_in_type,
+		m.supplier_name,
+		m.customer_name,
+		m.warehouse_id,
+		m.purchaser_id,
+		m.operator_name,
+		m.status,
+		m.approve_status,
+		m.stock_in_time,
+		m.source_order_no,
+		m.remark as main_remark
+		FROM mis_stock_in_detail d
+		LEFT JOIN mis_stock_in m ON d.stock_in_id = m.id
+		WHERE d.del_flag = '0'
+
+		<!-- 主表条件 -->
+		<if test="vo.stockInType != null and vo.stockInType != ''">
+			AND m.stock_in_type = #{vo.stockInType}
+		</if>
+		<if test="vo.supplierName != null and vo.supplierName != ''">
+			AND m.supplier_name LIKE CONCAT('%', #{vo.supplierName}, '%')
+		</if>
+		<if test="vo.customerName != null and vo.customerName != ''">
+			AND m.customer_name LIKE CONCAT('%', #{vo.customerName}, '%')
+		</if>
+		<if test="vo.warehouseId != null and vo.warehouseId != ''">
+			AND m.warehouse_id = #{vo.warehouseId}
+		</if>
+		<if test="vo.purchaserId != null and vo.purchaserId != ''">
+			AND m.purchaser_id = #{vo.purchaserId}
+		</if>
+		<if test="vo.operatorName != null and vo.operatorName != ''">
+			AND m.operator_name LIKE CONCAT('%', #{vo.operatorName}, '%')
+		</if>
+		<if test="vo.status != null and vo.status != ''">
+			AND m.status = #{vo.status}
+		</if>
+		<if test="vo.approveStatus != null and vo.approveStatus != ''">
+			AND m.approve_status = #{vo.approveStatus}
+		</if>
+		<if test="vo.sourceOrderNo != null and vo.sourceOrderNo != ''">
+			AND m.source_order_no LIKE CONCAT('%', #{vo.sourceOrderNo}, '%')
+		</if>
+
+		<!-- 明细表条件 -->
+		<if test="vo.goodsName != null and vo.goodsName != ''">
+			AND d.goods_name LIKE CONCAT('%', #{vo.goodsName}, '%')
+		</if>
+		<if test="vo.goodsCode != null and vo.goodsCode != ''">
+			AND d.goods_code LIKE CONCAT('%', #{vo.goodsCode}, '%')
+		</if>
+		<if test="vo.batchNo != null and vo.batchNo != ''">
+			AND d.batch_no LIKE CONCAT('%', #{vo.batchNo}, '%')
+		</if>
+
+		<!-- 入库时间范围 -->
+		<if test="vo.stockInTime_begin != null and vo.stockInTime_begin != ''">
+			AND m.stock_in_time &gt;= #{vo.stockInTime_begin}
+		</if>
+		<if test="vo.stockInTime_end != null and vo.stockInTime_end != ''">
+			AND m.stock_in_time &lt;= #{vo.stockInTime_end}
+		</if>
+
+		ORDER BY d.create_time DESC
+
+	</select>
 </mapper>

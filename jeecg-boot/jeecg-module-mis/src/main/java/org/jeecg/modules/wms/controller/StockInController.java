@@ -2,18 +2,16 @@ package org.jeecg.modules.wms.controller;
 
 import java.io.UnsupportedEncodingException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.date.DateTime;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.common.enums.ApproveStatusEnum;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
@@ -24,6 +22,7 @@ import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecg.modules.wms.entity.Warehouse;
 import org.jeecg.modules.wms.service.IStockService;
 import org.jeecg.modules.wms.service.IWarehouseService;
+import org.jeecg.modules.wms.vo.StockInDetailVo;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -196,6 +195,21 @@ public class StockInController {
 		if(stockInEntity==null) {
 			return Result.error("未找到对应数据");
 		}
+		LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+		stockIn.setOperatorUserId(loginUser.getId());  // 记录实际执行人
+		stockIn.setOperatorName(loginUser.getRealname());
+		if(StringUtils.isNotBlank(stockIn.getPurchaserId())){
+			SysUser sysUser = userService.getById(stockIn.getPurchaserId());
+			if(sysUser != null){
+				stockIn.setPurchaserName(sysUser.getRealname());
+			}
+		}
+		if(StringUtils.isNotBlank(stockIn.getWarehouseId())){
+			Warehouse warehouse =  warehouseService.getById(stockIn.getWarehouseId());
+			if(warehouse != null){
+				stockIn.setWarehouseName(warehouse.getName());
+			}
+		}
 		stockInService.updateMain(stockIn, stockInPage.getStockInDetailList());
 		return Result.OK("编辑成功!");
 	}
@@ -344,4 +358,138 @@ public class StockInController {
       return Result.OK("文件导入失败！");
     }
 
+	 /**
+	  * 导出
+	  * @return
+	  */
+	 @RequiresPermissions("wms:mis_stock_in:exportXls")
+	 @RequestMapping(value = "/exportStockInXls")
+	 public ModelAndView exportStockInXls(HttpServletRequest request, StockIn stockIn) {
+		 // Step.1 组装查询条件查询数据
+		 QueryWrapper<StockIn> queryWrapper = QueryGenerator.initQueryWrapper(stockIn, request.getParameterMap());
+		 LoginUser sysUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+
+		 //配置选中数据查询条件
+		 String selections = request.getParameter("selections");
+		 if(oConvertUtils.isNotEmpty(selections)) {
+			 List<String> selectionList = Arrays.asList(selections.split(","));
+			 queryWrapper.in("id",selectionList);
+		 }
+		 //Step.2 获取导出数据
+		 List<StockIn> stockInList = stockInService.list(queryWrapper);
+
+		 // Step.3 组装pageList
+//		 List<StockInPage> pageList = new ArrayList<StockInPage>();
+//		 for (StockIn main : stockInList) {
+//			 StockInPage vo = new StockInPage();
+//			 BeanUtils.copyProperties(main, vo);
+//			 List<StockInDetail> stockInDetailList = stockInDetailService.selectByMainId(main.getId());
+//			 vo.setStockInDetailList(stockInDetailList);
+//			 pageList.add(vo);
+//		 }
+
+		 // Step.4 AutoPoi 导出Excel
+		 ModelAndView mv = new ModelAndView(new JeecgEntityExcelView());
+		 mv.addObject(NormalExcelConstants.FILE_NAME, "入库表列表");
+		 mv.addObject(NormalExcelConstants.CLASS, StockIn.class);
+		 mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("入库表数据", "导出人:"+sysUser.getRealname(), "入库表"));
+		 mv.addObject(NormalExcelConstants.DATA_LIST, stockInList);
+		 return mv;
+		// return super.exportXls(request, stockIn, StockIn.class, "入库表");
+	 }
+
+	 /**
+	  * 导出
+	  * @return
+	  */
+	 @RequestMapping(value = "/exportStockInDetail")
+	 public ModelAndView exportStockInDetail(HttpServletRequest request, StockInDetail stockInDetail) {
+		 // Step.1 组装查询条件
+		 QueryWrapper<StockInDetail> queryWrapper = QueryGenerator.initQueryWrapper(stockInDetail, request.getParameterMap());
+		 LoginUser sysUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+
+		 // Step.2 获取导出数据
+		 List<StockInDetail> pageList = stockInDetailService.list(queryWrapper);
+		 List<StockInDetail> exportList = null;
+
+		 // 过滤选中数据
+		 String selections = request.getParameter("selections");
+		 if (oConvertUtils.isNotEmpty(selections)) {
+			 List<String> selectionList = Arrays.asList(selections.split(","));
+			 exportList = pageList.stream().filter(item -> selectionList.contains(item.getId())).collect(Collectors.toList());
+		 } else {
+			 exportList = pageList;
+		 }
+
+		 // Step.3 AutoPoi 导出Excel
+		 ModelAndView mv = new ModelAndView(new JeecgEntityExcelView());
+		 //此处设置的filename无效,前端会重更新设置一下
+		 mv.addObject(NormalExcelConstants.FILE_NAME, "入库明细表");
+		 mv.addObject(NormalExcelConstants.CLASS, StockInDetail.class);
+		 mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("入库明细表报表", "导出人:" + sysUser.getRealname(), "入库明细表"));
+		 mv.addObject(NormalExcelConstants.DATA_LIST, exportList);
+		 return mv;
+	 }
+
+	 /**
+	  * 纯明细查询 - 分页
+	  */
+	 @AutoLog(value = "入库明细-分页列表查询")
+	 @ApiOperation(value = "入库明细-分页列表查询", notes = "入库明细-分页列表查询")
+	 @GetMapping(value = "/listDetailAll")
+	 public Result<IPage<StockInDetailVo>> listDetailAll(
+			 @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
+			 @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
+			 StockInDetailVo vo) {
+//
+		 Page<StockInDetailVo> page = new Page<>(pageNo, pageSize);
+		 IPage<StockInDetailVo> pageList = stockInDetailService.listDetailAll(page, vo);
+		 return Result.OK(pageList);
+	 }
+
+	 /**
+	  * 纯明细查询 - 导出
+	  */
+	 @AutoLog(value = "入库明细-导出")
+	 @ApiOperation(value = "入库明细-导出", notes = "入库明细-导出")
+	 @GetMapping(value = "/exportDetailAll")
+	 public ModelAndView exportDetailAll(HttpServletRequest request, StockInDetailVo vo) {
+
+		 QueryWrapper<StockInDetailVo> queryWrapper = QueryGenerator.initQueryWrapper(new StockInDetailVo(), request.getParameterMap());
+		 List<StockInDetailVo> list = stockInDetailService.listDetailAll(vo);
+
+		 // 添加汇总行
+		 BigDecimal totalAmount = list.stream()
+				 .map(StockInDetailVo::getTotalAmount)
+				 .filter(Objects::nonNull)
+				 .reduce(BigDecimal.ZERO, BigDecimal::add);
+		 BigDecimal totalActualQty = list.stream()
+				 .map(StockInDetailVo::getActualQty)
+				 .filter(Objects::nonNull)
+				 .reduce(BigDecimal.ZERO, BigDecimal::add);
+		 BigDecimal totalApplyQty = list.stream()
+				 .map(StockInDetailVo::getApplyQty)
+				 .filter(Objects::nonNull)
+				 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		 // 添加汇总行
+		 StockInDetailVo summary = new StockInDetailVo();
+		 summary.setGoodsName("合计");
+		 summary.setGoodsCode("");
+		 summary.setStockInNo("");
+		 summary.setApplyQty(totalApplyQty);
+		 summary.setActualQty(totalActualQty);
+		 summary.setTotalAmount(totalAmount);
+		 list.add(summary);
+
+		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+		 // Step.3 AutoPoi 导出Excel
+		 ModelAndView mv = new ModelAndView(new JeecgEntityExcelView());
+		 //此处设置的filename无效,前端会重更新设置一下
+		 mv.addObject(NormalExcelConstants.FILE_NAME, "入库明细表");
+		 mv.addObject(NormalExcelConstants.CLASS, StockInDetailVo.class);
+		 mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("入库明细表报表", "导出人:" + loginUser.getRealname(), "入库明细表"));
+		 mv.addObject(NormalExcelConstants.DATA_LIST, list);
+		 return mv;
+	 }
 }

@@ -56,6 +56,18 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void saveMain(StockOut stockOut, List<StockOutDetail> stockOutDetailList) {
+		if(stockOutDetailList !=null && stockOutDetailList.size()>0){
+			BigDecimal totalCost = stockOutDetailList.stream()
+					.map(d -> d.getCostTotal() != null ? d.getCostTotal() : BigDecimal.ZERO)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+			BigDecimal totalSales = stockOutDetailList.stream()
+					.map(d -> d.getSalesTotal() != null ? d.getSalesTotal() : BigDecimal.ZERO)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+			stockOut.setTotalCost(totalCost);
+			stockOut.setTotalSales(totalSales);
+		}
 		stockOutMapper.insert(stockOut);
 		if(stockOutDetailList!=null && stockOutDetailList.size()>0) {
 			for(StockOutDetail entity:stockOutDetailList) {
@@ -68,6 +80,18 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public void updateMain(StockOut stockOut,List<StockOutDetail> stockOutDetailList) {
+		if(stockOutDetailList !=null && stockOutDetailList.size()>0){
+			BigDecimal totalCost = stockOutDetailList.stream()
+					.map(d -> d.getCostTotal() != null ? d.getCostTotal() : BigDecimal.ZERO)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+			BigDecimal totalSales = stockOutDetailList.stream()
+					.map(d -> d.getSalesTotal() != null ? d.getSalesTotal() : BigDecimal.ZERO)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+			stockOut.setTotalCost(totalCost);
+			stockOut.setTotalSales(totalSales);
+		}
 		stockOutMapper.updateById(stockOut);
 		stockOutDetailMapper.deleteByMainId(stockOut.getId());
 		if(stockOutDetailList!=null && stockOutDetailList.size()>0) {

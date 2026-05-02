@@ -174,6 +174,7 @@ export const searchFormSchema: FormSchema[] = [
       componentProps:{
           dictCode:"approval_status"
       },
+    defaultValue:'0'
       //colProps: {span: 6},
  	},
 ];
@@ -324,6 +325,16 @@ export const formSchema: FormSchema[] = [
   //   field: 'consigneePhone',
   //   component: 'Input',
   // },
+  {
+    label:'是否产品',
+    field:'isProduct',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode: "yn",
+      disabled:true,
+    },
+    defaultValue:'0'
+  },
   {
     label: '备注',
     field: 'remark',

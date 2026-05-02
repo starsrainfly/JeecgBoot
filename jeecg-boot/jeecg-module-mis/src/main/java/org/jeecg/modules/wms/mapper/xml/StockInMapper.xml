@@ -2,4 +2,43 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.wms.mapper.StockInMapper">
 
+    <select id="selectTodayInQty" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(d.actual_qty), 0)
+        FROM mis_stock_in i
+                 JOIN mis_stock_in_detail d ON i.id = d.stock_in_id
+        WHERE i.create_time &gt;= #{start}
+          AND i.create_time &lt;= #{end}
+          AND i.approve_status = '1'
+          AND i.del_flag = '0'
+          AND d.del_flag = '0'
+    </select>
+    <select id="select7DaysInTrend" resultType="org.jeecg.modules.wms.vo.WarehouseDashboardVo$DailyTrend">
+        SELECT
+            DATE(i.create_time) as date,
+            COALESCE(SUM(d.actual_qty), 0) as inQty,
+            0 as outQty
+        FROM mis_stock_in i
+            JOIN mis_stock_in_detail d ON i.id = d.stock_in_id
+        WHERE i.create_time &gt;= #{start}
+          AND i.create_time &lt;= #{end}
+          AND i.approve_status = '1'
+          AND i.del_flag = '0'
+          AND d.del_flag = '0'
+        GROUP BY DATE(i.create_time)
+        ORDER BY date
+    </select>
+    <select id="selectRecentPending" resultType="org.jeecg.modules.wms.vo.WarehouseDashboardVo$PendingInItem">
+        SELECT
+            i.id,
+            i.stock_in_no as stockInNo,
+            i.supplier_name as supplierName,
+            i.stock_in_type as stockInType,
+            i.create_time as createTime,
+            i.total_amount as totalAmount
+        FROM mis_stock_in i
+        WHERE i.approve_status = '0'
+          AND i.del_flag = '0'
+        ORDER BY i.create_time DESC
+            LIMIT #{limit}
+    </select>
 </mapper>

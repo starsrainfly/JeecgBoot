@@ -2,4 +2,40 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.wms.mapper.StockOutMapper">
 
+    <select id="selectTodayOutQty" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(d.actual_qty), 0)
+        FROM mis_stock_out o
+                 JOIN mis_stock_out_detail d ON o.id = d.stock_out_id
+        WHERE o.create_time &gt;= #{start}
+          AND o.create_time &lt;= #{end}
+          AND o.approve_status = '1'
+          AND o.del_flag = '0'
+          AND d.del_flag = '0'
+    </select>
+
+    <select id="select7DaysOutTrend" resultType="org.jeecg.modules.wms.vo.WarehouseDashboardVo$DailyTrend">
+        SELECT
+            DATE(o.create_time) as date,
+            0 as inQty,
+            COALESCE(SUM(d.actual_qty), 0) as outQty
+        FROM mis_stock_out o
+            JOIN mis_stock_out_detail d ON o.id = d.stock_out_id
+        WHERE o.create_time &gt;= #{start}
+          AND o.create_time &lt;= #{end}
+          AND o.approve_status = '1'
+          AND o.del_flag = '0'
+          AND d.del_flag = '0'
+        GROUP BY DATE(o.create_time)
+        ORDER BY date
+    </select>
+
+    <select id="selectMonthOutAmount" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_sales), 0)
+        FROM mis_stock_out
+        WHERE approve_status = '1'
+          AND del_flag = '0'
+          AND create_time &gt;= #{start}
+          AND create_time &lt;= #{end}
+          AND is_product = #{isProduct}
+    </select>
 </mapper>

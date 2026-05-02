@@ -1,6 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.wms.mapper.StockOutDetailMapper">
+	<!-- 公共WHERE条件 — 参数用 vo.xxx -->
+	<sql id="detailQueryWhere">
+		WHERE d.del_flag = '0' AND m.del_flag = '0'
+		<if test="vo.stockOutNo != null and vo.stockOutNo != ''">
+			AND d.stock_out_no LIKE CONCAT('%', #{vo.stockOutNo}, '%')
+		</if>
+		<if test="vo.goodsName != null and vo.goodsName != ''">
+			AND d.goods_name LIKE CONCAT('%', #{vo.goodsName}, '%')
+		</if>
+		<if test="vo.goodsCode != null and vo.goodsCode != ''">
+			AND d.goods_code LIKE CONCAT('%', #{vo.goodsCode}, '%')
+		</if>
+		<if test="vo.batchNo != null and vo.batchNo != ''">
+			AND d.batch_no LIKE CONCAT('%', #{vo.batchNo}, '%')
+		</if>
+		<if test="vo.customerName != null and vo.customerName != ''">
+			AND m.customer_name LIKE CONCAT('%', #{vo.customerName}, '%')
+		</if>
+		<if test="vo.warehouseName != null and vo.warehouseName != ''">
+			AND m.warehouse_name LIKE CONCAT('%', #{vo.warehouseName}, '%')
+		</if>
+		<if test="vo.warehouseId != null and vo.warehouseId != ''">
+			AND m.warehouse_id =#{vo.warehouseId}
+		</if>
+		<if test="vo.status != null and vo.status != ''">
+			AND m.status = #{vo.status}
+		</if>
+		<if test="vo.approveStatus != null and vo.approveStatus != ''">
+			AND m.approve_status = #{vo.approveStatus}
+		</if>
+		<if test="vo.stockOutType != null and vo.stockOutType != ''">
+			AND m.stock_out_type = #{vo.stockOutType}
+		</if>
+		<if test="vo.goodsType != null and vo.goodsType != ''">
+			AND d.goods_type = #{vo.goodsType}
+		</if>
+		<if test="vo.overFlag != null and vo.overFlag != ''">
+			AND d.over_flag = #{vo.overFlag}
+		</if>
+		<if test="vo.stockOutTime_begin != null and vo.stockOutTime_begin != ''">
+			AND m.stock_out_time >= #{vo.stockOutTime_begin}
+		</if>
+		<if test="vo.stockOutTime_end != null and vo.stockOutTime_end != ''">
+			AND m.stock_out_time &lt;= #{vo.stockOutTime_end}
+		</if>
+		<if test="vo.requiredDate_begin != null and vo.requiredDate_begin != ''">
+			AND m.required_date >= #{vo.requiredDate_begin}
+		</if>
+		<if test="vo.requiredDate_end != null and vo.requiredDate_end != ''">
+			AND m.required_date &lt;= #{vo.requiredDate_end}
+		</if>
+	</sql>
 
 	<delete id="deleteByMainId" parameterType="java.lang.String">
 		DELETE 
@@ -13,4 +65,97 @@
 		FROM  mis_stock_out_detail
 		WHERE
 			 stock_out_id = #{mainId} 	</select>
+
+	<!-- 列表查询 -->
+    <select id="listDetailAll" resultType="org.jeecg.modules.wms.vo.StockOutDetailVo">
+		SELECT
+		d.id,
+		d.stock_out_no,
+		d.goods_type,
+		d.goods_code,
+		d.goods_name,
+		d.goods_spec,
+		d.unit,
+		d.batch_no,
+		d.expiry_date,
+		d.serial_no,
+		d.cost_price,
+		d.cost_total,
+		d.sales_price,
+		d.sales_total,
+		d.apply_qty,
+		d.actual_qty,
+		d.production_date,
+		d.shelf_life,
+		d.production_batch_no,
+		d.over_flag,
+		d.over_qty,
+		d.source_type,
+		d.remark as remark,
+		d.create_time,
+		m.stock_out_type,
+		m.source_order_code,
+		m.customer_name,
+		m.warehouse_name,
+		m.requester_name,
+		m.consignee,
+		m.consignee_phone,
+		m.deliver_address,
+		m.status,
+		m.approve_status,
+		m.stock_out_time,
+		m.required_date,
+		m.total_cost,
+		m.total_sales,
+		m.remark as master_remark
+		FROM mis_stock_out_detail d
+		LEFT JOIN mis_stock_out m ON d.stock_out_id = m.id
+		<include refid="detailQueryWhere"/>
+		ORDER BY d.create_time DESC
+	</select>
+
+	<!-- 合计查询 -->
+	<select id="calcDetailTotal" resultType="org.jeecg.modules.wms.vo.StockOutDetailVo">
+		SELECT
+		'合计' as stock_out_no,
+		'合计' as goods_name,
+		NULL as goods_code,
+		NULL as goods_spec,
+		NULL as unit,
+		NULL as batch_no,
+		SUM(d.apply_qty) as apply_qty,
+		SUM(d.actual_qty) as actual_qty,
+		SUM(d.cost_total) as cost_total,
+		SUM(d.sales_total) as sales_total,
+		SUM(d.over_qty) as over_qty,
+		NULL as cost_price,
+		NULL as sales_price,
+		NULL as expiry_date,
+		NULL as production_date,
+		NULL as shelf_life,
+		NULL as production_batch_no,
+		NULL as over_flag,
+		NULL as source_type,
+		NULL as remark,
+		NULL as create_time,
+		NULL as stock_out_type,
+		NULL as source_order_code,
+		NULL as customer_name,
+		NULL as warehouse_name,
+		NULL as requester_name,
+		NULL as consignee,
+		NULL as consignee_phone,
+		NULL as deliver_address,
+		NULL as status,
+		NULL as approve_status,
+		NULL as stock_out_time,
+		NULL as required_date,
+		SUM(m.total_cost) as total_cost,
+		SUM(m.total_sales) as total_sales,
+		NULL as master_remark,
+		NULL as id
+		FROM mis_stock_out_detail d
+		LEFT JOIN mis_stock_out m ON d.stock_out_id = m.id
+		<include refid="detailQueryWhere"/>
+	</select>
 </mapper>

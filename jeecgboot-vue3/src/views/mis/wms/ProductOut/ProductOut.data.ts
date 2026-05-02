@@ -27,15 +27,15 @@ export const columns: BasicColumn[] = [
    //  dataIndex: 'customerName'
    // },
    {
-    title: '领用人id',
+    title: '领用人',
     align:"center",
     dataIndex: 'requesterUserId_dictText'
    },
-   {
-    title: '领用人',
-    align:"center",
-    dataIndex: 'requesterName'
-   },
+   // {
+   //  title: '领用人',
+   //  align:"center",
+   //  dataIndex: 'requesterName'
+   // },
    {
     title: '仓库',
     align:"center",
@@ -96,21 +96,21 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'stockOutTime'
    },
-   // {
-   //  title: '收货地址',
-   //  align:"center",
-   //  dataIndex: 'deliverAddress'
-   // },
-   // {
-   //  title: '收货人',
-   //  align:"center",
-   //  dataIndex: 'consignee'
-   // },
-   // {
-   //  title: '收货人电话',
-   //  align:"center",
-   //  dataIndex: 'consigneePhone'
-   // },
+   {
+    title: '收货地址',
+    align:"center",
+    dataIndex: 'deliverAddress'
+   },
+   {
+    title: '收货人',
+    align:"center",
+    dataIndex: 'consignee'
+   },
+   {
+    title: '收货人电话',
+    align:"center",
+    dataIndex: 'consigneePhone'
+   },
    {
     title: '备注',
     align:"center",
@@ -147,7 +147,7 @@ export const searchFormSchema: FormSchema[] = [
                 { source: 'id', target: 'customerId' },
                 { source: 'customer_name', target: 'customerName' },
             ],
-            multi:true
+            multi:false
         }
     },
 
@@ -212,39 +212,40 @@ export const formSchema: FormSchema[] = [
   //   field: 'sourceOrderCode',
   //   component: 'Input',
   // },
-  // {
-  //   label: '客户id',
-  //   field: 'customerId',
-  //   component: 'Input',
-  //   dynamicRules: ({model,schema}) => {
-  //         return [
-  //                { required: true, message: '请输入客户id!'},
-  //         ];
-  //    },
-  // },
-  // {
-  //   label: '客户名称',
-  //   field: 'customerName',
-  //   component: 'JPopup',
-  //   componentProps: ({ formActionType }) => {
-  //       const {setFieldsValue} = formActionType;
-  //       return{
-  //           setFieldsValue:setFieldsValue,
-  //           code:"scm_customer",
-  //           fieldConfig: [
-  //               { source: 'id', target: 'customerId' },
-  //               { source: 'customer_name', target: 'customerName' },
-  //           ],
-  //           multi:true
-  //       }
-  //   },
-  //
-  //   dynamicRules: ({model,schema}) => {
-  //         return [
-  //                { required: true, message: '请输入客户名称!'},
-  //         ];
-  //    },
-  // },
+  {
+    label: '客户id',
+    field: 'customerId',
+    component: 'Input',
+    show:false
+    // dynamicRules: ({model,schema}) => {
+    //       return [
+    //              { required: true, message: '请输入客户id!'},
+    //       ];
+    //  },
+  },
+  {
+    label: '客户名称',
+    field: 'customerName',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"scm_customer",
+            fieldConfig: [
+                { source: 'id', target: 'customerId' },
+                { source: 'customer_name', target: 'customerName' },
+            ],
+            multi:false
+        }
+    },
+
+    // dynamicRules: ({model,schema}) => {
+    //       return [
+    //              { required: true, message: '请输入客户名称!'},
+    //       ];
+    //  },
+  },
   {
     label: '领用人',
     field: 'requesterUserId',
@@ -305,21 +306,21 @@ export const formSchema: FormSchema[] = [
   //       dictCode:"approval_status"
   //    },
   // },
-  // {
-  //   label: '收货地址',
-  //   field: 'deliverAddress',
-  //   component: 'Input',
-  // },
-  // {
-  //   label: '收货人',
-  //   field: 'consignee',
-  //   component: 'Input',
-  // },
-  // {
-  //   label: '收货人电话',
-  //   field: 'consigneePhone',
-  //   component: 'Input',
-  // },
+  {
+    label: '收货地址',
+    field: 'deliverAddress',
+    component: 'Input',
+  },
+  {
+    label: '收货人',
+    field: 'consignee',
+    component: 'Input',
+  },
+  {
+    label: '收货人电话',
+    field: 'consigneePhone',
+    component: 'Input',
+  },
   {
     label:'是否产品',
     field:'isProduct',
@@ -328,7 +329,7 @@ export const formSchema: FormSchema[] = [
       dictCode: "yn",
       disabled:true,
     },
-    defaultValue:'0'
+    defaultValue:'1'
   },
   {
     label: '备注',
@@ -386,13 +387,12 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       title: '编码',
       key: 'goodsCode',
       type: JVxeTypes.popup,
-      popupCode:"mdm_material_select",
+      popupCode:"mdm_product_select",
       fieldConfig: [
         { source: 'id', target: 'goodsId' },
-        { source: 'material_code', target: 'goodsCode' },
-        { source: 'material_name', target: 'goodsName' },
-        { source: 'material_spec', target: 'goodsSpec' },
-        { source: 'material_type', target: 'goodsType' },
+        { source: 'product_code', target: 'goodsCode' },
+        { source: 'product_name', target: 'goodsName' },
+        { source: 'product_spec', target: 'goodsSpec' },
       ],
 
       width:"200px",
@@ -500,6 +500,9 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
     },
     {
       title:'销售金额',

@@ -156,6 +156,16 @@ export const searchFormSchema: FormSchema[] = [
       },
       //colProps: {span: 6},
  	},
+  {
+    label: '审核状态',
+    field: 'approveStatus',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"approval_status"
+    },
+    defaultValue:'0'
+
+  },
 ];
 //表单数据
 export const formSchema: FormSchema[] = [
@@ -206,23 +216,29 @@ export const formSchema: FormSchema[] = [
   //     ];
   //   },
   // },
-  // {
-  //   label: '客户',
-  //   field: 'customerName',
-  //   component: 'JPopup',
-  //   componentProps: ({ formActionType }) => {
-  //       const {setFieldsValue} = formActionType;
-  //       return{
-  //           setFieldsValue:setFieldsValue,
-  //           code:"scm_customer",
-  //           fieldConfig: [
-  //               { source: 'id', target: 'customerId' },
-  //               { source: 'customer_name', target: 'customerName' },
-  //           ],
-  //           multi:true
-  //       }
-  //   },
-  // },
+  {
+    label: '客户id',
+    field: 'customerId',
+    component: 'Input',
+    show:false //隐藏
+  },
+  {
+    label: '客户',
+    field: 'customerName',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"scm_customer",
+            fieldConfig: [
+                { source: 'id', target: 'customerId' },
+                { source: 'customer_name', target: 'customerName' },
+            ],
+            multi:false
+        }
+    },
+  },
   {
     label: '仓库',
     field: 'warehouseId',
@@ -297,6 +313,16 @@ export const formSchema: FormSchema[] = [
     show:false
   },
   {
+    label:'是否产品',
+    field:'isProduct',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode: "yn",
+      disabled:true,
+    },
+    defaultValue:'1'
+  },
+  {
     label: '备注',
     field: 'remark',
     component: 'Input',
@@ -353,7 +379,6 @@ export const stockInDetailColumns: JVxeColumn[] = [
         { source: 'product_code', target: 'goodsCode' },
         { source: 'product_name', target: 'goodsName' },
         { source: 'product_spec', target: 'goodsSpec' },
-
       ],
 
       width:"200px",

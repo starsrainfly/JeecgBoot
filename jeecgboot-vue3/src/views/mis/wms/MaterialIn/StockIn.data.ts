@@ -171,6 +171,16 @@ export const formSchema: FormSchema[] = [
     dynamicDisabled:true //禁用
   },
   {
+    label:'是否产品',
+    field:'isProduct',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode: "yn",
+      disabled:true,
+    },
+    defaultValue:'0'
+  },
+  {
     label: '入库类型',
     field: 'stockInType',
     component: 'JDictSelectTag',

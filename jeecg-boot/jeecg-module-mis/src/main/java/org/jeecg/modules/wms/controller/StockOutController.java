@@ -2,18 +2,16 @@ package org.jeecg.modules.wms.controller;
 
 import java.io.UnsupportedEncodingException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import cn.hutool.core.date.DateTime;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.common.enums.ApproveStatusEnum;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
@@ -24,6 +22,7 @@ import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecg.modules.wms.entity.Warehouse;
 import org.jeecg.modules.wms.service.IStockService;
 import org.jeecg.modules.wms.service.IWarehouseService;
+import org.jeecg.modules.wms.vo.StockOutDetailVo;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -444,5 +443,89 @@ public class StockOutController {
       }
       return Result.OK("文件导入失败！");
     }
+
+	 /**
+	  * 出库明细查询 — 分页列表（带合计）
+	  */
+	 @AutoLog(value = "出库明细查询-分页列表")
+	 @ApiOperation(value = "出库明细查询-分页列表", notes = "返回列表+合计数据")
+	 @GetMapping(value = "/listDetailAll")
+	 public Result<IPage<StockOutDetailVo>> queryPageList(
+			 @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
+			 @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
+			 StockOutDetailVo stockOutDetailVo) {
+
+		 Page<StockOutDetailVo> page = new Page<>(pageNo, pageSize);
+		 IPage<StockOutDetailVo> pageList = stockOutDetailService.listDetailAll(page, stockOutDetailVo);
+//		 StockOutDetailVo summary = stockOutDetailService.calcDetailTotal(stockOutDetailVo);
+//
+//		 Map<String, Object> result = new HashMap<>();
+//		 result.put("records", pageList.getRecords());
+//		 result.put("total", pageList.getTotal());
+//		 result.put("summary", summary);
+
+		 return Result.OK(pageList);
+	 }
+
+	 /**
+	  * 出库明细查询 — 导出Excel（带合计行）
+	  */
+	 @AutoLog(value = "出库明细查询-导出")
+	 @ApiOperation(value = "出库明细查询-导出", notes = "出库明细查询-导出")
+	 @GetMapping(value = "/exportStockOutDetailXls")
+	 public ModelAndView exportDetailAllXls(StockOutDetailVo stockOutDetailVo) {
+		 List<StockOutDetailVo> list = stockOutDetailService.listDetailAll(stockOutDetailVo);
+//		 StockOutDetailVo summary = stockOutDetailService.calcDetailTotal(stockOutDetailVo);
+//
+//		 if (summary != null && summary.getApplyQty() != null) {
+//			 summary.setGoodsName("合计");
+//			 summary.setGoodsCode("");
+//			 summary.setStockOutNo("");
+//			 list.add(summary);
+//		 }
+		 // Java Stream 算合计（和入库一样）
+		 BigDecimal totalApplyQty = list.stream()
+				 .map(StockOutDetailVo::getApplyQty)
+				 .filter(Objects::nonNull)
+				 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		 BigDecimal totalActualQty = list.stream()
+				 .map(StockOutDetailVo::getActualQty)
+				 .filter(Objects::nonNull)
+				 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		 BigDecimal totalCostTotal = list.stream()
+				 .map(StockOutDetailVo::getCostTotal)
+				 .filter(Objects::nonNull)
+				 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		 BigDecimal totalSalesTotal = list.stream()
+				 .map(StockOutDetailVo::getSalesTotal)
+				 .filter(Objects::nonNull)
+				 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		 BigDecimal totalOverQty = list.stream()
+				 .map(StockOutDetailVo::getOverQty)
+				 .filter(Objects::nonNull)
+				 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		 // 构造合计行
+		 StockOutDetailVo summary = new StockOutDetailVo();
+		 summary.setStockOutNo("");
+		 summary.setGoodsName("合计");
+		 summary.setGoodsCode("");
+		 summary.setApplyQty(totalApplyQty);
+		 summary.setActualQty(totalActualQty);
+		 summary.setCostTotal(totalCostTotal);
+		 summary.setSalesTotal(totalSalesTotal);
+		 summary.setOverQty(totalOverQty);
+		 list.add(summary);
+		 ModelAndView mv = new ModelAndView(new JeecgEntityExcelView());
+		 mv.addObject(NormalExcelConstants.FILE_NAME, "出库明细表");
+		 mv.addObject(NormalExcelConstants.CLASS, StockOutDetailVo.class);
+		 mv.addObject(NormalExcelConstants.PARAMS, new ExportParams("出库明细表报表", "出库明细"));
+		 mv.addObject(NormalExcelConstants.DATA_LIST, list);
+		 return mv;
+	 }
 
 }

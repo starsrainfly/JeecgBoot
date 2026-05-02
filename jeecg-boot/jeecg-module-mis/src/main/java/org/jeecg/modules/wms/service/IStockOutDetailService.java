@@ -1,7 +1,11 @@
 package org.jeecg.modules.wms.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.modules.wms.entity.StockOutDetail;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.wms.vo.StockOutDetailVo;
+
 import java.util.List;
 
 /**
@@ -19,4 +23,19 @@ public interface IStockOutDetailService extends IService<StockOutDetail> {
 	 * @return List<StockOutDetail>
 	 */
 	public List<StockOutDetail> selectByMainId(String mainId);
+
+	/**
+	 * 出库明细查询 — 分页
+	 */
+	IPage<StockOutDetailVo> listDetailAll(Page<StockOutDetailVo> page, StockOutDetailVo stockOutDetailVo);
+
+	/**
+	 * 出库明细查询 — 不分页
+	 */
+	List<StockOutDetailVo> listDetailAll(StockOutDetailVo stockOutDetailVo);
+
+	/**
+	 * 计算明细合计
+	 */
+	StockOutDetailVo calcDetailTotal(StockOutDetailVo stockOutDetailVo);
 }

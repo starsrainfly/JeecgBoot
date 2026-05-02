@@ -94,6 +94,9 @@ public class Material implements Serializable {
 	@Excel(name = "备注", width = 15)
     @Schema(description = "备注")
     private String remark;
+    @Excel(name="效期预警天数")
+    @Schema(description = "效期预警天数")
+    private Integer expiryAlertDays;
 	/**是否删除*/
 	@Excel(name = "是否删除", width = 15)
     @Schema(description = "是否删除")

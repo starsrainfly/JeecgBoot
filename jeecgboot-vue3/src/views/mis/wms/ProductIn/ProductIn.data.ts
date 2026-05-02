@@ -17,6 +17,7 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'stockInType_dictText'
    },
+
    {
      title: '仓库名称',
      align:"center",
@@ -210,24 +211,31 @@ export const formSchema: FormSchema[] = [
     //     { required: true, message: '请选择供应商!'},
     //   ];
     // },
+    show:false
   },
-  // {
-  //   label: '客户',
-  //   field: 'customerName',
-  //   component: 'JPopup',
-  //   componentProps: ({ formActionType }) => {
-  //       const {setFieldsValue} = formActionType;
-  //       return{
-  //           setFieldsValue:setFieldsValue,
-  //           code:"scm_customer",
-  //           fieldConfig: [
-  //               { source: 'id', target: 'customerId' },
-  //               { source: 'customer_name', target: 'customerName' },
-  //           ],
-  //           multi:true
-  //       }
-  //   },
-  // },
+  {
+    label: '客户id',
+    field: 'customerId',
+    component: 'Input',
+    show:false //隐藏
+  },
+  {
+    label: '客户',
+    field: 'customerName',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+        const {setFieldsValue} = formActionType;
+        return{
+            setFieldsValue:setFieldsValue,
+            code:"scm_customer",
+            fieldConfig: [
+                { source: 'id', target: 'customerId' },
+                { source: 'customer_name', target: 'customerName' },
+            ],
+            multi:false
+        }
+    },
+  },
   {
     label: '仓库',
     field: 'warehouseId',
@@ -277,6 +285,16 @@ export const formSchema: FormSchema[] = [
         multi: false
       }
     },
+  },
+  {
+    label:'是否产品',
+    field:'isProduct',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode: "yn",
+      disabled:true,
+    },
+    defaultValue:'1'
   },
   {
     label: '备注',

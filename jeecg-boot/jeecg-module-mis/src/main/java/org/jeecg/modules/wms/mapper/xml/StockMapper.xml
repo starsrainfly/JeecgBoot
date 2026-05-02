@@ -185,5 +185,123 @@
           AND goods_id = #{goodsId}
           AND quantity > 0
     </select>
+    <!--首页所用sql-->
+    <!-- 库存预警数 - 缺货 + 积压 + 效期 -->
+    <select id="selectWarningCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM (
+                                 -- 缺货或积压预警
+                                 SELECT s.goods_id
+                                 FROM mis_stock s
+                                 WHERE s.del_flag = '0'
+                                 GROUP BY s.goods_id
+                                 HAVING
+                                     SUM(s.quantity) &lt;= MAX(CASE WHEN s.safety_stock_qty &gt; 0 THEN s.safety_stock_qty END)
+                                     OR
+                                     SUM(s.quantity) &gt;= MAX(CASE WHEN s.max_stock_qty &gt; 0 THEN s.max_stock_qty END)
+
+                                 UNION
+
+                                 -- 效期预警（关联物料/产品表获取预警天数）
+                                 SELECT s.goods_id
+                                 FROM mis_stock s
+                                          LEFT JOIN mis_material m ON s.goods_id = m.id AND s.is_product = '0'
+                                          LEFT JOIN mis_product p ON s.goods_id = p.id AND s.is_product = '1'
+                                 WHERE s.del_flag = '0'
+                                   AND s.expiry_date IS NOT NULL
+                                   AND s.quantity &gt; 0
+                                   AND s.expiry_date &gt;= CURDATE()
+                                   AND s.expiry_date &lt;= DATE_ADD(
+                                         CURDATE(),
+                                         INTERVAL COALESCE(m.expiry_alert_days, p.expiry_alert_days, 30) DAY
+              )
+                                 GROUP BY s.goods_id
+                             ) t
+    </select>
+    <!-- 库存锁定总数量 -->
+    <select id="selectTotalLockedQty" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(locked_qty), 0)
+        FROM mis_stock
+        WHERE del_flag = '0'
+    </select>
+    <!-- 预警物料Top5 -->
+    <select id="selectWarningTop5" resultType="org.jeecg.modules.wms.vo.WarehouseDashboardVo$WarningMaterial">
+        SELECT * FROM (
+                          SELECT
+                              s.goods_id AS materialId,
+                              MAX(s.goods_code) AS materialCode,
+                              MAX(s.goods_name) AS materialName,
+                              MAX(s.goods_spec) AS spec,
+                              SUM(s.quantity) AS availableQty,
+                              MAX(s.safety_stock_qty) AS safetyStock,
+                              MAX(s.max_stock_qty) AS maxStock,
+                              MAX(m.expiry_alert_days) AS materialAlertDays,
+                              MAX(p.expiry_alert_days) AS productAlertDays,
+                              MAX(s.is_product) AS isProduct,
+                              MIN(s.expiry_date) AS nearestExpiryDate,
+                              SUM(CASE
+                                      WHEN s.expiry_date IS NOT NULL
+                                          AND s.expiry_date &gt;= CURDATE()
+                                          AND s.expiry_date &lt;= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                                          THEN s.quantity
+                                      ELSE 0
+                                  END) AS expiryQty
+                          FROM mis_stock s
+                                   LEFT JOIN mis_material m ON s.goods_id = m.id AND s.is_product = '0'
+                                   LEFT JOIN mis_product p ON s.goods_id = p.id AND s.is_product = '1'
+                          WHERE s.del_flag = '0'
+                            AND (s.safety_stock_qty &gt; 0 OR s.max_stock_qty &gt; 0 OR s.expiry_date IS NOT NULL)
+                          GROUP BY s.goods_id
+                          HAVING
+                              SUM(s.quantity) &lt;= MAX(CASE WHEN s.safety_stock_qty &gt; 0 THEN s.safety_stock_qty END)
+                              OR SUM(s.quantity) &gt;= MAX(CASE WHEN s.max_stock_qty &gt; 0 THEN s.max_stock_qty END)
+                              OR MIN(s.expiry_date) IS NOT NULL
+                      ) t
+        ORDER BY
+            CASE
+                WHEN availableQty &lt;= safetyStock THEN 1
+                WHEN availableQty &gt;= maxStock THEN 2
+                ELSE 3
+                END,
+            ABS(
+                    CASE
+                        WHEN availableQty &lt;= safetyStock THEN safetyStock - availableQty
+                        WHEN availableQty &gt;= maxStock THEN availableQty - maxStock
+                        ELSE 0
+                        END
+            ) DESC
+            LIMIT 5
+    </select>
+    <!-- 效期预警明细 -->
+    <select id="selectExpiryAlertList"
+            resultType="org.jeecg.modules.wms.vo.WarehouseDashboardVo$ExpiryAlertItem">
+        SELECT
+            s.id as stockId,
+            s.goods_id as materialId,
+            s.goods_code as materialCode,
+            s.goods_name as materialName,
+            s.goods_spec as spec,
+            s.batch_no as batchNo,
+            s.quantity as quantity,
+            s.expiry_date as expiryDate,
+            DATEDIFF(s.expiry_date, CURDATE()) as remainDays,
+            COALESCE(m.expiry_alert_days, p.expiry_alert_days, 30) as alertDays,
+            s.warehouse_id as warehouseId,
+            s.area_id as areaId,
+            s.shelf_id as shelfId,
+            s.location_id as locationId
+        FROM mis_stock s
+                 LEFT JOIN mis_material m ON s.goods_id = m.id AND s.goods_type = '0'
+                 LEFT JOIN mis_product p ON s.goods_id = p.id AND s.goods_type = '1'
+        WHERE s.del_flag = '0'
+          AND s.quantity &gt; 0
+          AND s.expiry_date IS NOT NULL
+          AND s.expiry_date &gt;= CURDATE()
+          AND s.expiry_date &lt;= DATE_ADD(
+                CURDATE(),
+                INTERVAL COALESCE(m.expiry_alert_days, p.expiry_alert_days, 30) DAY
+          )
+        ORDER BY s.expiry_date ASC, s.quantity DESC
+            LIMIT 10
+    </select>
 
 </mapper>

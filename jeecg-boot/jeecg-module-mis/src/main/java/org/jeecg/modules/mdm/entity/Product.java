@@ -71,7 +71,9 @@ public class Product implements Serializable {
 	@Excel(name = "颜色", width = 15)
     @Schema(description = "颜色")
     private String productColor;
-
+    @Excel(name="效期预警天数")
+    @Schema(description = "效期预警天数")
+    private Integer expiryAlertDays;
 //	/**用途*/
 //	@Excel(name = "用途", width = 15)
 //    @Schema(description = "用途")

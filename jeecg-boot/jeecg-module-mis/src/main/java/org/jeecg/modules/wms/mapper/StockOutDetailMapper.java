@@ -1,9 +1,13 @@
 package org.jeecg.modules.wms.mapper;
 
 import java.util.List;
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.modules.wms.entity.StockOutDetail;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
+import org.jeecg.modules.wms.vo.StockOutDetailVo;
 
 /**
  * @Description: 出库明细表
@@ -28,4 +32,20 @@ public interface StockOutDetailMapper extends BaseMapper<StockOutDetail> {
    * @return List<StockOutDetail>
    */
 	public List<StockOutDetail> selectByMainId(@Param("mainId") String mainId);
+
+	/**
+	 * 出库明细查询 — 分页
+	 */
+	IPage<StockOutDetailVo> listDetailAll(Page<StockOutDetailVo> page,
+										  @Param("vo") StockOutDetailVo stockOutDetailVo);
+
+	/**
+	 * 出库明细查询 — 不分页（导出用）
+	 */
+	List<StockOutDetailVo> listDetailAll(@Param("vo") StockOutDetailVo stockOutDetailVo);
+
+	/**
+	 * 计算明细合计 — SUM聚合
+	 */
+	StockOutDetailVo calcDetailTotal(@Param("vo") StockOutDetailVo stockOutDetailVo);
 }

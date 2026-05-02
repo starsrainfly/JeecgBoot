@@ -174,6 +174,7 @@ public class StockInServiceImpl extends ServiceImpl<StockInMapper, StockIn> impl
 			stock.setProductionDate(stockInDetail.getProductionDate());
 			stock.setShelfLife(stockInDetail.getShelfLife());
 			stock.setExpiryDate(stockInDetail.getExpiryDate());
+			stock.setIsProduct(stockIn.getIsProduct());
 			stock.setSysOrgCode(loginUser.getOrgCode());
 			stock.setCreateBy(loginUser.getRealname());
 			stock.setCreateTime(new DateTime());

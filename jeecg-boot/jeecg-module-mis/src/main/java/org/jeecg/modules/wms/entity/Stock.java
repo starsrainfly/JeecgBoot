@@ -1,6 +1,7 @@
 package org.jeecg.modules.wms.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -132,6 +133,19 @@ public class Stock implements Serializable {
 	@Excel(name = "原始入库数量", width = 15)
     @Schema(description = "原始入库数量")
     private java.math.BigDecimal originalQty;
+    /**安全库存*/
+    @Excel(name = "安全库存", width = 15)
+    @Schema(description = "安全库存")
+    private BigDecimal safetyStockQty;
+    /**库存上限*/
+    @Excel(name = "库存上限", width = 15)
+    @Schema(description = "库存上限")
+    private BigDecimal maxStockQty;
+    /**是否产品*/
+    @Excel(name = "是否产品", width = 15, dicCode = "yn")
+    @Schema(description = "是否产品")
+    @Dict(dicCode = "yn")
+    private String isProduct;
 	/**状态*/
 	@Excel(name = "状态", width = 15, dicCode = "wms_stock_status")
 	@Dict(dicCode = "wms_stock_status")

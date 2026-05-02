@@ -156,6 +156,15 @@ export const searchFormSchema: FormSchema[] = [
       },
       //colProps: {span: 6},
  	},
+  {
+    label: '审核状态',
+    field: 'approveStatus',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"approval_status"
+    },
+   defaultValue:'0'
+  },
 ];
 //表单数据
 export const formSchema: FormSchema[] = [
@@ -177,6 +186,16 @@ export const formSchema: FormSchema[] = [
         { required: true, message: '请选择入库类型!'},
       ];
     },
+  },
+  {
+    label:'是否产品',
+    field:'isProduct',
+    component:'JDictSelectTag',
+    componentProps:{
+      dictCode: "yn",
+      disabled:true,
+    },
+    defaultValue:'0'
   },
   {
     label: '供应商id',

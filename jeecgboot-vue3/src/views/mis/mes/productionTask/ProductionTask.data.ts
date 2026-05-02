@@ -14,13 +14,15 @@ export const columns: BasicColumn[] = [
    {
     title: '工单名称',
     align:"center",
-    dataIndex: 'taskName'
+    dataIndex: 'taskName',
+     width:230
    },
    {
     title: '工序',
     align:"center",
     sorter: true,
-    dataIndex: 'sequence'
+    dataIndex: 'sequence',
+     width:80
    },
    {
     title: '操作说明',
@@ -31,7 +33,8 @@ export const columns: BasicColumn[] = [
     title: '批次号',
     align:"center",
     sorter: true,
-    dataIndex: 'batchNo'
+    dataIndex: 'batchNo',
+     width:180
    },
    {
     title: '生产订单号',

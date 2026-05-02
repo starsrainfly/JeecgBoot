@@ -1,6 +1,7 @@
 package org.jeecg.modules.wms.mapper;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import org.apache.ibatis.annotations.Param;
 import org.jeecg.modules.wms.entity.Stock;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.jeecg.modules.wms.vo.StockSummaryVo;
+import org.jeecg.modules.wms.vo.WarehouseDashboardVo;
 
 /**
  * @Description: 库存记录表
@@ -95,4 +97,13 @@ public interface StockMapper extends BaseMapper<Stock> {
             @Param("warehouseId") String warehouseId,
             @Param("goodsId") String goodsId
     );
+
+    Long selectWarningCount();
+
+    BigDecimal selectTotalLockedQty();
+
+    List<WarehouseDashboardVo.WarningMaterial> selectWarningTop5();
+
+    List<WarehouseDashboardVo.ExpiryAlertItem> selectExpiryAlertList();
+
 }

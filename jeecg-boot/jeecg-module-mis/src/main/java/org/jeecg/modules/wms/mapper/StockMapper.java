@@ -106,4 +106,7 @@ public interface StockMapper extends BaseMapper<Stock> {
 
     List<WarehouseDashboardVo.ExpiryAlertItem> selectExpiryAlertList();
 
+    long selectPendingInAuditCount();
+    long selectPendingOutAuditCount();
+
 }

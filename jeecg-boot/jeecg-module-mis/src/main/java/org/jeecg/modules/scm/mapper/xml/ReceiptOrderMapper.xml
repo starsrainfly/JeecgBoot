@@ -2,4 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.scm.mapper.ReceiptOrderMapper">
 
+    <select id="selectMonthReceiptAmount" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(receipt_amount), 0)
+        FROM mis_receipt_order
+        WHERE del_flag = '0'
+          AND status = '1'
+          AND receipt_date &gt;= #{start}
+          AND receipt_date &lt;= #{end}
+    </select>
 </mapper>

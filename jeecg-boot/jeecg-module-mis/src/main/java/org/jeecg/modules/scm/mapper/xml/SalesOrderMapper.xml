@@ -1,5 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.scm.mapper.SalesOrderMapper">
+    <!-- 本月销售额（财务审核通过） -->
+    <select id="selectMonthSalesAmount" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(order_total), 0)
+        FROM mis_sales_order
+        WHERE finance_approve_status = '1'
+          AND del_flag = '0'
+          AND create_time &gt;= #{start}
+          AND create_time &lt;= #{end}
+    </select>
+
+    <!-- 待销售审核数 -->
+    <select id="selectPendingSalesAuditCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_sales_order
+        WHERE sales_approve_status = '0'
+          AND del_flag = '0'
+    </select>
+    <!-- 待财务审核数 -->
+    <select id="selectPendingFinanceAuditCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_sales_order
+        WHERE sales_approve_status = '1'
+          AND finance_approve_status = '0'
+          AND del_flag = '0'
+    </select>
+    <!-- 近30天趋势 -->
+    <select id="select30DaysTrend" resultType="org.jeecg.modules.mdm.vo.ManagerDashboardVo$DailySalesTrend">
+        SELECT
+            DATE(create_time) as date,
+            COALESCE(SUM(CASE WHEN finance_approve_status = '1' THEN order_total ELSE 0 END), 0) as salesAmount,
+            0 as receiptAmount
+        FROM mis_sales_order
+        WHERE del_flag = '0'
+          AND create_time &gt;= #{start}
+          AND create_time &lt;= #{end}
+        GROUP BY DATE(create_time)
+        ORDER BY date
+    </select>
+
+    <!-- 最近待审核订单 -->
+    <select id="selectRecentPendingAudit"
+            resultType="org.jeecg.modules.mdm.vo.ManagerDashboardVo$RecentSalesOrder">
+        SELECT
+            id,
+            order_no as orderNo,
+            customer_name as customerName,
+            salesman_name as salesmanName,
+            order_total as orderTotal,
+            sales_approve_status as salesApproveStatus,
+            finance_approve_status as financeApproveStatus,
+            create_time as createTime
+        FROM mis_sales_order
+        WHERE (sales_approve_status = '0' OR finance_approve_status = '0')
+          AND del_flag = '0'
+        ORDER BY create_time DESC
+            LIMIT #{limit}
+    </select>
+
 
 </mapper>

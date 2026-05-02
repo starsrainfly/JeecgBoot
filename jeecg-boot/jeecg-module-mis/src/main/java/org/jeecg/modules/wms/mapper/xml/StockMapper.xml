@@ -303,5 +303,17 @@
         ORDER BY s.expiry_date ASC, s.quantity DESC
             LIMIT 10
     </select>
+    <select id="selectPendingInAuditCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_stock_in
+        WHERE approve_status = '0'
+          AND del_flag = '0'
+    </select>
+    <select id="selectPendingOutAuditCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_stock_out
+        WHERE approve_status = '0'
+          AND del_flag = '0'
+    </select>
 
 </mapper>

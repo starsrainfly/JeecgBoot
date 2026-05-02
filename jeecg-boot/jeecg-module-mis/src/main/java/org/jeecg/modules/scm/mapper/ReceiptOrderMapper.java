@@ -1,5 +1,7 @@
 package org.jeecg.modules.scm.mapper;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Param;
@@ -14,4 +16,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface ReceiptOrderMapper extends BaseMapper<ReceiptOrder> {
 
+    BigDecimal selectMonthReceiptAmount(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

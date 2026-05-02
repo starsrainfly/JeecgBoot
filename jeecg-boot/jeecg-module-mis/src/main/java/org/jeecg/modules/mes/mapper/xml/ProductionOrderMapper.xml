@@ -2,4 +2,36 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.mes.mapper.ProductionOrderMapper">
 
+    <select id="selectRecentPending"
+            resultType="org.jeecg.modules.mdm.vo.ManagerDashboardVo$RecentProduceOrder">
+        SELECT
+            id,
+            order_no as orderNo,
+            product_name as productName,
+            planned_qty as plannedQty,
+            status,
+            planned_start_date as plannedStartDate
+        FROM mis_production_order
+        WHERE status = '1'
+          AND del_flag = '0'
+        ORDER BY planned_start_date ASC
+            LIMIT #{limit}
+    </select>
+
+    <select id="selectStatusDistribution"
+            resultType="org.jeecg.modules.mdm.vo.ManagerDashboardVo$ProduceOrderStatus">
+        SELECT
+            status,
+            CASE status
+                WHEN '0' THEN '草稿'
+                WHEN '1' THEN '已下达'
+                WHEN '2' THEN '部分完成'
+                WHEN '3' THEN '已完成'
+                ELSE status
+                END as statusText,
+            COUNT(*) as count
+        FROM mis_production_order
+        WHERE del_flag = '0'
+        GROUP BY status
+    </select>
 </mapper>

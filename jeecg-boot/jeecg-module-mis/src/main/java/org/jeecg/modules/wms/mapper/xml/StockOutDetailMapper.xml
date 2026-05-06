@@ -158,4 +158,15 @@
 		LEFT JOIN mis_stock_out m ON d.stock_out_id = m.id
 		<include refid="detailQueryWhere"/>
 	</select>
+
+	<select id="sumMaterialCostByBatchId" resultType="java.math.BigDecimal">
+		SELECT COALESCE(SUM(d.cost_total), 0)
+		FROM mis_stock_out o
+				 INNER JOIN mis_stock_out_detail d ON o.id = d.stock_out_id
+		WHERE d.production_batch_id = #{batchId}
+		  AND o.stock_out_type = 'PRODUCTION'
+		  AND o.approve_status = '1'
+		  AND o.del_flag = '0'
+		  AND d.del_flag = '0'
+	</select>
 </mapper>

@@ -142,7 +142,7 @@ export const searchFormSchema: FormSchema[] = [
         const {setFieldsValue} = formActionType;
         return{
             setFieldsValue:setFieldsValue,
-            code:"scm_customer",
+            code:"scm_customer_no_param",
             fieldConfig: [
                 { source: 'id', target: 'customerId' },
                 { source: 'customer_name', target: 'customerName' },
@@ -231,7 +231,7 @@ export const formSchema: FormSchema[] = [
         const {setFieldsValue} = formActionType;
         return{
             setFieldsValue:setFieldsValue,
-            code:"scm_customer",
+            code:"scm_customer_no_param",
             fieldConfig: [
                 { source: 'id', target: 'customerId' },
                 { source: 'customer_name', target: 'customerName' },
@@ -380,8 +380,8 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       dictCode:"mdm_material_type",
       width:"200px",
       placeholder: '请输入${title}',
-      defaultValue:'',
-
+      defaultValue:'PRODUCT',
+      disabled:true,
     },
     {
       title: '编码',
@@ -511,6 +511,7 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',
+      disabled:true,
     },
     // {
     //   title: '来源单据明细id',
@@ -560,7 +561,7 @@ export const superQuerySchema = {
   stockOutNo: {title: '出库单号',order: 0,view: 'text', type: 'string',},
   stockOutType: {title: '出库类型',order: 1,view: 'list', type: 'string',dictCode: 'wms_stock_out_type',},
   sourceOrderId: {title: '销售订单',order: 2,view: 'text', type: 'string',},
-  customerName: {title: '客户名称',order: 5,view: 'popup', type: 'string',code: 'scm_customer', orgFields: 'customer_name', destFields: 'customerName', popupMulti: false,},
+  customerName: {title: '客户名称',order: 5,view: 'popup', type: 'string',code: 'scm_customer_no_param', orgFields: 'customer_name', destFields: 'customerName', popupMulti: false,},
   requesterUserId: {title: '领用人id',order: 6,view: 'list', type: 'string',dictTable: "sys_user where del_flag='0' and status='1'", dictCode: 'id', dictText: 'realname',},
   requesterName: {title: '领用人',order: 7,view: 'text', type: 'string',},
   warehouseName: {title: '仓库',order: 9,view: 'text', type: 'string',},

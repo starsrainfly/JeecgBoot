@@ -127,7 +127,7 @@
     DollarOutlined, BankOutlined, ToolOutlined,
     AuditOutlined, WarningOutlined, ExportOutlined,
   } from '@ant-design/icons-vue';
-  import StatCard from '../warehouse/components/StatCard.vue';
+  import StatCard from '../Warehouse/components/statCard.vue';
 
   const { createMessage } = useMessage();
 
@@ -172,7 +172,7 @@
     { title: '工单号', dataIndex: 'orderNo', width: 140 },
     { title: '产品', dataIndex: 'productName' },
     { title: '计划量', dataIndex: 'plannedQty', width: 100, align: 'right' },
-    { title: '状态', dataIndex: 'status', width: 90 },
+    { title: '状态', dataIndex: 'status_dictText', width: 90 },
     { title: '计划开工', dataIndex: 'plannedStartDate', width: 110 },
   ];
 

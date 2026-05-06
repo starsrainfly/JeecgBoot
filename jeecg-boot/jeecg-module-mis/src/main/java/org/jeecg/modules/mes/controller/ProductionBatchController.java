@@ -13,8 +13,12 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.jeecg.modules.mdm.entity.ProcessRoutingStep;
+import org.jeecg.modules.mdm.service.IProcessRoutingStepService;
 import org.jeecg.modules.mes.entity.ProductionBatchMaterialActual;
+import org.jeecg.modules.mes.entity.ProductionTask;
 import org.jeecg.modules.mes.service.IProductionBatchMaterialActualService;
 import org.jeecg.modules.system.entity.SysDepart;
 import org.jeecg.modules.system.service.ISysDepartService;
@@ -70,6 +74,7 @@ public class ProductionBatchController {
 	private IProductionBatchMaterialActualService materialActualService;
 	 @Autowired
 	 private ISysDepartService departService;
+
 	/**
 	 * 分页列表查询
 	 *
@@ -238,6 +243,7 @@ public class ProductionBatchController {
 				 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
 		 productionBatch.setActualQty(totalWeight);
+		 productionBatch.setRemainQty(totalWeight);
 		 productionBatch.setWeighingEndTime(new Date());
 		 productionBatch.setStatus("WEIGHED");
 		 productionBatchService.updateById(productionBatch);

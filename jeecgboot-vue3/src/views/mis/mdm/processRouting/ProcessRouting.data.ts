@@ -269,6 +269,20 @@ export const processRoutingStepColumns: JVxeColumn[] = [
         { required: true, message: '${title}不能为空' },
       ],
     },
+  {
+    title: '是否最后完工工序',
+    key: 'isFinishStep',
+    type: JVxeTypes.select,
+    options:[],
+    dictCode:"yn",
+    width:"200px",
+    placeholder: '请输入${title}',
+    defaultValue:'',
+    validateRules: [
+      { required: true, message: '${title}不能为空' },
+    ],
+    // 校验：一个工艺只能有一个 is_finish_step=1
+  },
     {
       title: '是否需要质检',
       key: 'qcRequired',

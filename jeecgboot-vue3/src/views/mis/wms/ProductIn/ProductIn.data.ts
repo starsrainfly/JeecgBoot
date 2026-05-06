@@ -213,29 +213,29 @@ export const formSchema: FormSchema[] = [
     // },
     show:false
   },
-  {
-    label: '客户id',
-    field: 'customerId',
-    component: 'Input',
-    show:false //隐藏
-  },
-  {
-    label: '客户',
-    field: 'customerName',
-    component: 'JPopup',
-    componentProps: ({ formActionType }) => {
-        const {setFieldsValue} = formActionType;
-        return{
-            setFieldsValue:setFieldsValue,
-            code:"scm_customer",
-            fieldConfig: [
-                { source: 'id', target: 'customerId' },
-                { source: 'customer_name', target: 'customerName' },
-            ],
-            multi:false
-        }
-    },
-  },
+  // {
+  //   label: '客户id',
+  //   field: 'customerId',
+  //   component: 'Input',
+  //   show:false //隐藏
+  // },
+  // {
+  //   label: '客户',
+  //   field: 'customerName',
+  //   component: 'JPopup',
+  //   componentProps: ({ formActionType }) => {
+  //       const {setFieldsValue} = formActionType;
+  //       return{
+  //           setFieldsValue:setFieldsValue,
+  //           code:"scm_customer",
+  //           fieldConfig: [
+  //               { source: 'id', target: 'customerId' },
+  //               { source: 'customer_name', target: 'customerName' },
+  //           ],
+  //           multi:false
+  //       }
+  //   },
+  // },
   {
     label: '仓库',
     field: 'warehouseId',
@@ -273,18 +273,101 @@ export const formSchema: FormSchema[] = [
     label: '生产批次号',
     field: 'sourceOrderNo',
     component: 'JPopup',
+    show: ({ model }) => model.stockInType === 'PRODUCTION',
     componentProps: ({ formActionType }) => {
       const {setFieldsValue} = formActionType;
       return {
         setFieldsValue: setFieldsValue,
-        code: "scm_production_batch",
+        code: "mes_production_batch_select",
         fieldConfig: [
           {source: 'id', target: 'sourceOrderId'},
-         // {source: 'PRODUCT', target: 'sourceOrderType'},
+          {source: 'PRODUCT', target: 'sourceOrderType'},
+          { source: 'id', target: 'sourceOrderId' },
+          { source: 'batch_no', target: 'sourceOrderNo' }, // 批次号显示用
+          { source: 'product_id', target: 'productId' },   // 隐藏字段
+          { source: 'product_code', target: 'productCode' }, // 隐藏字段
+          { source: 'product_name', target: 'productName' }, // 隐藏字段
+          { source: 'product_spec', target: 'productSpec' }, // 隐藏字段
+          {source: 'product_color', target:'productColor'},
+          { source: 'actual_qty', target: 'batchActualQty' }, // 实际产量（校验用）
+          { source: 'remain_qty', target: 'batchRemainQty' }, // 剩余可入量
+          { source: 'planned_qty', target: 'plannedQty' },
+          { source: 'recipe_id', target: 'recipeId' },
+          {source: 'in_stock_qty', target: 'batchInStockQty'},    // 已入库数量（新增）
+          //{ source: 'unit', target: 'unit' },
         ],
-        multi: false
+        multi: false,
+
       }
     },
+  },
+  // 隐藏字段：产品信息（用于子表自动填充）
+  {
+    label: 'productId',
+    field: 'productId',
+    component: 'Input',
+    show: false
+  },
+  {
+    label: 'productCode',
+    field: 'productCode',
+    component: 'Input',
+    show: false
+  },
+  {
+    label: 'productName',
+    field: 'productName',
+    component: 'Input',
+    show: false
+  },
+  {
+    label: 'productSpec',
+    field: 'productSpec',
+    component: 'Input',
+    show: false
+  },
+  {
+    label: 'productColor',
+    field: 'productColor',
+    component: 'Input',
+    show: false
+  },
+  {
+    label: 'batchActualQty',
+    field: 'batchActualQty',
+    component: 'InputNumber',
+    show: false
+  },
+  {
+    label: 'batchRemainQty',
+    field: 'batchRemainQty',
+    component: 'InputNumber',
+    show: false
+  },
+  {
+    label: 'batchInStockQty',
+    field: 'batchInStockQty',
+    component: 'InputNumber',
+    show: false
+  },
+  {
+    label: 'plannedQty',
+    field: 'plannedQty',
+    component: 'InputNumber',
+    show: false
+  },
+  {
+    label: 'unit',
+    field: 'unit',
+    component: 'Input',
+    defaultValue:'kg',
+    show: false
+  },
+  {
+    label: 'recipeId',
+    field: 'recipeId',
+    component: 'Input',
+    show: false
   },
   {
     label:'是否产品',
@@ -294,7 +377,7 @@ export const formSchema: FormSchema[] = [
       dictCode: "yn",
       disabled:true,
     },
-    defaultValue:'1'
+    defaultValue:'1',
   },
   {
     label: '备注',
@@ -353,6 +436,7 @@ export const stockInDetailColumns: JVxeColumn[] = [
         { source: 'product_code', target: 'goodsCode' },
         { source: 'product_name', target: 'goodsName' },
         { source: 'product_spec', target: 'goodsSpec' },
+        { source: 'product_color', target: 'goodsColor'},
        // { source: 'material_type', target: 'goodsType' },
       ],
 
@@ -364,7 +448,7 @@ export const stockInDetailColumns: JVxeColumn[] = [
         ],
     },
     {
-      title: '项目名称',
+      title: '产品名称',
       key: 'goodsName',
       type: JVxeTypes.input,
       width:"200px",
@@ -379,6 +463,14 @@ export const stockInDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
+  {
+    title: '产品颜色',
+    key: 'goodsColor',
+    type: JVxeTypes.input,
+    width:"200px",
+    placeholder: '请输入${title}',
+    defaultValue:'',
+  },
     {
       title: '单位',
       key: 'unit',
@@ -410,59 +502,60 @@ export const stockInDetailColumns: JVxeColumn[] = [
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',
+      disabled: true,
       validateRules: [
         { required: true, message: '${title}不能为空' },
       ],
     },
-    {
-      title: '币种',
-      key: 'currency',
-      type: JVxeTypes.select,
-      options:[],
-      dictCode:"mis_currency where del_flag='0' and status='1',currency_name,currency_code",
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'CNY',
-        validateRules: [
-          { required: true, message: '${title}不能为空' },
-        ],
-      visible:false,
-    },
-    {
-      title: '汇率',
-      key: 'exchangeRate',
-      type: JVxeTypes.inputNumber,
-      options:[],
-      dictCode:"",
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue: 1,
-        validateRules: [
-          { required: true, message: '${title}不能为空' },
-        ],
-      visible:false,
-    },
-    {
-      title: '单价',
-      key: 'unitPrice',
-      type: JVxeTypes.inputNumber,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:0,
-        validateRules: [
-          { required: true, message: '${title}不能为空' },
-        ],
-      visible:false,
-    },
-    {
-      title: '金额',
-      key: 'totalAmount',
-      type: JVxeTypes.inputNumber,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:0,
-      visible:false,
-    },
+    // {
+    //   title: '币种',
+    //   key: 'currency',
+    //   type: JVxeTypes.select,
+    //   options:[],
+    //   dictCode:"mis_currency where del_flag='0' and status='1',currency_name,currency_code",
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'CNY',
+    //     validateRules: [
+    //       { required: true, message: '${title}不能为空' },
+    //     ],
+    //   visible:false,
+    // },
+    // {
+    //   title: '汇率',
+    //   key: 'exchangeRate',
+    //   type: JVxeTypes.inputNumber,
+    //   options:[],
+    //   dictCode:"",
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue: 1,
+    //     validateRules: [
+    //       { required: true, message: '${title}不能为空' },
+    //     ],
+    //   visible:false,
+    // },
+    // {
+    //   title: '单价',
+    //   key: 'unitPrice',
+    //   type: JVxeTypes.inputNumber,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:0,
+    //     validateRules: [
+    //       { required: true, message: '${title}不能为空' },
+    //     ],
+    //   visible:false,
+    // },
+    // {
+    //   title: '金额',
+    //   key: 'totalAmount',
+    //   type: JVxeTypes.inputNumber,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:0,
+    //   visible:false,
+    // },
     {
       title:'生产日期',
       key:'productionDate',
@@ -525,6 +618,31 @@ export const stockInDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
+  // 隐藏字段：关联生产批次
+  {
+    title: '生产批次ID',
+    key: 'productionBatchId',
+    type: JVxeTypes.input,
+    width:"200px",
+    visible: false,
+  },
+  // 隐藏字段：用于校验
+  {
+    title: '批次已入库量',
+    key: '_batchInStockQty',
+    type: JVxeTypes.inputNumber,
+    width: "120px",
+    disabled: true,  // 只读
+    //visible: false,  // 隐藏，或设为 true 显示
+  },
+  {
+    title: '批次剩余量',
+    key: '_batchRemainQty',
+    type: JVxeTypes.inputNumber,
+    width: "120px",
+    disabled: true,
+   // visible: false,
+  },
   ]
 
 

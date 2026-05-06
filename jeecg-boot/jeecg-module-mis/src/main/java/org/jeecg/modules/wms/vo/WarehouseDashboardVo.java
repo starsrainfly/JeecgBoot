@@ -65,9 +65,11 @@ public class WarehouseDashboardVo {
         private String id;
         private String stockInNo;
         private String supplierName;
-
+        @Schema(description = "入库类型")
         @Dict(dicCode = "wms_stock_in_type")
         private String stockInType;
+
+        private String stockInType_dictText;
 
         @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")

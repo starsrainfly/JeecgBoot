@@ -136,6 +136,11 @@ public class StockInPage {
 	@Excel(name = "来源单据号", width = 15)
 	@Schema(description = "来源单据号")
     private String sourceOrderNo;
+	/**是否产品*/
+	@Excel(name = "是否产品", width = 15, dicCode = "yn")
+	@Schema(description = "是否产品")
+	@Dict(dicCode = "yn")
+	private String isProduct;
 	/**备注*/
 	@Excel(name = "备注", width = 15)
 	@Schema(description = "备注")

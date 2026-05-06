@@ -1,5 +1,6 @@
 package org.jeecg.modules.mes.controller;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.io.IOException;
@@ -18,9 +19,13 @@ import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
+import org.jeecg.modules.mdm.entity.ProcessRoutingStep;
+import org.jeecg.modules.mdm.service.IProcessRoutingStepService;
+import org.jeecg.modules.mes.entity.ProductionBatch;
 import org.jeecg.modules.mes.entity.ProductionBatchMaterialActual;
 import org.jeecg.modules.mes.entity.ProductionTask;
 import org.jeecg.modules.mes.service.IProductionBatchMaterialActualService;
+import org.jeecg.modules.mes.service.IProductionBatchService;
 import org.jeecg.modules.mes.service.IProductionTaskService;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -37,6 +42,7 @@ import org.jeecgframework.poi.excel.entity.ImportParams;
 import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 import org.jeecg.common.system.base.controller.JeecgController;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -69,6 +75,11 @@ public class ProductionTaskController extends JeecgController<ProductionTask, IP
 
 	 @Autowired
 	 private ISysUserService sysUserService;
+
+	 @Autowired
+	 private IProcessRoutingStepService processRoutingStepService;
+	 @Autowired
+	 private IProductionBatchService productionBatchService;
 
 	/*// 查询包装物料（内包+外包）
 List<ProductionMaterial> packageMaterials = productionMaterialService.list(
@@ -290,6 +301,7 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 	  */
 	 @AutoLog(value = "我的工单-完成任务")
 	 @Operation(summary="我的工单-完成任务")
+	 @Transactional(rollbackFor = Exception.class)
 	 @RequestMapping(value = "/complete", method = {RequestMethod.PUT,RequestMethod.POST})
 	 public Result<String> completeTask(@RequestBody ProductionTask productionTask) {
 		 String taskId = productionTask.getId();
@@ -310,7 +322,55 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 
 		 productionTaskService.updateById(task);
 
+		 // 判断是否是最后工序，更新批次状态
+		 updateBatchIfFinishStep(task);
+
 		 return Result.OK("任务已完成");
+	 }
+	 /**
+	  * 如果是最后工序，更新批次为"可入库"
+	  */
+	 private void updateBatchIfFinishStep(ProductionTask task) {
+		 String batchId = task.getBatchId();
+		 if (StrUtil.isEmpty(batchId)) {
+			 return;
+		 }
+
+		 // 获取工艺步骤
+		 ProcessRoutingStep step = processRoutingStepService.getById(task.getRoutingDetailId());
+		 if (step == null || !"1".equals(step.getIsFinishStep())) {
+			 return;  // 不是最后工序，不处理
+		 }
+
+		 // 是最后工序：更新批次为生产完成
+		 ProductionBatch batch = productionBatchService.getById(batchId);
+		 if (batch == null) {
+			 return;
+		 }
+
+		 // 校验：必须先完成配料（有actualQty）
+		 if (batch.getActualQty() == null || batch.getActualQty().compareTo(BigDecimal.ZERO) <= 0) {
+			 log.error("批次【{}】最后工序完工，但未完成配料称重！", batch.getBatchNo());
+			 // 这里可以抛异常阻止，或者只是记录日志
+			 // throw new JeecgBootException("请先完成配料称重");
+			 return;
+		 }
+
+		 batch.setStatus("COMPLETED");      // 生产完成
+		 batch.setInStockStatus("0");        // 未入库
+		 // remainQty 和 inStockQty 在 completeWeighing 时已初始化
+		 // 如果之前没初始化，这里兜底
+		 if (batch.getRemainQty() == null) {
+			 batch.setRemainQty(batch.getActualQty());
+		 }
+		 if (batch.getInStockQty() == null) {
+			 batch.setInStockQty(BigDecimal.ZERO);
+		 }
+
+		 productionBatchService.updateById(batch);
+
+		 log.info("批次【{}】最后工序【{}】完工，生产完成，可入库",
+				 batch.getBatchNo(), step.getStepName());
 	 }
 
 	 /**

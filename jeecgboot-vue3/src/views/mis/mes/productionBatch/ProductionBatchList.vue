@@ -33,6 +33,13 @@
     </BasicTable>
     <!-- 表单区域 -->
     <ProductionBatchModal @register="registerModal" @success="handleSuccess"></ProductionBatchModal>
+
+    <!-- 配料详情弹窗 -->
+    <WeighingDetailModal @register="registerWeighingModal"></WeighingDetailModal>
+
+    <!-- 产品入库申请（直接复用原有弹窗） -->
+    <ProductInModal @register="registerProductInModal" @success="handleSuccess"></ProductInModal>
+
   </div>
 </template>
 
@@ -46,11 +53,18 @@
   import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './ProductionBatch.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
+  import WeighingDetailModal from '/@/views/mis/mes/productionbatching/components/WeighingDetailModal.vue'
+  import ProductInModal from '/@/views/mis/wms/ProductIn/components/ProductInModal.vue'  // 引入产品入库弹窗
+
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
   //注册model
   const [registerModal, {openModal}] = useModal();
+  //注册配料详情弹窗
+  const [registerWeighingModal, {openModal: openWeighingModal}] = useModal();
+  //注册产品入库弹窗
+  const [registerProductInModal, {openModal: openProductInModal}] = useModal();
    //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
@@ -69,7 +83,7 @@
                 ],
             },
            actionColumn: {
-               width: 120,
+               width: 180,
                fixed:'right'
            },
            beforeFetch: (params) => {
@@ -159,7 +173,12 @@
            onClick: handleEdit.bind(null, record),
            disabled: !(record.status === 'PENDING'),
            auth: 'mes:mis_production_batch:edit'
-         }
+         },
+         {
+           label:'入库申请',
+           onClick: handleStockIn.bind(null, record),
+           color:'success'
+         },
        ]
    }
 
@@ -172,7 +191,14 @@
       {
         label: '详情',
         onClick: handleDetail.bind(null, record),
-      }, {
+      },
+      {
+        label: '配料详情',
+        onClick: handleWeighingDetail.bind(null, record),
+        // 配料完成后才能查看详情
+        disabled: record.status === 'PENDING' || record.status === 'CREATED',
+      },
+      {
         label: '删除',
         disabled: !(record.status === 'PENDING'),
         popConfirm: {
@@ -185,6 +211,47 @@
     ]
   }
 
+  /**
+   * 查看配料详情
+   */
+  function handleWeighingDetail(record) {
+    openWeighingModal(true, {
+      id: record.id,
+      batchNo: record.batchNo,
+      productName: record.productName,
+      plannedQty: record.plannedQty,
+      actualQty: record.actualQty,
+    });
+  }
+
+  /**
+   * 入库申请 - 直接弹窗
+   */
+  function handleStockIn(record) {
+    openProductInModal(true, {
+      isUpdate: false,
+      showFooter: true,
+      // 标记从批次触发
+      fromBatch: true,
+      // 传入批次信息
+      record: {
+        stockInType: 'PRODUCTION',
+        sourceOrderType: 'PRODUCT',
+        sourceOrderId: record.id,
+        sourceOrderNo: record.batchNo,
+        productId: record.productId,
+        productCode: record.productCode,
+        productName: record.productName,
+        productSpec: record.productSpec,
+        productColor: record.productColor,
+        batchActualQty: record.actualQty,
+        batchRemainQty: record.remainQty,
+        batchInstockQty: record.inStockQty,
+        unit: 'kg',  // 默认或从BOM获取
+        isProduct: '1',
+      }
+    });
+  }
 
 </script>
 

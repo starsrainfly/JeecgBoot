@@ -374,6 +374,7 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 		batch.setProductName(order.getProductName());
 		batch.setProductColor(order.getProductColor());
 		batch.setPlannedQty(plannedQty);
+		batch.setRemainQty(plannedQty);
 		batch.setShelfLife(order.getShelfLife());
 		batch.setCompanyId(order.getCompanyId());
 		batch.setCompanyName(order.getCompanyName());

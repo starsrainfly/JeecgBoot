@@ -1,8 +1,10 @@
 package org.jeecg.modules.wms.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.modules.system.service.ISysDictService;
 import org.jeecg.modules.wms.entity.StockIn;
 import org.jeecg.modules.wms.entity.StockOut;
 import org.jeecg.modules.wms.mapper.StockInMapper;
@@ -34,6 +36,8 @@ public class DashboardServiceImpl implements  IDashboardService {
     private StockOutMapper stockOutMapper;
     @Autowired
     private StockMapper stockMapper;
+    @Autowired
+    private ISysDictService dictService;
 //    @Autowired
 //    private RedisTemplate<String, Object> redisTemplate;
 
@@ -111,7 +115,16 @@ public class DashboardServiceImpl implements  IDashboardService {
         vo.setTrendList(mergeTrend(inTrend, outTrend));
 
         // 8. 待办列表 - 状态=0审核中
-        vo.setPendingInList(stockInMapper.selectRecentPending(5));
+        List<WarehouseDashboardVo.PendingInItem> pendingInList = stockInMapper.selectRecentPending(5);
+
+        // 2. 手动翻译字典
+        for (WarehouseDashboardVo.PendingInItem item : pendingInList) {
+            if (StrUtil.isNotBlank(item.getStockInType())) {
+                String dictText = dictService.queryDictTextByKey("wms_stock_in_type", item.getStockInType());
+                item.setStockInType_dictText(dictText);
+            }
+        }
+        vo.setPendingInList(pendingInList);//stockInMapper.selectRecentPending(5)
 
         // 9. 预警Top5
        // vo.setWarningMaterialList(stockInventoryMapper.selectWarningTop5());

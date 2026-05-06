@@ -94,6 +94,10 @@ public class ProcessRoutingStep implements Serializable {
 	@Excel(name = "是否需要质检", width = 15, dicCode = "yn")
     @Schema(description = "是否需要质检")
     private String qcRequired;
+    /**是否完工工序（最后工序）*/
+    @Excel(name = "是否完工工序（最后工序）", width = 15, dicCode = "yn")
+    @Schema(description = "是否完工工序（最后工序）")
+    private String isFinishStep;
 	/**创建人*/
     @Schema(description = "创建人")
     private String createBy;

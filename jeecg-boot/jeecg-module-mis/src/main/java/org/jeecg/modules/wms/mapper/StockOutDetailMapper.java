@@ -1,5 +1,6 @@
 package org.jeecg.modules.wms.mapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -48,4 +49,11 @@ public interface StockOutDetailMapper extends BaseMapper<StockOutDetail> {
 	 * 计算明细合计 — SUM聚合
 	 */
 	StockOutDetailVo calcDetailTotal(@Param("vo") StockOutDetailVo stockOutDetailVo);
+
+	/**
+	 * 汇总该批次已审核的领料成本
+	 * @param batchId
+	 * @return
+	 */
+	BigDecimal sumMaterialCostByBatchId(@Param("batchId") String batchId);
 }

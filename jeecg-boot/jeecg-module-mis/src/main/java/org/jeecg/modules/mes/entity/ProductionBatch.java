@@ -2,6 +2,7 @@ package org.jeecg.modules.mes.entity;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.util.Date;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -58,6 +59,9 @@ public class ProductionBatch implements Serializable {
     @Excel(name = "产品编码", width = 15)
     @Schema(description = "产品编码")
     private String productCode;
+    @Excel(name = "产品规格", width = 15)
+    @Schema(description = "产品规格")
+    private String productSpec;
     /**产品颜色*/
     @Excel(name = "产品颜色", width = 15)
     @Schema(description = "产品颜色")
@@ -116,11 +120,11 @@ public class ProductionBatch implements Serializable {
     /**已入库数量*/
     @Excel(name = "已入库数量", width = 15)
     @Schema(description = "已入库数量")
-    private Integer inStockQty;
+    private BigDecimal inStockQty;
     /**剩余可入库数量*/
     @Excel(name = "剩余可入库数量", width = 15)
     @Schema(description = "剩余可入库数量")
-    private Integer remainQty;
+    private BigDecimal remainQty;
     /**入库状态 0未入库，1部分入库，2已入库*/
     @Excel(name = "入库状态", width = 15)
     @Schema(description = "入库状态")

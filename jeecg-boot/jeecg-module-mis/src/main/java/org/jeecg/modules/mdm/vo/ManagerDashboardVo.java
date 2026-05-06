@@ -3,6 +3,7 @@ package org.jeecg.modules.mdm.vo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.jeecg.common.aspect.annotation.Dict;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -73,8 +74,9 @@ public class ManagerDashboardVo {
     @Data
     @ApiModel("生产工单状态分布")
     public static class ProduceOrderStatus {
+        @Dict(dicCode = "mes_production_status")
         private String status;
-        private String statusText;
+        private String status_dictText;
         private Long count;
     }
 
@@ -94,8 +96,12 @@ public class ManagerDashboardVo {
         private String customerName;
         private String salesmanName;
         private BigDecimal orderTotal;
+        @Dict(dicCode = "approval_status")
         private String salesApproveStatus;
+        private String salesApproveStatus_dictText;
+        @Dict(dicCode = "approval_status")
         private String financeApproveStatus;
+        private String financeApproveStatus_dictText;
         private Date createTime;
     }
 
@@ -106,7 +112,9 @@ public class ManagerDashboardVo {
         private String orderNo;
         private String productName;
         private BigDecimal plannedQty;
+        @Dict(dicCode = "mes_production_status")
         private String status;
+        private String status_dictText;
         private Date plannedStartDate;
     }
 }

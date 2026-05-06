@@ -50,6 +50,10 @@ public class Stock implements Serializable {
 	@Excel(name = "规格型号", width = 15)
     @Schema(description = "规格型号")
     private java.lang.String goodsSpec;
+    /**颜色*/
+    @Excel(name = "颜色", width = 15)
+    @Schema(description = "颜色")
+    private String goodsColor;
 	/**单位*/
 	@Excel(name = "单位", width = 15)
     @Schema(description = "单位")

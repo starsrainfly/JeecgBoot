@@ -25,6 +25,7 @@
     color: string;
     icon: string;
     suffix?: string;
+    prefix?: string;   // ← 只加这一行，显式声明
     link?: any;
   }>();
 

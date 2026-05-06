@@ -1,5 +1,6 @@
 package org.jeecg.modules.mdm.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.jeecg.modules.mdm.service.IManagerDashboardService;
 
@@ -8,8 +9,10 @@ import org.jeecg.modules.mes.entity.ProductionOrder;
 import org.jeecg.modules.mes.mapper.ProductionOrderMapper;
 import org.jeecg.modules.scm.mapper.ReceiptOrderMapper;
 import org.jeecg.modules.scm.mapper.SalesOrderMapper;
+import org.jeecg.modules.system.service.ISysDictService;
 import org.jeecg.modules.wms.mapper.StockMapper;
 import org.jeecg.modules.wms.mapper.StockOutMapper;
+import org.jeecg.modules.wms.vo.WarehouseDashboardVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +35,8 @@ public class ManagerDashboardServiceImpl implements IManagerDashboardService {
     private ProductionOrderMapper productionOrderMapper;
     @Autowired
     private StockOutMapper stockOutMapper;
+    @Autowired
+    private ISysDictService dictService;
 
     @Override
     public ManagerDashboardVo getManagerDashboardData() {
@@ -82,7 +87,14 @@ public class ManagerDashboardServiceImpl implements IManagerDashboardService {
         vo.setMonthIncomeExpense(incomeExpense);
 
         // 10. 生产工单状态分布
-        vo.setProduceOrderStatusList(productionOrderMapper.selectStatusDistribution());
+        List<ManagerDashboardVo.ProduceOrderStatus> produceOrderStatuslist = productionOrderMapper.selectStatusDistribution();
+        for (ManagerDashboardVo.ProduceOrderStatus item : produceOrderStatuslist) {
+            if (StrUtil.isNotBlank(item.getStatus())) {
+                String dictText = dictService.queryDictTextByKey("mes_production_status", item.getStatus());
+                item.setStatus_dictText(dictText);
+            }
+        }
+        vo.setProduceOrderStatusList(produceOrderStatuslist);
 
         // 11. 待审核单据分布
         List<ManagerDashboardVo.PendingAuditDist> auditDistList = new ArrayList<>();
@@ -96,7 +108,14 @@ public class ManagerDashboardServiceImpl implements IManagerDashboardService {
         vo.setRecentSalesOrderList(salesOrderMapper.selectRecentPendingAudit(5));
 
         // 12. 最近待生产工单
-        vo.setRecentProduceOrderList(productionOrderMapper.selectRecentPending(5));
+        List<ManagerDashboardVo.RecentProduceOrder> recentProduceOrderList = productionOrderMapper.selectRecentPending(5);
+        for (ManagerDashboardVo.RecentProduceOrder item : recentProduceOrderList) {
+            if (StrUtil.isNotBlank(item.getStatus())) {
+                String dictText = dictService.queryDictTextByKey("mes_production_status", item.getStatus());
+                item.setStatus_dictText(dictText);
+            }
+        }
+        vo.setRecentProduceOrderList(recentProduceOrderList);
 
         return vo;
     }

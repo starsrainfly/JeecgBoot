@@ -83,5 +83,5 @@ public class ScanDeliveryRequestVo implements Serializable {
 
     /** 发货明细列表 */
     @Schema(description = "发货明细列表")
-    private List<ScanDeliveryItemVo> scanItems;
+    private List<ScanDeliveryItemVo> deliveryItems;
 }

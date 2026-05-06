@@ -48,7 +48,7 @@
         JOIN mis_delivery m ON d.delivery_id = m.id
         GROUP BY m.source_order_id
         ) delivery_sum ON delivery_sum.source_order_id = so.id
-        WHERE so.order_status != '2'
+        WHERE so.order_status >= '2' AND so.sales_approve_status ='1' AND so.finance_approve_status='1'
 
         <if test="param.orderNo != null and param.orderNo != ''">
             AND so.order_no LIKE CONCAT('%', #{param.orderNo}, '%')

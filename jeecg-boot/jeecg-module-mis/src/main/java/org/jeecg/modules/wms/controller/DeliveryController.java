@@ -15,10 +15,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.jeecg.modules.scm.entity.SalesOrder;
 import org.jeecg.modules.scm.entity.SalesOrderDetail;
 import org.jeecg.modules.scm.mapper.SalesOrderDetailMapper;
+import org.jeecg.modules.scm.service.ISalesOrderDetailService;
 import org.jeecg.modules.scm.service.ISalesOrderService;
+import org.jeecg.modules.wms.entity.*;
+import org.jeecg.modules.wms.service.*;
 import org.jeecg.modules.wms.vo.*;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
@@ -31,22 +35,10 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
 import org.jeecg.common.util.oConvertUtils;
-import org.jeecg.modules.wms.entity.DeliveryDetail;
-import org.jeecg.modules.wms.entity.Delivery;
-import org.jeecg.modules.wms.entity.Stock;
-import org.jeecg.modules.wms.entity.StockOut;
-import org.jeecg.modules.wms.entity.StockOutDetail;
 import org.jeecg.modules.wms.mapper.DeliveryDetailMapper;
-import org.jeecg.modules.wms.service.IDeliveryService;
-import org.jeecg.modules.wms.service.IDeliveryDetailService;
-import org.jeecg.modules.wms.service.IStockService;
-import org.jeecg.modules.wms.service.IStockOutService;
-import org.jeecg.modules.wms.service.IStockOutDetailService;
-import org.jeecg.modules.wms.service.IWarehouseService;
 import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.enums.StockEnum;
-import org.jeecg.modules.wms.entity.Warehouse;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,7 +87,11 @@ public class DeliveryController {
 	private ISerialNoService serialNoService;
 	@Autowired
 	private IWarehouseService warehouseService;
-	
+
+	@Autowired
+	private ISalesOrderDetailService salesOrderDetailService;
+	@Autowired
+	private IStockInDetailService stockInDetailService;
 	/**
 	 * 分页列表查询
 	 *
@@ -505,14 +501,30 @@ public class DeliveryController {
 	@PostMapping(value = "/scanDeliver")
 	@Transactional(rollbackFor = Exception.class)
 	public Result<String> scanDeliver(@RequestBody ScanDeliveryRequestVo request) {
-		if (request.getScanItems() == null || request.getScanItems().isEmpty()) {
+		if (request.getDeliveryItems() == null || request.getDeliveryItems().isEmpty()) {
 			return Result.error("发货明细不能为空");
 		}
 
 		LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
 		Date now = new Date();
 
-		// ===== 1. 生成并保存出库单 =====
+		// ===== 0. 校验订单状态 =====
+		SalesOrder order = salesOrderService.getById(request.getSourceOrderId());
+		if (order == null) {
+			return Result.error("销售订单不存在");
+		}
+		if (!"1".equals(order.getSalesApproveStatus())) {
+			return Result.error("销售订单未通过业务审核");
+		}
+		if (!"1".equals(order.getFinanceApproveStatus())) {
+			return Result.error("销售订单未通过财务审核");
+		}
+		if ("2".equals(order.getDeliveryStatus())) {
+			return Result.error("订单已全部发货");
+		}
+
+
+		// ===== 1. 生成并保存出库单 直接出库 免审核=====
 		StockOut stockOut = new StockOut();
 		stockOut.setStockOutNo(serialNoService.generateSerialNo(SerialNoPrefixEnum.STOCK_OUT.getPrefix()));
 		stockOut.setStockOutType(StockEnum.StockOutType.SALES.getCode());
@@ -522,6 +534,8 @@ public class DeliveryController {
 		stockOut.setCustomerName(request.getCustomerName());
 		stockOut.setOperatorUserId(loginUser.getId());
 		stockOut.setOperatorName(loginUser.getRealname());
+		stockOut.setRequesterUserId(order.getSalesmanId()); //领料人 这里使用业务员
+		stockOut.setRequesterName(order.getSalesmanName());
 		stockOut.setStatus(StockEnum.StockOutStatus.FINISHED.getCode());
 		stockOut.setApproveStatus("1");
 		stockOut.setApproveId(loginUser.getId());
@@ -532,13 +546,16 @@ public class DeliveryController {
 		stockOut.setConsignee(request.getConsignee());
 		stockOut.setConsigneePhone(request.getConsigneePhone());
 		stockOut.setDeliverAddress(request.getConsigneeAddress());
-		stockOut.setRemark(request.getRemark());
+		stockOut.setRemark("发货自动出库 " +request.getRemark());
 		stockOut.setIsProduct("1");
 		stockOutService.save(stockOut);
 
 		// ===== 2. 保存出库明细并扣减库存 =====
 		List<StockOutDetail> stockOutDetails = new ArrayList<>();
-		for (ScanDeliveryItemVo item : request.getScanItems()) {
+		BigDecimal totalCost = BigDecimal.ZERO;
+		BigDecimal totalSales = BigDecimal.ZERO;
+
+		for (ScanDeliveryItemVo item : request.getDeliveryItems()) {
 			// 扣减库存
 			stockService.directDeduct(item.getStockId(), item.getActualQty());
 
@@ -560,10 +577,41 @@ public class DeliveryController {
 			detail.setSourceDetailId(item.getSourceDetailId());
 			detail.setSourceType("NORMAL");
 			detail.setOverFlag("0");
+			//计算销售金额
 			if (item.getUnitPrice() != null) {
 				detail.setSalesPrice(item.getUnitPrice());
-				detail.setSalesTotal(item.getUnitPrice().multiply(item.getActualQty()).setScale(2, RoundingMode.HALF_UP));
+				BigDecimal lineSales = item.getUnitPrice().multiply(item.getActualQty()).setScale(2, RoundingMode.HALF_UP);
+				detail.setSalesTotal(lineSales);
+				totalSales = totalSales.add(lineSales);
 			}
+			//计算成本 从入库单上取
+			// 成本价和金额（从入库明细取）
+			Stock stock = stockService.getById(item.getStockId());
+			if (stock != null && oConvertUtils.isNotEmpty(stock.getInDetailId())) {
+				StockInDetail inDetail = stockInDetailService.getById(stock.getInDetailId());
+				if (inDetail != null) {
+					//  unit_price（材料采购单价或产品的生产成本）
+					BigDecimal costPrice = inDetail.getUnitPrice();
+
+					if (costPrice != null) {
+						detail.setCostPrice(costPrice);
+						BigDecimal lineCost = costPrice
+								.multiply(item.getActualQty())
+								.setScale(2, RoundingMode.HALF_UP);
+						detail.setCostTotal(lineCost);
+						totalCost = totalCost.add(lineCost);
+					}
+				}
+			}
+			// 成本价和金额（从库存取）
+//			if (stock != null && stock.getCostPrice() != null) {
+//				detail.setCostPrice(stock.getCostPrice());
+//				BigDecimal lineCost = stock.getCostPrice()
+//						.multiply(item.getActualQty())
+//						.setScale(2, RoundingMode.HALF_UP);
+//				detail.setCostTotal(lineCost);
+//				totalCost = totalCost.add(lineCost);
+//			}
 			// 设置批次号与仓库
 			detail.setBatchNo(item.getProductionBatchNo());
 			if (oConvertUtils.isNotEmpty(item.getWarehouseId())) {
@@ -575,9 +623,16 @@ public class DeliveryController {
 			}
 			stockOutDetailService.save(detail);
 			stockOutDetails.add(detail);
+			// 【关键】更新销售订单明细发货数量
+			updateOrderDetailDelivery(item.getSourceDetailId(), item.getActualQty());
 		}
 		// 更新出库单仓库（取第一条明细的仓库）
+		// 更新出库主表金额和仓库
+		stockOut.setTotalCost(totalCost);
+		stockOut.setTotalSales(totalSales);
 		stockOutService.updateById(stockOut);
+		// 【关键】更新销售订单主表发货状态
+		updateOrderDeliveryStatus(request.getSourceOrderId());
 
 		// ===== 3. 生成并保存发货单 =====
 		Delivery delivery = new Delivery();
@@ -598,7 +653,7 @@ public class DeliveryController {
 		delivery.setLogisticsCost(request.getLogisticsCost());
 		delivery.setDriverPhone(request.getDriverPhone());
 		delivery.setDeliveryTime(request.getDeliveryTime());
-		delivery.setStatus("FINISHED");
+		delivery.setStatus("2");
 		delivery.setStockOutId(stockOut.getId());
 		delivery.setStockOutNo(stockOut.getStockOutNo());
 		delivery.setRemark(request.getRemark());
@@ -608,8 +663,8 @@ public class DeliveryController {
 		BigDecimal totalQty = BigDecimal.ZERO;
 		BigDecimal totalAmount = BigDecimal.ZERO;
 		List<DeliveryDetail> deliveryDetails = new ArrayList<>();
-		for (int i = 0; i < request.getScanItems().size(); i++) {
-			ScanDeliveryItemVo item = request.getScanItems().get(i);
+		for (int i = 0; i < request.getDeliveryItems().size(); i++) {
+			ScanDeliveryItemVo item = request.getDeliveryItems().get(i);
 			StockOutDetail outDetail = stockOutDetails.get(i);
 
 			DeliveryDetail detail = new DeliveryDetail();
@@ -625,7 +680,12 @@ public class DeliveryController {
 			detail.setExpiryDate(item.getExpiryDate());
 			detail.setStockId(item.getStockId());
 			detail.setWarehouseId(item.getWarehouseId());
-			detail.setWarehouseName(item.getWarehouseName());
+			if (oConvertUtils.isNotEmpty(item.getWarehouseId())) {
+				Warehouse wh = warehouseService.getById(item.getWarehouseId());
+				if (wh != null) {
+					detail.setWarehouseName(wh.getName());
+				}
+			}
 			detail.setActualQty(item.getActualQty());
 			detail.setUnitPrice(item.getUnitPrice());
 			if (item.getUnitPrice() != null && item.getActualQty() != null) {
@@ -682,6 +742,60 @@ public class DeliveryController {
 
 		 List<Stock> stocks = stockService.list(qw);
 		 return Result.OK(stocks);
+	 }
+
+	 private void updateOrderDetailDelivery(String detailId, BigDecimal qty) {
+		 if (oConvertUtils.isEmpty(detailId)) return;
+
+		 SalesOrderDetail detail = salesOrderDetailService.getById(detailId);
+		 if (detail == null) return;
+
+		 BigDecimal newDeliveryQty = detail.getDeliveryQty().add(qty);
+		 detail.setDeliveryQty(newDeliveryQty);
+
+		 BigDecimal orderQty = detail.getOrderQty();
+		 if (newDeliveryQty.compareTo(orderQty) >= 0) {
+			 detail.setDeliveryStatus("2"); // 已完成
+		 } else {
+			 detail.setDeliveryStatus("1"); // 部分发货
+		 }
+
+		 salesOrderDetailService.updateById(detail);
+	 }
+
+	 private void updateOrderDeliveryStatus(String orderId) {
+		 List<SalesOrderDetail> details = salesOrderDetailService.list(
+				 new LambdaQueryWrapper<SalesOrderDetail>()
+						 .eq(SalesOrderDetail::getOrderId, orderId)
+						 .eq(SalesOrderDetail::getDelFlag, "0")
+		 );
+
+		 boolean allFinished = true;
+		 boolean anyStarted = false;
+		 BigDecimal totalDeliveryQty = BigDecimal.ZERO;
+
+		 for (SalesOrderDetail detail : details) {
+			 totalDeliveryQty = totalDeliveryQty.add(detail.getDeliveryQty());
+			 if (!"2".equals(detail.getDeliveryStatus())) {
+				 allFinished = false;
+			 }
+			 if ("1".equals(detail.getDeliveryStatus()) || "2".equals(detail.getDeliveryStatus())) {
+				 anyStarted = true;
+			 }
+		 }
+
+		 SalesOrder order = salesOrderService.getById(orderId);
+		 if (order != null) {
+			 if (allFinished) {
+				 order.setDeliveryStatus("2");
+			 } else if (anyStarted) {
+				 order.setDeliveryStatus("1");
+			 } else {
+				 order.setDeliveryStatus("0");
+			 }
+
+			 salesOrderService.updateById(order);
+		 }
 	 }
 
 }

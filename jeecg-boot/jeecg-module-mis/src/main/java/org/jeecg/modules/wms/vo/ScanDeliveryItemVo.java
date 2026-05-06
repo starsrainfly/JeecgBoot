@@ -1,7 +1,9 @@
 package org.jeecg.modules.wms.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.jeecg.common.aspect.annotation.Dict;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -54,14 +56,17 @@ public class ScanDeliveryItemVo implements Serializable {
 
     /** 生产日期 */
     @Schema(description = "生产日期")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date productionDate;
 
     /** 有效期至 */
     @Schema(description = "有效期至")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date expiryDate;
 
     /** 仓库ID */
     @Schema(description = "仓库ID")
+    @Dict(dictTable = "mis_warehouse", dicText = "name", dicCode = "id")
     private String warehouseId;
 
     /** 仓库名称 */

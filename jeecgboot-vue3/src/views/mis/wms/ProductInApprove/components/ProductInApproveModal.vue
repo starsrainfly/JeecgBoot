@@ -93,7 +93,8 @@
     const [registerForm, {setProps,resetFields, setFieldsValue, validate,updateSchema}] = useForm({
         schemas: formSchema,
         showActionButtonGroup: false,
-        baseColProps: {span: 6}
+        baseColProps: {span: 6},
+        labelWidth:100,
     });
 
      //表单赋值

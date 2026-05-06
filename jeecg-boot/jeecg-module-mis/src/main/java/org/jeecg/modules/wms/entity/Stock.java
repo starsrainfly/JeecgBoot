@@ -111,6 +111,14 @@ public class Stock implements Serializable {
 	@Excel(name = "已分配未出库量", width = 15)
     @Schema(description = "已分配未出库量")
     private java.math.BigDecimal lockedQty;
+    /**成本单价*/
+    @Excel(name = "成本单价", width = 15)
+    @Schema(description = "成本单价")
+    private BigDecimal costPrice;
+    /**成本金额*/
+    @Excel(name = "成本金额", width = 15)
+    @Schema(description = "成本金额")
+    private BigDecimal costTotal;
 	/**入库明细id*/
 	@Excel(name = "入库明细id", width = 15)
     @Schema(description = "入库明细id")

@@ -173,7 +173,10 @@ export const formSchema: FormSchema[] = [
     label: '入库单号',
     field: 'stockInNo',
     component: 'Input',
-    dynamicDisabled:true //禁用
+    //dynamicDisabled:true //禁用
+    componentProps:{
+      readonly:true
+    }
   },
   {
     label: '入库类型',
@@ -216,29 +219,29 @@ export const formSchema: FormSchema[] = [
   //     ];
   //   },
   // },
-  {
-    label: '客户id',
-    field: 'customerId',
-    component: 'Input',
-    show:false //隐藏
-  },
-  {
-    label: '客户',
-    field: 'customerName',
-    component: 'JPopup',
-    componentProps: ({ formActionType }) => {
-        const {setFieldsValue} = formActionType;
-        return{
-            setFieldsValue:setFieldsValue,
-            code:"scm_customer",
-            fieldConfig: [
-                { source: 'id', target: 'customerId' },
-                { source: 'customer_name', target: 'customerName' },
-            ],
-            multi:false
-        }
-    },
-  },
+  // {
+  //   label: '客户id',
+  //   field: 'customerId',
+  //   component: 'Input',
+  //   show:false //隐藏
+  // },
+  // {
+  //   label: '客户',
+  //   field: 'customerName',
+  //   component: 'JPopup',
+  //   componentProps: ({ formActionType }) => {
+  //       const {setFieldsValue} = formActionType;
+  //       return{
+  //           setFieldsValue:setFieldsValue,
+  //           code:"scm_customer",
+  //           fieldConfig: [
+  //               { source: 'id', target: 'customerId' },
+  //               { source: 'customer_name', target: 'customerName' },
+  //           ],
+  //           multi:false
+  //       }
+  //   },
+  // },
   {
     label: '仓库',
     field: 'warehouseId',
@@ -320,7 +323,8 @@ export const formSchema: FormSchema[] = [
       dictCode: "yn",
       disabled:true,
     },
-    defaultValue:'1'
+    defaultValue:'1',
+    show:false,
   },
   {
     label: '备注',
@@ -379,6 +383,7 @@ export const stockInDetailColumns: JVxeColumn[] = [
         { source: 'product_code', target: 'goodsCode' },
         { source: 'product_name', target: 'goodsName' },
         { source: 'product_spec', target: 'goodsSpec' },
+        { source: 'product_color', target:'goodsColor'},
       ],
 
       width:"200px",
@@ -389,7 +394,7 @@ export const stockInDetailColumns: JVxeColumn[] = [
         ],
     },
     {
-      title: '项目名称',
+      title: '产品名称',
       key: 'goodsName',
       type: JVxeTypes.input,
       width:"200px",
@@ -404,6 +409,14 @@ export const stockInDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
+  {
+    title: '产品颜色',
+    key: 'goodsColor',
+    type: JVxeTypes.input,
+    width:"200px",
+    placeholder: '请输入${title}',
+    defaultValue:'',
+  },
     {
       title: '单位',
       key: 'unit',
@@ -584,6 +597,7 @@ export const superQuerySchema = {
         goodsCode: {title: '编码',order: 3,view: 'popup', type: 'string',code: 'mdm_material_select', orgFields: 'material_code', destFields: 'goodsCode', popupMulti: false,},
         goodsName: {title: '项目名称',order: 4,view: 'text', type: 'string',},
         goodsSpec: {title: '规格型号',order: 5,view: 'text', type: 'string',},
+        goodsColor: {title: '产品颜色',order: 5,view: 'text', type: 'string',},
         unit: {title: '单位',order: 6,view: 'list', type: 'string',dictTable: "mis_unit where del_flag='0'", dictCode: 'unit', dictText: 'unit',},
         applyQty: {title: '申请数量',order: 7,view: 'number', type: 'number',},
         actualQty: {title: '实收数量',order: 8,view: 'number', type: 'number',},

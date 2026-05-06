@@ -212,7 +212,8 @@ public class StockInServiceImpl extends ServiceImpl<StockInMapper, StockIn> impl
 			stock.setSupplierId(stockIn.getSupplierId());
 			stock.setSupplierName(stockIn.getSupplierName());
 			stock.setQcStatus(stockInDetail.getQcStatus());
-
+			stock.setCostPrice(stockInDetail.getUnitPrice());
+			stock.setCostTotal(stockInDetail.getTotalAmount());
 
 
 			stockList.add(stock);

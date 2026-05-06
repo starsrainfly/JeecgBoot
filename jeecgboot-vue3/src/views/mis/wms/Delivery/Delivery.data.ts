@@ -274,7 +274,7 @@ export const formSchema: FormSchema[] = [
                 { source: 'address', target: 'consigneeAddress' },
                 { source: 'phone_number', target: 'consigneePhone' },
             ],
-            multi:true
+            multi:false
         }
     },
 
@@ -316,6 +316,7 @@ export const formSchema: FormSchema[] = [
     label: '物流公司id',
     field: 'logisticsCompanyId',
     component: 'Input',
+    show:false
   },
   {
     label: '物流公司编码',
@@ -331,7 +332,7 @@ export const formSchema: FormSchema[] = [
                 { source: 'company_code', target: 'logisticsCompanyCode' },
                 { source: 'company_name', target: 'logisticsCompany' },
             ],
-            multi:true
+            multi:false
         }
     },
 
@@ -397,6 +398,7 @@ export const formSchema: FormSchema[] = [
     label: '出库单id',
     field: 'stockOutId',
     component: 'Input',
+    show:false
   },
   {
     label: '出库单号',
@@ -424,28 +426,28 @@ export const formSchema: FormSchema[] = [
 //子表单数据
 //子表表格配置
 export const deliveryDetailColumns: JVxeColumn[] = [
-    {
-      title: '发货单ID',
-      key: 'deliveryId',
-      type: JVxeTypes.input,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-        validateRules: [
-          { required: true, message: '${title}不能为空' },
-        ],
-    },
-    {
-      title: '销售订单明细ID',
-      key: 'sourceDetailId',
-      type: JVxeTypes.input,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-        validateRules: [
-          { required: true, message: '${title}不能为空' },
-        ],
-    },
+    // {
+    //   title: '发货单ID',
+    //   key: 'deliveryId',
+    //   type: JVxeTypes.input,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    //     validateRules: [
+    //       { required: true, message: '${title}不能为空' },
+    //     ],
+    // },
+    // {
+    //   title: '销售订单明细ID',
+    //   key: 'sourceDetailId',
+    //   type: JVxeTypes.input,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    //     validateRules: [
+    //       { required: true, message: '${title}不能为空' },
+    //     ],
+    // },
     {
       title: '产品ID',
       key: 'goodsId',
@@ -489,17 +491,17 @@ export const deliveryDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
-    {
-      title: '生产批次ID',
-      key: 'productionBatchId',
-      type: JVxeTypes.input,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-        validateRules: [
-          { required: true, message: '${title}不能为空' },
-        ],
-    },
+    // {
+    //   title: '生产批次ID',
+    //   key: 'productionBatchId',
+    //   type: JVxeTypes.input,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    //     validateRules: [
+    //       { required: true, message: '${title}不能为空' },
+    //     ],
+    // },
     {
       title: '批次号',
       key: 'productionBatchNo',
@@ -527,25 +529,25 @@ export const deliveryDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
-    {
-      title: '库存记录ID',
-      key: 'stockId',
-      type: JVxeTypes.input,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-        validateRules: [
-          { required: true, message: '${title}不能为空' },
-        ],
-    },
-    {
-      title: '仓库ID',
-      key: 'warehouseId',
-      type: JVxeTypes.input,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-    },
+    // {
+    //   title: '库存记录ID',
+    //   key: 'stockId',
+    //   type: JVxeTypes.input,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    //     validateRules: [
+    //       { required: true, message: '${title}不能为空' },
+    //     ],
+    // },
+    // {
+    //   title: '仓库ID',
+    //   key: 'warehouseId',
+    //   type: JVxeTypes.input,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    // },
     {
       title: '仓库名称',
       key: 'warehouseName',
@@ -594,14 +596,14 @@ export const deliveryDetailColumns: JVxeColumn[] = [
       placeholder: '请输入${title}',
       defaultValue:'',
     },
-    {
-      title: '出库明细ID',
-      key: 'stockOutDetailId',
-      type: JVxeTypes.input,
-      width:"200px",
-      placeholder: '请输入${title}',
-      defaultValue:'',
-    },
+    // {
+    //   title: '出库明细ID',
+    //   key: 'stockOutDetailId',
+    //   type: JVxeTypes.input,
+    //   width:"200px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    // },
     {
       title: '备注',
       key: 'remark',

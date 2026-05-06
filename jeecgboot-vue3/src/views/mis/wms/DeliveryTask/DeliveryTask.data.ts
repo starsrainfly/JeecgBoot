@@ -256,6 +256,12 @@ export const stockColumns: BasicColumn[] = [
     width: 120,
   },
   {
+    title:'单位',
+    align:'center',
+    dataIndex:'unit',
+    width:80
+  },
+  {
     title: '操作',
     align: 'center',
     key: 'action',

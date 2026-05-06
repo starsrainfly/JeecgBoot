@@ -95,8 +95,9 @@
               <span class="logistics-label">物流单号</span>
               <a-input
                 ref="logisticsInputRef"
-                v-model:value="logisticsFormTrackingNo"
+                v-model:value="logisticsNo"
                 @keydown="onLogisticsKeydown"
+                @blur="onLogisticsBlur"
                 placeholder="扫描或输入"
                 allowClear
 
@@ -202,7 +203,7 @@
   let productHtml5QrCode: any = null;
 
   // ==================== 物流单号扫码 ====================
-  const logisticsFormTrackingNo = ref('');
+  const logisticsNo = ref('');
   const logisticsScanMsg = ref('');
   const logisticsScanType = ref<'success' | 'error' | 'warning'>('success');
   const logisticsInputRef = ref<HTMLInputElement | null>(null);
@@ -249,6 +250,8 @@
 
   });
 
+  const identifying = ref(false);
+
   // 物流表单（不含trackingNo）
   const [registerLogisticsForm, { setFieldsValue, validate, resetFields, getFieldsValue, updateSchema }] = useForm({
     schemas: logisticsFormSchema.filter(s => s.field !== 'trackingNo'),
@@ -260,14 +263,14 @@
 
 
   // ==================== 关键：监听物流单号变化 ====================
-  watch(logisticsFormTrackingNo, async (val) => {
-    console.log('=== watch 物流单号 ===', val);
-    if (!val || val.trim() === '') return;
-
-    const code = val.trim();
-    await setFieldsValue({ trackingNo: code });
-    await handleLogisticsScan(code);
-  });
+  // watch(logisticsNo, async (val) => {
+  //   console.log('=== watch 物流单号 ===', val);
+  //   if (!val || val.trim() === '') return;
+  //
+  //   const code = val.trim();
+  //   await setFieldsValue({ trackingNo: code });
+  //   await handleLogisticsScan(code);
+  // });
 
   // ==================== Modal 初始化 ====================
   const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data) => {
@@ -441,7 +444,7 @@
     if (e.key === 'Enter') {
       if (logisticsKeyBuffer.length > 0 && timeDiff < SCAN_THRESHOLD_MS) {
         e.preventDefault();
-        logisticsFormTrackingNo.value = logisticsKeyBuffer;
+        logisticsNo.value = logisticsKeyBuffer;
         logisticsKeyBuffer = '';
         return;
       }
@@ -458,6 +461,10 @@
   // 核心：物流单号识别
   async function handleLogisticsScan(code: string) {
     console.log('=== handleLogisticsScan 执行 ===', code);
+    if (identifying.value) return;  // 防止重复调用
+    if (!code) return;
+
+    identifying.value = true;
 
     try {
       const res = await scanLogisticsCode({ trackingNo: code });
@@ -492,6 +499,9 @@
       logisticsScanMsg.value = '物流识别失败：' + (err?.message || '未知错误');
       logisticsScanType.value = 'error';
     }
+    finally {
+      identifying.value = false;
+    }
   }
 
   async function openLogisticsScan() {
@@ -511,7 +521,8 @@
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText: string) => {
           console.log('物流扫码结果:', decodedText);
-          logisticsFormTrackingNo.value = decodedText;
+          logisticsNo.value = decodedText;
+          handleLogisticsScan(decodedText);  // 立即识别
           logisticsScanTip.value = '识别成功：' + decodedText;
           setTimeout(() => stopLogisticsScan(), 300);
         },
@@ -633,8 +644,9 @@
       warehouseId: stock.warehouseId,
       warehouseName: stock.warehouseId_dictText,
       actualQty: qty,
-      unitPrice: orderLine.unitPrice || orderLine.price || 0,
+      unitPrice: orderLine.unitPrice  || 0,
       scanCode: scanCodeVal.value || stock.goodsCode,
+      unit:stock.unit || 'kg',
     });
     setDeliveryData([...deliveryItems.value]);
     createMessage.success('已添加');
@@ -654,6 +666,7 @@
       warehouseName: stock.warehouseId_dictText,
       actualQty: qty,
       unitPrice: orderLine.unitPrice,
+      unit:stock.unit || 'kg',
       scanCode: scanCodeVal.value || stock.goodsCode,
     });
     setDeliveryData([...deliveryItems.value]);
@@ -686,12 +699,34 @@
       const logistics = await validate();
       const params = {
         ...logistics,
-        orderId: orderInfo.orderId,
-        items: deliveryItems.value.map((item) => ({
+        // 订单信息（字段名要匹配后端）
+        sourceOrderId: orderInfo.orderId,      //
+        sourceOrderNo: orderInfo.orderNo,        //
+        customerId: orderInfo.customerId,
+        customerName: orderInfo.customerName,
+        consignee: orderInfo.consignee,
+        consigneePhone: orderInfo.consigneePhone,
+        consigneeAddress: orderInfo.consigneeAddress,
+        logisticsNo:logisticsNo.value,
+        // 发货明细
+        deliveryItems: deliveryItems.value.map((item) => ({
           sourceDetailId: item.sourceDetailId,
           stockId: item.stockId,
+          goodsId: item.goodsId,
+          goodsCode: item.goodsCode,
+          goodsName: item.goodsName,
+          goodsSpec: item.goodsSpec,
+          unit: item.unit,
           actualQty: item.actualQty,
+          unitPrice: item.unitPrice,
+          productionBatchId: item.productionBatchId,
+          productionBatchNo: item.productionBatchNo,
+          productionDate: item.productionDate ? formatDate(item.productionDate) : null,
+          expiryDate: item.expiryDate ? formatDate(item.expiryDate) : null,
+          warehouseId: item.warehouseId,
+          warehouseName: item.warehouseName,
           scanCode: item.scanCode,
+          remark: item.remark,
         })),
       };
       await scanDeliver(params);
@@ -710,7 +745,14 @@
     const fmt = (n: number) => String(n).padStart(2, '0');
     return `${now.getFullYear()}-${fmt(now.getMonth() + 1)}-${fmt(now.getDate())} ${fmt(now.getHours())}:${fmt(now.getMinutes())}:${fmt(now.getSeconds())}`;
   }
-
+  function formatDate(date: any): string {
+    if (!date) return '';
+    if (typeof date === 'string') return date;  // 已经是字符串
+    if (date instanceof Date) {
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    }
+    return String(date);
+  }
   async function resetAll() {
     deliveryItems.value = [];
     setDeliveryData([]);
@@ -718,11 +760,35 @@
     productScanMsg.value = '';
     logisticsScanMsg.value = '';
     scanCodeVal.value = '';
-    logisticsFormTrackingNo.value = '';
+    logisticsNo.value = '';
     matchedStocks.value = [];
     matchedOrderLines.value = [];
     await resetFields();
   }
+
+
+  // 失去焦点识别（手机输入完成）
+  function onLogisticsBlur() {
+    const code = logisticsNo.value?.trim();
+    if (code && !identifying.value) {
+      // 可选：延迟识别，避免频繁触发
+      // debouncedBlurScan(code);
+      handleLogisticsScan(code);
+    }
+  }
+
+  // 手动点击识别按钮
+  async function manualIdentify() {
+    const code = logisticsNo.value?.trim();
+    if (!code) {
+      createMessage.warning('请输入物流单号');
+      return;
+    }
+    await handleLogisticsScan(code);
+  }
+
+
+
 </script>
 
 <style lang="less" scoped>

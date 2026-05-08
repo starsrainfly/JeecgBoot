@@ -22,19 +22,20 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, unref, reactive, watch } from 'vue';
+  import {ref, computed, unref, reactive, watch, nextTick} from 'vue';
   import { BasicModal, useModalInner } from '/@/components/Modal';
   import { BasicForm, useForm } from '/@/components/Form/index';
   import { JVxeTable } from '/@/components/jeecg/JVxeTable'
   import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods.ts'
-  import { formSchema as originalFormSchema, stockOutDetailColumns } from '../ProductOut.data';
-  import { saveOrUpdate, stockOutDetailList } from '../ProductOut.api';
+  import { formSchema as originalFormSchema, stockOutDetailColumns } from '../ProductOutApprove.data';
+  import { saveOrUpdate, stockOutDetailList, approveStockOut } from '../ProductOutApprove.api';
   import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
   import { useMessage } from "@/hooks/web/useMessage";
 
+
   const { createMessage } = useMessage();
   const emit = defineEmits(['register', 'success']);
-
+  const isAuditMode = ref(false); // 新增：是否为审核模式
   const isUpdate = ref(true);
   const formDisabled = ref(false);
   const refKeys = ref(['stockOutDetail']);
@@ -62,6 +63,47 @@
     packageNames: [],
     remarks: [],
   });
+
+  // ==================== 新增：审核模式下的列配置 ====================
+  /**
+   * 审核模式下的列配置
+   * 只有特定字段可编辑：实收数量(actualQty)、质检状态(qcStatus)
+   * 其他字段设置为 disabled
+   */
+  const auditColumns = computed(() => {
+    if (!isAuditMode.value) {
+      // 非审核模式，返回原始列配置
+      return stockOutDetailColumns;
+    }
+
+    // 审核模式：设置各列的 disabled 状态
+    return stockOutDetailColumns.map(col => {
+      const editableFields = ['actualQty', 'productionDate','shelfLife','expiryDate', 'qcStatus','batchNo','serialNo']; // 审核时可编辑的字段
+      const isEditable = editableFields.includes(col.key);
+
+      return {
+        ...col,
+        disabled: !isEditable, // 不可编辑的字段设置为 true
+        // 对于 popup 类型，在审核模式下禁用选择
+        readonly: !isEditable && col.type === 'popup' ? true : false
+      };
+    });
+  });
+
+  // 使用 ref 来存储当前提交方法，以便动态切换
+  const submitMethodRef = ref(requestAddOrEdit);
+  // 在 useModalInner 中切换
+  // submitMethodRef.value = isAuditMode.value ? requestAudit : requestAddOrEdit;
+  // 不使用 ref，而是使用一个函数来动态判断
+  async function handleSubmitMethod(values) {
+    if (isAuditMode.value) {
+      console.log('执行审核提交');
+      return requestAudit(values);
+    } else {
+      console.log('执行编辑/新增提交');
+      return requestAddOrEdit(values);
+    }
+  }
 
   // 包装 JPopup 的 setFieldsValue 以捕获订单选择
   const formSchema = computed(() => {
@@ -100,11 +142,10 @@
     });
   });
 
-  const [registerForm, { setProps, resetFields, setFieldsValue, validate, getFieldsValue }] = useForm({
+  const [registerForm, { setProps, resetFields, setFieldsValue, validate, getFieldsValue,updateSchema }] = useForm({
     schemas: formSchema.value,
     showActionButtonGroup: false,
-    baseColProps: { span: 6 },
-    labelWidth:100,
+    baseColProps: { span: 6 }
   });
 
   // 监听表单变化（备用，如果 JPopup 包装不触发）
@@ -225,14 +266,40 @@
   }
 
   const [handleChangeTabs, handleSubmit, requestSubTableData, formRef] = useJvxeMethod(
-    requestAddOrEdit, classifyIntoFormData, tableRefs, activeKey, refKeys
+    handleSubmitMethod, classifyIntoFormData, tableRefs, activeKey, refKeys
   );
 
   const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data) => {
     await reset();
+    // 新增：判断是否为审核模式
+    isAuditMode.value = data?.isAudit === true;
     setModalProps({ confirmLoading: false, showCancelBtn: data?.showFooter, showOkBtn: data?.showFooter });
     isUpdate.value = !!data?.isUpdate;
     formDisabled.value = !data?.showFooter;
+
+    // ==================== 审核模式下设置字段禁用 ====================
+    if (isAuditMode.value) {
+      // 审核模式下，只有 approveStatus 和 approveRemark 可编辑，其他都禁用
+      const editableFields = ['approveStatus', 'approveRemark','id'];
+
+      // 构建新的 schema，使用 dynamicDisabled 函数控制每个字段
+      const auditSchema = originalFormSchema.map(schema => {
+        const canEdit = editableFields.includes(schema.field);
+        return {
+          ...schema,
+          // 使用 dynamicDisabled 函数返回布尔值
+          dynamicDisabled: () => !canEdit,
+          // 同时设置 disabled 属性作为备用
+          disabled: !canEdit
+        };
+      });
+
+      // 更新 schema
+      await updateSchema(auditSchema);
+
+      // 强制刷新表单
+      await nextTick();
+    }
 
     if (unref(isUpdate)) {
       await setFieldsValue({ ...data.record });
@@ -246,15 +313,52 @@
       }
     }
 
-    setProps({ disabled: !data?.showFooter });
+    // setProps({ disabled: !data?.showFooter });
+    // 隐藏底部时禁用整个表单
+    // 控制表单禁用状态
+    if (!data?.showFooter) {
+      // 详情模式：全部禁用
+      setProps({ disabled: true });
+    } else if (isAuditMode.value) {
+      // 审核模式：不禁用（通过 schema 控制字段级别禁用）
+      setProps({ disabled: false });
+    } else {
+      // 新增/编辑模式：不禁用
+      setProps({ disabled: false });
+    }
   });
 
-  const title = computed(() => (!unref(isUpdate) ? '新增' : !unref(formDisabled) ? '编辑' : '详情'));
+  /**
+   * 获取弹窗标题
+   */
+  function getModalTitle() {
+    if (isAuditMode.value) return '入库审核';
+    if (!unref(isUpdate)) return '新增';
+    if (!unref(formDisabled)) return '编辑';
+    return '详情';
+  }
+  //设置标题
+  //const title = computed(() => (!unref(isUpdate) ? '新增' : !unref(formDisabled) ? '编辑' : '详情'));
+  const title = computed(() => {
+    return getModalTitle();
+    // if (isAuditMode.value) return '入库审核';
+    // return !unref(isUpdate) ? '新增' : !unref(formDisabled) ? '编辑' : '详情';
+  });
 
   async function reset() {
     await resetFields();
     activeKey.value = 'stockOutDetail';
     stockOutDetailTable.dataSource = [];
+    isAuditMode.value = false;
+    submitMethodRef.value = requestAddOrEdit; // 重置提交方法
+    // ==================== 关键修复：重置时恢复原始 schema ====================
+    // 恢复所有字段的 disabled 状态
+    const originalSchema = originalFormSchema.map(schema => ({
+      ...schema,
+      dynamicDisabled: false,
+      disabled: false
+    }));
+    await updateSchema(originalSchema);
   }
 
   function classifyIntoFormData(allValues) {
@@ -273,6 +377,23 @@
       emit('success');
     } finally {
       setModalProps({ confirmLoading: false });
+    }
+  }
+
+  /**
+   * 审核提交事件
+   */
+  async function requestAudit(values) {
+    try {
+      setModalProps({confirmLoading: true});
+      // 使用 approve 接口提交
+      await approveStockOut(values);
+      //关闭弹窗
+      closeModal();
+      //刷新列表
+      emit('success');
+    } finally {
+      setModalProps({confirmLoading: false});
     }
   }
 

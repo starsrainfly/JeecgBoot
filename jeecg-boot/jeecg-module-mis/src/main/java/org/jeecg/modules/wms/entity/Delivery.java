@@ -158,4 +158,10 @@ public class Delivery implements Serializable {
 	/**所属部门*/
     @Schema(description = "所属部门")
     private String sysOrgCode;
+    @Schema(description = "公司id")
+    private String companyId;
+    @Schema(description = "公司名称")
+    private String companyName;
+    @Schema(description = "公司编码")
+    private String companyCode;
 }

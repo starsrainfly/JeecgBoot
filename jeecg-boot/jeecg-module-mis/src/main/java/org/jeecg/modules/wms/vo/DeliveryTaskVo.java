@@ -48,4 +48,11 @@ public class DeliveryTaskVo {
 
     /** 是否预警：0-否 1-是 */
     private Integer isUrgent;
+
+    @Schema(description = "公司id")
+    private String companyId;
+    @Schema(description = "公司名称")
+    private String companyName;
+    @Schema(description = "公司编码")
+    private String companyCode;
 }

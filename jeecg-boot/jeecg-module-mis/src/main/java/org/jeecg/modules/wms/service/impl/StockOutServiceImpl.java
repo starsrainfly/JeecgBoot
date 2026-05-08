@@ -228,6 +228,7 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 				outDetail.setOverQty(BigDecimal.ZERO);
 				// 复制原始remark
 				outDetail.setRemark(originalRemark);
+
 				result.add(outDetail);
 				normalRemaining = normalRemaining.subtract(allocate);
 			}
@@ -281,6 +282,7 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 			outDetail.setOverQty(totalOverQty);      // **总超量50，仅标记**
 			// **设置 remark（复制原始，可选追加超量标记）**
 			outDetail.setRemark(originalRemark);
+
 			result.add(outDetail);
 			overRemaining = overRemaining.subtract(allocate);
 		}
@@ -455,15 +457,26 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 		stockService.confirmDeduct(detail.getStockId(), detail.getActualQty());
 
 		String reqId = detail.getRequirementId();
-		if (StringUtils.isBlank(reqId)) {
-			return;
+		String sourceDetailId = detail.getSourceDetailId();
+//		if (StringUtils.isBlank(reqId)) {
+//			return;
+//		}
+//		ProductionMaterial material = productionMaterialService.getById(reqId);
+//		if (material == null) {
+//			return;
+//		}
+		if(StringUtils.isNotBlank(reqId)){
+			//生产领料 通过需求表出库
+			handleProductionRequirementOut(detail, stockOut,reqId);
 		}
+	}
 
-		ProductionMaterial material = productionMaterialService.getById(reqId);
-		if (material == null) {
-			return;
-		}
-
+	/**
+	 * 生产领料通过需求表出库
+	 * @param detail
+	 * @param reqId
+	 */
+	private void handleProductionRequirementOut(StockOutDetail detail,StockOut stockOut, String reqId){
 		BigDecimal actualQty = detail.getActualQty();
 		// 区分正常和超量处理
 		if ("1".equals(detail.getOverFlag())) {
@@ -485,7 +498,13 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 			log.info("正常明细审核: reqId={}, actualQty={}, 增加已发减少锁定",
 					reqId, detail.getActualQty());
 		}
+	}
 
+	private void handleSalesOut(StockOutDetail detail, String sourceDetailId, String orderId) {
+//		// 更新销售订单明细发货数量
+//		salesOrderDetailService.increaseDeliveryQty(sourceDetailId, detail.getActualQty());
+//		// 更新订单发货状态
+//		updateSalesOrderDeliveryStatus(orderId);
 	}
 
 	/**
@@ -673,6 +692,7 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 			detail.setCostTotal(residual.getUnitPrice().multiply(lockedQty)
 					.setScale(2, RoundingMode.HALF_UP));
 		}
+
 		detail.setBatchNo(residual.getMaterialBatchNo());
 		detail.setProductionBatchId(residual.getProductionBatchId());
 		detail.setProductionBatchNo(residual.getProductionBatchNo());
@@ -711,6 +731,11 @@ public class StockOutServiceImpl extends ServiceImpl<StockOutMapper, StockOut> i
 				detail.setCostTotal(detail.getCostPrice().multiply(qty).setScale(2, RoundingMode.HALF_UP));
 			}
 		}
+		//复制销售单价和金额
+		detail.setSalesPrice(source.getSalesPrice() != null ? source.getSalesPrice() : BigDecimal.ZERO);
+		detail.setSalesTotal(source.getSalesTotal() != null ? source.getSalesTotal() : BigDecimal.ZERO);
+
+
 		detail.setBatchNo(stock.getBatchNo());
 		detail.setExpiryDate(stock.getExpiryDate());
 		detail.setProductionDate(stock.getProductionDate());

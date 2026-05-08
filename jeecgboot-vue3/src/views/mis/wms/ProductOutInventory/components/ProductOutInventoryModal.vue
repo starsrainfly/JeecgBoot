@@ -27,8 +27,8 @@
   import { BasicForm, useForm } from '/@/components/Form/index';
   import { JVxeTable } from '/@/components/jeecg/JVxeTable'
   import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods.ts'
-  import { formSchema as originalFormSchema, stockOutDetailColumns } from '../ProductOut.data';
-  import { saveOrUpdate, stockOutDetailList } from '../ProductOut.api';
+  import { formSchema as originalFormSchema, stockOutDetailColumns } from '../ProductOutInventory.data';
+  import { saveOrUpdate, stockOutDetailList } from '../ProductOutInventory.api';
   import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
   import { useMessage } from "@/hooks/web/useMessage";
 

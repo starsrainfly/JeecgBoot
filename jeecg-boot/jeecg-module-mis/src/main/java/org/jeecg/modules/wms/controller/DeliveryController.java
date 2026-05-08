@@ -548,6 +548,9 @@ public class DeliveryController {
 		stockOut.setDeliverAddress(request.getConsigneeAddress());
 		stockOut.setRemark("发货自动出库 " +request.getRemark());
 		stockOut.setIsProduct("1");
+		stockOut.setCompanyId(request.getCompanyId());
+		stockOut.setCompanyCode(request.getCompanyCode());
+		stockOut.setCompanyName(request.getCompanyName());
 		stockOutService.save(stockOut);
 
 		// ===== 2. 保存出库明细并扣减库存 =====
@@ -584,34 +587,35 @@ public class DeliveryController {
 				detail.setSalesTotal(lineSales);
 				totalSales = totalSales.add(lineSales);
 			}
-			//计算成本 从入库单上取
-			// 成本价和金额（从入库明细取）
-			Stock stock = stockService.getById(item.getStockId());
-			if (stock != null && oConvertUtils.isNotEmpty(stock.getInDetailId())) {
-				StockInDetail inDetail = stockInDetailService.getById(stock.getInDetailId());
-				if (inDetail != null) {
-					//  unit_price（材料采购单价或产品的生产成本）
-					BigDecimal costPrice = inDetail.getUnitPrice();
-
-					if (costPrice != null) {
-						detail.setCostPrice(costPrice);
-						BigDecimal lineCost = costPrice
-								.multiply(item.getActualQty())
-								.setScale(2, RoundingMode.HALF_UP);
-						detail.setCostTotal(lineCost);
-						totalCost = totalCost.add(lineCost);
-					}
-				}
-			}
-			// 成本价和金额（从库存取）
-//			if (stock != null && stock.getCostPrice() != null) {
-//				detail.setCostPrice(stock.getCostPrice());
-//				BigDecimal lineCost = stock.getCostPrice()
-//						.multiply(item.getActualQty())
-//						.setScale(2, RoundingMode.HALF_UP);
-//				detail.setCostTotal(lineCost);
-//				totalCost = totalCost.add(lineCost);
+//			//计算成本 从入库单上取
+//			// 成本价和金额（从入库明细取）
+//			Stock stock = stockService.getById(item.getStockId());
+//			if (stock != null && oConvertUtils.isNotEmpty(stock.getInDetailId())) {
+//				StockInDetail inDetail = stockInDetailService.getById(stock.getInDetailId());
+//				if (inDetail != null) {
+//					//  unit_price（材料采购单价或产品的生产成本）
+//					BigDecimal costPrice = inDetail.getUnitPrice();
+//
+//					if (costPrice != null) {
+//						detail.setCostPrice(costPrice);
+//						BigDecimal lineCost = costPrice
+//								.multiply(item.getActualQty())
+//								.setScale(2, RoundingMode.HALF_UP);
+//						detail.setCostTotal(lineCost);
+//						totalCost = totalCost.add(lineCost);
+//					}
+//				}
 //			}
+			// 成本价和金额（从库存取）
+			Stock stock = stockService.getById(item.getStockId());
+			if (stock != null && stock.getCostPrice() != null) {
+				detail.setCostPrice(stock.getCostPrice());
+				BigDecimal lineCost = stock.getCostPrice()
+						.multiply(item.getActualQty())
+						.setScale(2, RoundingMode.HALF_UP);
+				detail.setCostTotal(lineCost);
+				totalCost = totalCost.add(lineCost);
+			}
 			// 设置批次号与仓库
 			detail.setBatchNo(item.getProductionBatchNo());
 			if (oConvertUtils.isNotEmpty(item.getWarehouseId())) {
@@ -658,6 +662,10 @@ public class DeliveryController {
 		delivery.setStockOutNo(stockOut.getStockOutNo());
 		delivery.setRemark(request.getRemark());
 		delivery.setDeliverBy(loginUser.getRealname());
+
+		delivery.setCompanyId(request.getCompanyId());
+		delivery.setCompanyCode(request.getCompanyCode());
+		delivery.setCompanyName(request.getCompanyName());
 
 		// 计算总数量和金额
 		BigDecimal totalQty = BigDecimal.ZERO;

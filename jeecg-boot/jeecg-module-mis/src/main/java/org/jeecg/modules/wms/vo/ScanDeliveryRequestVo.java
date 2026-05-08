@@ -81,6 +81,13 @@ public class ScanDeliveryRequestVo implements Serializable {
     @Schema(description = "备注")
     private String remark;
 
+    @Schema(description = "公司id")
+    private String companyId;
+    @Schema(description = "公司名称")
+    private String companyName;
+    @Schema(description = "公司编码")
+    private String companyCode;
+
     /** 发货明细列表 */
     @Schema(description = "发货明细列表")
     private List<ScanDeliveryItemVo> deliveryItems;

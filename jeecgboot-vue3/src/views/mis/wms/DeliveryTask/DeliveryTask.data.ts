@@ -69,6 +69,12 @@ export const taskColumns: BasicColumn[] = [
       return h('a-tag', { color: colors[status] || 'default' }, texts[status] || status);
     },
   },
+  {
+    title:'公司',
+    align:'center',
+    dataIndex:'companyName',
+    width:120
+  },
 ];
 
 // ==================== 搜索表单 ====================
@@ -114,6 +120,14 @@ export const taskSearchFormSchema: FormSchema[] = [
       dictCode: 'delivery_task_status',
     },
     colProps: { span: 6 },
+  },
+  {
+    label:'公司',
+    field:'companyId',
+    component:'JSelectMultiple',
+    componentProps: {
+      dictCode: "sys_depart where del_flag='0' and org_category='1' and org_type='1',depart_name,id",
+    },
   },
   {
     label: '隐藏已完成',

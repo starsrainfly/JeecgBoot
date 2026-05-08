@@ -218,6 +218,11 @@ export const formSchema: FormSchema[] = [
     component: 'Input',
   },
   {
+    label:'公司',
+    field:'companyName',
+    component:'Input'
+  },
+  {
     label: '来源类型',
     field: 'sourceType',
     component: 'JDictSelectTag',
@@ -229,6 +234,7 @@ export const formSchema: FormSchema[] = [
     label: '来源订单id',
     field: 'sourceOrderId',
     component: 'Input',
+    show:false,
   },
   {
     label: '来源订单号',
@@ -243,7 +249,7 @@ export const formSchema: FormSchema[] = [
                 { source: 'id', target: 'sourceOrderId' },
                 { source: 'order_no', target: 'sourceOrderNo' },
             ],
-            multi:true
+            multi:false
         }
     },
 
@@ -257,6 +263,7 @@ export const formSchema: FormSchema[] = [
     label: '客户id',
     field: 'customerId',
     component: 'Input',
+    show:false,
   },
   {
     label: '客户名称',

@@ -189,6 +189,9 @@
     consignee: '',
     consigneePhone: '',
     consigneeAddress: '',
+    companyId:'',
+    companyCode:'',
+    companyName:'',
   });
 
   // ==================== 产品扫码 ====================
@@ -295,6 +298,9 @@
         consignee: res.order.deliveryConsignee,
         consigneePhone: res.order.deliveryPhone,
         consigneeAddress: res.order.deliveryAddress,
+        companyId: res.order.companyId,
+        companyCode: res.order.companyCode,
+        companyName: res.order.companyName,
       });
     }
     orderLineData.value = res.lines || [];
@@ -307,6 +313,9 @@
       consignee: orderInfo.consignee,
       consigneePhone: orderInfo.consigneePhone,
       consigneeAddress: orderInfo.consigneeAddress,
+      companyId: orderInfo.companyId,
+      companyCode: orderInfo.companyCode,
+      companyName: orderInfo.companyName,
       deliveryTime: formatNow(),
     });
   }
@@ -707,6 +716,9 @@
         consignee: orderInfo.consignee,
         consigneePhone: orderInfo.consigneePhone,
         consigneeAddress: orderInfo.consigneeAddress,
+        companyId: orderInfo.companyId,
+        companyCode: orderInfo.companyCode,
+        companyName: orderInfo.companyName,
         logisticsNo:logisticsNo.value,
         // 发货明细
         deliveryItems: deliveryItems.value.map((item) => ({

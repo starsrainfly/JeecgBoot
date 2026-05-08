@@ -51,10 +51,28 @@ public class StockOutPage {
 	@Excel(name = "客户id", width = 15)
 	@Schema(description = "客户id")
     private String customerId;
+	/**客户编码*/
+	@Excel(name = "客户编码", width = 15)
+	@Schema(description = "客户编码")
+	private String customerCode;
 	/**客户名称*/
 	@Excel(name = "客户名称", width = 15)
 	@Schema(description = "客户名称")
     private String customerName;
+
+	/**公司ID*/
+	@Excel(name = "公司ID", width = 15)
+	@Schema(description = "公司ID")
+	private String companyId;
+	/**公司编码*/
+	@Excel(name = "公司编码", width = 15)
+	@Schema(description = "公司编码")
+	private String companyCode;
+	/**公司名称*/
+	@Excel(name = "公司名称", width = 15)
+	@Schema(description = "公司名称")
+	private String companyName;
+
 	/**领用人id*/
 	@Excel(name = "领用人id", width = 15, dictTable = "sys_user where del_flag='0' and status='1'", dicText = "realname", dicCode = "id")
     @Dict(dictTable = "sys_user where del_flag='0' and status='1'", dicText = "realname", dicCode = "id")

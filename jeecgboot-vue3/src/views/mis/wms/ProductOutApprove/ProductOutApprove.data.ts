@@ -178,7 +178,7 @@ export const searchFormSchema: FormSchema[] = [
       componentProps:{
           dictCode:"approval_status"
       },
-      //colProps: {span: 6},
+      defaultValue:'0'
  	},
 ];
 //表单数据
@@ -315,11 +315,11 @@ export const formSchema: FormSchema[] = [
         }
     },
 
-    // dynamicRules: ({model,schema}) => {
-    //       return [
-    //              { required: true, message: '请输入客户名称!'},
-    //       ];
-    //  },
+    dynamicRules: ({model,schema}) => {
+          return [
+                 { required: true, message: '请输入客户名称!'},
+          ];
+     },
   },
   {
     label: '领用人',
@@ -354,40 +354,36 @@ export const formSchema: FormSchema[] = [
     show:false
   },
 
-  // {
-  //   label: '审批人id',
-  //   field: 'approveId',
-  //   component: 'Input',
-  //   show:false
-  // },
-  // {
-  //   label: '审核备注',
-  //   field: 'approveRemark',
-  //   component: 'Input',
-  //   show:false
-  // },
-  // {
-  //   label: '审核状态',
-  //   field: 'approveStatus',
-  //   component: 'JDictSelectTag',
-  //   componentProps:{
-  //       dictCode:"approval_status"
-  //    },
-  // },
+
   {
     label: '收货地址',
     field: 'deliverAddress',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入收货地址!'},
+      ];
+    },
   },
   {
     label: '收货人',
     field: 'consignee',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入收货人!'},
+      ];
+    },
   },
   {
     label: '收货人电话',
     field: 'consigneePhone',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入收货电话!'},
+      ];
+    },
   },
   {
     label:'是否产品',
@@ -403,6 +399,31 @@ export const formSchema: FormSchema[] = [
     label: '备注',
     field: 'remark',
     component: 'Input',
+  },
+  {
+    label: '审批人id',
+    field: 'approveId',
+    component: 'Input',
+    show:false
+  },
+  {
+    label: '审核备注',
+    field: 'approveRemark',
+    component: 'Input',
+
+  },
+  {
+    label: '审核状态',
+    field: 'approveStatus',
+    component: 'JDictSelectTag',
+    componentProps:{
+        dictCode:"approval_status"
+     },
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入审核状态!'},
+      ];
+    },
   },
 	// TODO 主键隐藏字段，目前写死为ID
 	{
@@ -520,7 +541,9 @@ export const stockOutDetailColumns: JVxeColumn[] = [
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',
-      disabled:true,
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
     },
     {
       title: '批次号',

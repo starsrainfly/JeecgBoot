@@ -33,6 +33,10 @@
     </BasicTable>
     <!-- 表单区域 -->
     <DeliveryModal @register="registerModal" @success="handleSuccess"></DeliveryModal>
+
+    <!-- 打印预览弹窗 -->
+    <PrintDeliveryModal @register="registerPrintModal" />
+
   </div>
 </template>
 
@@ -43,14 +47,18 @@
   import {useModal} from '/@/components/Modal';
   import DeliveryModal from './components/DeliveryModal.vue'
   import {columns, searchFormSchema, superQuerySchema} from './Delivery.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './Delivery.api';
+  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl,deliveryDetailList} from './Delivery.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
+  import PrintDeliveryModal from './components/PrintDeliveryModal.vue';  // ← 新增
   import { useUserStore } from '/@/store/modules/user';
+  import {defHttp} from '/@/utils/http/axios';
+
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
   //注册model
   const [registerModal, {openModal}] = useModal();
+  const [registerPrintModal, { openModal: openPrintModal }] = useModal();  // ← 新增
    //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
@@ -70,7 +78,7 @@
                 ],
             },
            actionColumn: {
-               width: 120,
+               width: 160,
                fixed:'right'
            },
            beforeFetch: (params) => {
@@ -150,6 +158,63 @@
   function handleSuccess() {
       (selectedRowKeys.value = []) && reload();
    }
+
+  // ==================== 新增：打印相关 ====================
+
+  /**
+   * 打开打印预览弹窗
+   */
+  async function handlePrintPreview(record) {
+    // 获取明细数据（复用已有接口）
+    let details = [];
+    try {
+      const res = await defHttp.get({
+        url: deliveryDetailList,
+        params: { id: record.id }
+      });
+      //console.log("preview res:",res)
+      if (res) {
+        details = res || [];
+      }
+    } catch (e) {
+      console.warn('获取明细失败', e);
+    }
+
+    openPrintModal(true, {
+      record: record,           // 主表数据
+      detailList: details,      // 子表明细
+      showPrice: false          // 默认不显示单价
+    });
+  }
+
+  /**
+   * 直接打印（不预览）
+   */
+  async function handleDirectPrint(record) {
+    // 同样先获取明细
+    let details = [];
+    try {
+      const res = await defHttp.get({
+        url: deliveryDetailList,
+        params: { id: record.id }
+      });
+      console.log("res:",res)
+      if (res) {
+        details = res || [];
+      }
+    } catch (e) {
+      console.warn('获取明细失败', e);
+    }
+
+    // 直接打开打印窗口（复用预览组件的打印逻辑，或单独实现）
+    // 这里简化处理：打开预览弹窗后立即触发打印
+    openPrintModal(true, {
+      record: record,
+      detailList: details,
+      showPrice: false,
+      autoPrint: true  // 标记自动打印
+    });
+  }
    /**
       * 操作栏
       */
@@ -159,6 +224,11 @@
            label: '编辑',
            onClick: handleEdit.bind(null, record),
            auth: 'wms:mis_delivery:edit'
+         },
+         {
+           label: '预览打印',           // ← 新增
+           onClick: () => handlePrintPreview(record),
+
          }
        ]
    }
@@ -172,7 +242,13 @@
       {
         label: '详情',
         onClick: handleDetail.bind(null, record),
-      }, {
+      },
+      {
+        label: '直接打印',            // ← 新增
+        onClick: () => handleDirectPrint(record),
+
+      },
+      {
         label: '删除',
         popConfirm: {
           title: '是否确认删除',

@@ -2,4 +2,46 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.mes.mapper.ProductionTaskMapper">
 
+    <select id="getPageList" resultType="org.jeecg.modules.mes.vo.ProductionTaskVo">
+        SELECT
+        t.*,
+        s.is_material_step as isMaterialStep,
+        s.is_package_step as isPackageStep,
+        s.is_finish_step as isFinishStep,
+        s.step_name as stepName,
+        s.step_code as stepCode,
+        s.duration as duration
+        FROM mis_production_task t
+        LEFT JOIN mis_process_routing_step s ON t.routing_detail_id = s.id
+        WHERE t.del_flag = '0'
+        <if test="productionTaskVo.taskNo != null and productionTaskVo.taskNo != ''">
+            AND t.task_no LIKE CONCAT('%', #{productionTaskVo.taskNo}, '%')
+        </if>
+        <if test="productionTaskVo.batchNo != null and productionTaskVo.batchNo != ''">
+            AND t.batch_no LIKE CONCAT('%', #{productionTaskVo.batchNo}, '%')
+        </if>
+        <if test="productionTaskVo.orderNo != null and productionTaskVo.orderNo != ''">
+            AND t.order_no LIKE CONCAT('%', #{productionTaskVo.orderNo}, '%')
+        </if>
+        <if test="productionTaskVo.productCode != null and productionTaskVo.productCode != ''">
+            AND t.product_code LIKE CONCAT('%', #{productionTaskVo.productCode}, '%')
+        </if>
+        <if test="productionTaskVo.productName != null and productionTaskVo.productName != ''">
+            AND t.product_name LIKE CONCAT('%', #{productionTaskVo.productName}, '%')
+        </if>
+        <if test="productionTaskVo.status != null and productionTaskVo.status != ''">
+            AND t.status = #{productionTaskVo.status}
+        </if>
+        <if test="productionTaskVo.taskType != null and productionTaskVo.taskType != ''">
+            AND t.task_type = #{productionTaskVo.taskType}
+        </if>
+        <if test="productionTaskVo.assignedOperatorId != null and productionTaskVo.assignedOperatorId != ''">
+            AND t.assigned_operator_id = #{productionTaskVo.assignedOperatorId}
+        </if>
+        <if test="productionTaskVo.companyId != null and productionTaskVo.companyId != ''">
+            AND t.company_id = #{productionTaskVo.companyId}
+        </if>
+        ORDER BY t.create_time DESC
+
+    </select>
 </mapper>

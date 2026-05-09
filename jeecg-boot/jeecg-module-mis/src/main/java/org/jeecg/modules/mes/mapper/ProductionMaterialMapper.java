@@ -58,4 +58,9 @@ public interface ProductionMaterialMapper extends BaseMapper<ProductionMaterial>
                   @Param("unOverQty") BigDecimal unOverQty,
                   @Param("status") String status,
                   @Param("updateBy") String updateBy);
+
+    /**
+     * 获取物料出库批号
+     */
+    List<String> getMaterialBatchNo(@Param("batchId") String batchId, @Param("materialId") String materialId);
 }

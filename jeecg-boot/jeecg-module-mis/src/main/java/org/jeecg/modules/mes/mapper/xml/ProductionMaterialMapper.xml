@@ -153,4 +153,12 @@
         GROUP BY pm.id
         ORDER BY pm.id DESC
     </select>
+    <select id="getMaterialBatchNo" resultType="java.lang.String">
+        SELECT DISTINCT d.batch_no
+        FROM mis_stock_out h
+        JOIN mis_stock_out_detail d ON h.id = d.stock_out_id
+        WHERE d.production_batch_id = #{batchId}
+        AND d.goods_id = #{materialId}
+        AND h.del_flag = '0' AND h.approve_status = '1'
+    </select>
 </mapper>

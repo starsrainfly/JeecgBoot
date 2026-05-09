@@ -9,6 +9,7 @@ import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.shiro.SecurityUtils;
@@ -20,19 +21,19 @@ import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.mdm.entity.ProcessRoutingStep;
+import org.jeecg.modules.mdm.entity.Recipe;
 import org.jeecg.modules.mdm.service.IProcessRoutingStepService;
-import org.jeecg.modules.mes.entity.ProductionBatch;
-import org.jeecg.modules.mes.entity.ProductionBatchMaterialActual;
-import org.jeecg.modules.mes.entity.ProductionTask;
-import org.jeecg.modules.mes.service.IProductionBatchMaterialActualService;
-import org.jeecg.modules.mes.service.IProductionBatchService;
-import org.jeecg.modules.mes.service.IProductionTaskService;
+import org.jeecg.modules.mdm.service.IRecipeService;
+import org.jeecg.modules.mes.entity.*;
+import org.jeecg.modules.mes.mapper.ProductionMaterialMapper;
+import org.jeecg.modules.mes.service.*;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jeecg.modules.mes.vo.ProductionTaskVo;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
@@ -80,6 +81,16 @@ public class ProductionTaskController extends JeecgController<ProductionTask, IP
 	 private IProcessRoutingStepService processRoutingStepService;
 	 @Autowired
 	 private IProductionBatchService productionBatchService;
+	 @Autowired
+	 private IRecipeService recipeService;
+	 @Autowired
+	 private ProductionMaterialMapper productionMaterialMapper;
+	 @Autowired
+	 private IProductionBatchBomService productionBatchBomService;
+	 @Autowired
+	 private IProductionOrderService productionOrderService;
+	 @Autowired
+	 private IProductionOrderDetailService productionOrderDetailService;
 
 	/*// 查询包装物料（内包+外包）
 List<ProductionMaterial> packageMaterials = productionMaterialService.list(
@@ -99,17 +110,17 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 	//@AutoLog(value = "工序表-分页列表查询")
 	@Operation(summary="工序表-分页列表查询")
 	@GetMapping(value = "/list")
-	public Result<IPage<ProductionTask>> queryPageList(ProductionTask productionTask,
-								   @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
-								   @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
-								   HttpServletRequest req) {
+	public Result<IPage<ProductionTaskVo>> queryPageList(ProductionTaskVo productionTaskVo,
+														 @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
+														 @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
+														 HttpServletRequest req) {
         // 自定义查询规则
         Map<String, QueryRuleEnum> customeRuleMap = new HashMap<>();
         // 自定义多选的查询规则为：LIKE_WITH_OR
         customeRuleMap.put("status", QueryRuleEnum.LIKE_WITH_OR);
-        QueryWrapper<ProductionTask> queryWrapper = QueryGenerator.initQueryWrapper(productionTask, req.getParameterMap(),customeRuleMap);
-		Page<ProductionTask> page = new Page<ProductionTask>(pageNo, pageSize);
-		IPage<ProductionTask> pageList = productionTaskService.page(page, queryWrapper);
+       // QueryWrapper<ProductionTask> queryWrapper = QueryGenerator.initQueryWrapper(productionTask, req.getParameterMap(),customeRuleMap);
+		Page<ProductionTaskVo> page = new Page<ProductionTaskVo>(pageNo, pageSize);
+		IPage<ProductionTaskVo> pageList = productionTaskService.getPageList(page,productionTaskVo); //productionTaskService.page(page, queryWrapper);
 		return Result.OK(pageList);
 	}
 	
@@ -445,5 +456,132 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 		 List<ProductionBatchMaterialActual> list = materialActualService.list(wrapper);
 
 		 return Result.OK(list);
+	 }
+
+	 /**
+	  * 获取配料工单打印数据（模式1：单工单）
+	  */
+	 @AutoLog(value = "配料工单-获取打印数据")
+	 @Operation(summary="配料工单-获取打印数据")
+	 @GetMapping(value = "/getBatchingPrintData")
+	 public Result<Map<String, Object>> getBatchingPrintData(@RequestParam String taskId) {
+		 ProductionTask task = productionTaskService.getById(taskId);
+		 if (task == null) {
+			 return Result.error("工单不存在");
+		 }
+
+		 // 必须是配料工序
+		 ProcessRoutingStep step = processRoutingStepService.getById(task.getRoutingDetailId());
+		 if (step == null || !"1".equals(step.getIsMaterialStep())) {
+			 return Result.error("该工单不是配料工序");
+		 }
+
+		 String batchId = task.getBatchId();
+		 String orderNo = task.getOrderNo();
+
+		 // 1. 批次信息
+		 ProductionBatch batch = productionBatchService.getById(batchId);
+
+		 // 2. 订单信息 + 客户信息（从明细取）
+		 ProductionOrder order = productionOrderService.getOne(
+				 new LambdaQueryWrapper<ProductionOrder>()
+						 .eq(ProductionOrder::getOrderNo, orderNo)
+		 );
+
+		 String customerCode = "";
+		 String customerName = "";
+		 if (order != null) {
+			 // 从生产订单明细取客户信息（销售类型有，备货类型为空）
+			 List<ProductionOrderDetail> orderDetails = productionOrderDetailService.list(
+					 new LambdaQueryWrapper<ProductionOrderDetail>()
+							 .eq(ProductionOrderDetail::getOrderId, order.getId())
+							 .orderByAsc(ProductionOrderDetail::getCreateTime)
+							 .last("LIMIT 1")
+			 );
+			 if (!orderDetails.isEmpty()) {
+				 ProductionOrderDetail detail = orderDetails.get(0);
+				 customerCode = StrUtil.nullToEmpty(detail.getCustomerCode());
+				 customerName = StrUtil.nullToEmpty(detail.getCustomerName());
+			 }
+		 }
+
+		 // 3. 配方技术要求
+		 Recipe recipe = null;
+		 if (batch != null && StrUtil.isNotBlank(batch.getRecipeId())) {
+			 recipe = recipeService.getById(batch.getRecipeId());
+		 }
+
+		 // 4. 工艺步骤（标准工艺）
+		 List<Map<String, Object>> processSteps = new ArrayList<>();
+		 if (recipe != null && StrUtil.isNotBlank(recipe.getRoutingId())) {
+			 List<ProcessRoutingStep> steps = processRoutingStepService.list(
+					 new LambdaQueryWrapper<ProcessRoutingStep>()
+							 .eq(ProcessRoutingStep::getRoutingId, recipe.getRoutingId())
+							 .orderByAsc(ProcessRoutingStep::getStepSeq)
+			 );
+			 for (ProcessRoutingStep s : steps) {
+				 Map<String, Object> stepMap = new HashMap<>();
+				 stepMap.put("stepSeq", s.getStepSeq());
+				 stepMap.put("stepName", s.getStepName());
+				 stepMap.put("stepDesc", s.getStepDesc());
+				 processSteps.add(stepMap);
+			 }
+		 }
+
+		 // 5. BOM物料清单 + 出库物料批号
+		 List<ProductionBatchBom> bomList = productionBatchBomService.list(
+				 new LambdaQueryWrapper<ProductionBatchBom>()
+						 .eq(ProductionBatchBom::getBatchId, batchId)
+						 .orderByAsc(ProductionBatchBom::getSerialNo)
+		 );
+
+		 List<Map<String, Object>> materialList = new ArrayList<>();
+		 for (ProductionBatchBom bom : bomList) {
+			 Map<String, Object> material = new HashMap<>();
+			 material.put("serialNo", bom.getSerialNo());
+			 material.put("materialCode", bom.getMaterialCode());
+			 material.put("materialName", bom.getMaterialName());
+			 material.put("materialSpec", bom.getMaterialSpec());
+			 material.put("plannedQty", bom.getPlannedQty());
+			 material.put("proportion", bom.getProportion());
+			 material.put("unit", bom.getUnit());
+
+			 // 查询出库物料批号
+			 List<String> batchNos = productionMaterialMapper.getMaterialBatchNo(batchId, bom.getMaterialId());
+			 material.put("materialBatchNo", CollUtil.join(batchNos, ","));
+
+			 materialList.add(material);
+		 }
+
+		 // 6. 汇总合计
+		 BigDecimal totalPlannedQty = bomList.stream()
+				 .map(ProductionBatchBom::getPlannedQty)
+				 .filter(Objects::nonNull)
+				 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		 // 7. 组装返回数据
+		 Map<String, Object> result = new HashMap<>();
+		 result.put("companyName", task.getCompanyName());
+		 result.put("taskNo", task.getTaskNo());
+		 result.put("batchNo", task.getBatchNo());
+		 result.put("orderNo", orderNo);
+		 result.put("customerCode", customerCode);
+		 result.put("customerName", customerName);
+		 result.put("productCode", task.getProductCode());
+		 result.put("productName", task.getProductName());
+		 result.put("productColor", task.getProductColor());
+		 result.put("plannedQty", batch != null ? batch.getPlannedQty() : BigDecimal.ZERO);
+		 result.put("batchSize", batch != null ? batch.getPlannedQty() : BigDecimal.ZERO);
+		 result.put("batchCount", 1);
+		 result.put("productionDate", batch != null ? batch.getProductionDate() : null);
+		 result.put("technics", recipe != null ? StrUtil.nullToEmpty(recipe.getTechnics()) : "");
+		 result.put("taskDesc", StrUtil.nullToEmpty(task.getTaskDesc()));
+		 result.put("processSteps", processSteps);
+		 result.put("materialList", materialList);
+		 result.put("totalPlannedQty", totalPlannedQty);
+		 result.put("notes", recipe != null ? StrUtil.nullToEmpty(recipe.getNotes()) : "");
+		 result.put("createBy", task.getCreateBy());
+
+		 return Result.OK(result);
 	 }
 }

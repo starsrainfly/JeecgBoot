@@ -1,6 +1,8 @@
 package org.jeecg.modules.mes.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
@@ -10,6 +12,7 @@ import org.jeecg.modules.mes.entity.ProductionBatch;
 import org.jeecg.modules.mes.entity.ProductionTask;
 import org.jeecg.modules.mes.mapper.ProductionTaskMapper;
 import org.jeecg.modules.mes.service.IProductionTaskService;
+import org.jeecg.modules.mes.vo.ProductionTaskVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +36,8 @@ public class ProductionTaskServiceImpl extends ServiceImpl<ProductionTaskMapper,
 
     @Autowired
     private ISerialNoService serialNoService;
+    @Autowired
+    private ProductionTaskMapper productionTaskMapper;
 
 
     @Override
@@ -90,5 +95,10 @@ public class ProductionTaskServiceImpl extends ServiceImpl<ProductionTaskMapper,
 
             this.save(task);
         }
+    }
+
+    @Override
+    public IPage<ProductionTaskVo> getPageList(Page<ProductionTaskVo> page, ProductionTaskVo productionTaskVo) {
+        return productionTaskMapper.getPageList(page, productionTaskVo);
     }
 }

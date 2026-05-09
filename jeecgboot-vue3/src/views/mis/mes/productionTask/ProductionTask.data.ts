@@ -24,6 +24,15 @@ export const columns: BasicColumn[] = [
     dataIndex: 'sequence',
      width:80
    },
+  {
+    title:'是否配料',
+    align:'center',
+    sorter:true,
+    dataIndex:'isMaterialStep',
+    customRender: ({text}) => {
+      return text === '1' ? '✓ 配料' : '-';
+    }
+  },
    {
     title: '操作说明',
     align:"center",
@@ -199,7 +208,7 @@ export const searchFormSchema: FormSchema[] = [
       //colProps: {span: 6},
  	},
 	{
-      label: "指派操作员id",
+      label: "操作员",
       field: 'assignedOperatorId',
       component: 'JSelectMultiple',
       componentProps:{

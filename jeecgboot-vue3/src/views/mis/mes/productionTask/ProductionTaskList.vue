@@ -33,6 +33,10 @@
     </BasicTable>
     <!-- 表单区域 -->
     <ProductionTaskModal @register="registerModal" @success="handleSuccess"></ProductionTaskModal>
+
+    <!-- 打印弹窗 -->
+    <PrintBatchingModal @register="registerPrintModal" />
+
   </div>
 </template>
 
@@ -46,11 +50,16 @@
   import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './ProductionTask.api';
   import { downloadFile } from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
+  import PrintBatchingModal from './components/PrintBatchingModal.vue';
+
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
   //注册model
   const [registerModal, {openModal}] = useModal();
+  // 注册打印弹窗
+  const [registerPrintModal, {openModal: openPrintModal}] = useModal();
+
   //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
@@ -69,7 +78,7 @@
               ],
             },
            actionColumn: {
-               width: 120,
+               width: 180,
                fixed:'right'
             },
             beforeFetch: (params) => {
@@ -148,17 +157,36 @@
   function handleSuccess() {
       (selectedRowKeys.value = []) && reload();
    }
+
+  // 打印配料单
+  function handlePrintBatching(record) {
+    openPrintModal(true, {
+      taskId: record.id,
+    });
+  }
+
    /**
       * 操作栏
       */
   function getTableAction(record){
-       return [
-         {
-           label: '编辑',
-           onClick: handleEdit.bind(null, record),
-           auth: 'mes:mis_production_task:edit'
-         }
-       ]
+     const actions = [
+       {
+         label: '编辑',
+         onClick: handleEdit.bind(null, record),
+         auth: 'mes:mis_production_task:edit'
+       }
+     ];
+
+     // 配料工单显示打印按钮（isMaterialStep='1'）
+     if (record.isMaterialStep === '1') {
+       actions.push({
+         label: '打印配料单',
+         onClick: handlePrintBatching.bind(null, record),
+         color: 'warning'
+       });
+     }
+
+     return actions;
    }
      /**
         * 下拉操作栏

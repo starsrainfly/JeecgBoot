@@ -88,7 +88,7 @@
                 ],
             },
            actionColumn: {
-               width: 180,
+               width: 200,
                fixed:'right'
            },
            beforeFetch: (params) => {

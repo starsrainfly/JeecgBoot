@@ -2,6 +2,8 @@ package org.jeecg.modules.mes.controller;
 
 import java.io.UnsupportedEncodingException;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,12 +15,19 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.common.utils.SerialNoUtils;
+import org.jeecg.modules.mdm.entity.ProcessRoutingStep;
 import org.jeecg.modules.mdm.entity.Product;
+import org.jeecg.modules.mdm.entity.Recipe;
+import org.jeecg.modules.mdm.entity.RecipeDetail;
+import org.jeecg.modules.mdm.service.IProcessRoutingStepService;
 import org.jeecg.modules.mdm.service.IProductService;
+import org.jeecg.modules.mdm.service.IRecipeDetailService;
 import org.jeecg.modules.mdm.service.IRecipeService;
 import org.jeecg.modules.system.entity.SysDepart;
 import org.jeecg.modules.system.service.ISysDepartService;
@@ -77,6 +86,12 @@ public class ProductionOrderController {
 	 private IProductService productService;
 	 @Autowired
 	 private ISysDepartService departService;
+	 @Autowired
+	 private IRecipeService recipeService;
+	 @Autowired
+	 private IRecipeDetailService recipeDetailService;
+	 @Autowired
+	 private IProcessRoutingStepService processRoutingStepService;
 	/**
 	 * 分页列表查询
 	 *
@@ -333,6 +348,103 @@ public class ProductionOrderController {
       return Result.OK("文件导入失败！");
     }
 
+	 /**
+	  * 获取订单汇总配料单打印数据
+	  */
+	 @AutoLog(value = "生产订单-汇总配料单打印数据")
+	 @Operation(summary="生产订单-汇总配料单打印数据")
+	 @GetMapping(value = "/getOrderBatchingPrintData")
+	 public Result<Map<String, Object>> getOrderBatchingPrintData(@RequestParam String orderId) {
+		 ProductionOrder order = productionOrderService.getById(orderId);
+		 if (order == null) {
+			 return Result.error("订单不存在");
+		 }
 
+		 String recipeId = order.getRecipeId();
+		 BigDecimal plannedQty = order.getPlannedQty();
+		 int batchCount = order.getBatchCount();
+		 BigDecimal batchSize = order.getBatchSize();
+
+		 // 1. 配方技术要求
+		 Recipe recipe = recipeService.getById(recipeId);
+
+		 // 2. 工艺步骤
+		 List<Map<String, Object>> processSteps = new ArrayList<>();
+		 if (recipe != null && StrUtil.isNotBlank(recipe.getRoutingId())) {
+			 List<ProcessRoutingStep> steps = processRoutingStepService.list(
+					 new LambdaQueryWrapper<ProcessRoutingStep>()
+							 .eq(ProcessRoutingStep::getRoutingId, recipe.getRoutingId())
+							 .orderByAsc(ProcessRoutingStep::getStepSeq)
+			 );
+			 for (ProcessRoutingStep s : steps) {
+				 Map<String, Object> stepMap = new HashMap<>();
+				 stepMap.put("stepSeq", s.getStepSeq());
+				 stepMap.put("stepName", s.getStepName());
+				 stepMap.put("stepDesc", s.getStepDesc());
+				 processSteps.add(stepMap);
+			 }
+		 }
+
+		 // 3. 客户信息（从订单明细取第一条）
+		 List<ProductionOrderDetail> orderDetails = productionOrderDetailService.selectByMainId(orderId);
+		 String customerCode = "";
+		 String customerName = "";
+		 if (!orderDetails.isEmpty()) {
+			 ProductionOrderDetail detail = orderDetails.get(0);
+			 customerCode = StrUtil.nullToEmpty(detail.getCustomerCode());
+			 customerName = StrUtil.nullToEmpty(detail.getCustomerName());
+		 }
+
+		 // 4. 配方BOM，按订单总量计算
+		 List<RecipeDetail> recipeDetails = recipeDetailService.selectByMainId(recipeId);
+		 BigDecimal proportionTotal = recipe != null && recipe.getProportionTotal() != null
+				 ? recipe.getProportionTotal()
+				 : BigDecimal.valueOf(100);
+
+		 List<Map<String, Object>> materialList = new ArrayList<>();
+		 BigDecimal totalPlannedQty = BigDecimal.ZERO;
+
+		 for (RecipeDetail rd : recipeDetails) {
+			 BigDecimal totalQty = plannedQty.multiply(rd.getProportion())
+					 .divide(proportionTotal, 4, RoundingMode.HALF_UP);
+
+			 totalPlannedQty = totalPlannedQty.add(totalQty);
+
+			 Map<String, Object> material = new HashMap<>();
+			 material.put("serialNo", rd.getSerialNo());
+			 material.put("materialCode", rd.getMaterialCode());
+			 material.put("materialName", rd.getMaterialName());
+			 material.put("materialSpec", rd.getMaterialSpec());
+			 material.put("plannedQty", totalQty);
+			 material.put("proportion", rd.getProportion());
+			 material.put("unit", rd.getUnit());
+			 material.put("materialBatchNo", "");
+			 materialList.add(material);
+		 }
+
+		 Map<String, Object> result = new HashMap<>();
+		 result.put("companyName", order.getCompanyName());
+		 result.put("taskNo", order.getOrderNo());
+		 result.put("batchNo", order.getOrderNo());
+		 result.put("orderNo", order.getOrderNo());
+		 result.put("customerCode", customerCode);
+		 result.put("customerName", customerName);
+		 result.put("productCode", order.getProductCode());
+		 result.put("productName", order.getProductName());
+		 result.put("productColor", order.getProductColor());
+		 result.put("plannedQty", plannedQty);
+		 result.put("batchSize", batchSize);
+		 result.put("batchCount", batchCount);
+		 result.put("productionDate", null);
+		 result.put("technics", recipe != null ? StrUtil.nullToEmpty(recipe.getTechnics()) : "");
+		 result.put("taskDesc", "");
+		 result.put("processSteps", processSteps);
+		 result.put("materialList", materialList);
+		 result.put("totalPlannedQty", totalPlannedQty.setScale(2,RoundingMode.HALF_UP));
+		 result.put("notes", recipe != null ? StrUtil.nullToEmpty(recipe.getNotes()) : "");
+		 result.put("createBy", order.getCreateBy());
+
+		 return Result.OK(result);
+	 }
 
 }

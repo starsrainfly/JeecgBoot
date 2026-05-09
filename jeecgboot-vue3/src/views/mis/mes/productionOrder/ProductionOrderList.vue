@@ -37,6 +37,9 @@
     </BasicTable>
     <!-- 表单区域 -->
     <ProductionOrderModal @register="registerModal" @success="handleSuccess"></ProductionOrderModal>
+
+    <!-- 打印弹窗 -->
+    <PrintBatchingModal @register="registerPrintModal" />
   </div>
 </template>
 
@@ -57,11 +60,16 @@
   } from './ProductionOrder.api';
   import {downloadFile} from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
+  import PrintBatchingModal from '../productionTask/components/PrintBatchingModal.vue';
+
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
   //注册model
   const [registerModal, {openModal}] = useModal();
+  // 注册打印弹窗
+  const [registerPrintModal, {openModal: openPrintModal}] = useModal();
+
    //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
@@ -80,7 +88,7 @@
                 ],
             },
            actionColumn: {
-               width: 120,
+               width: 180,
                fixed:'right'
            },
            beforeFetch: (params) => {
@@ -171,6 +179,14 @@
   function handleSuccess() {
       (selectedRowKeys.value = []) && reload();
    }
+
+  function handlePrintOrderBatching(record) {
+    openPrintModal(true, {
+      mode: 'order',
+      orderId: record.id
+    });
+  }
+
    /**
       * 操作栏
       */
@@ -180,6 +196,12 @@
            label: '编辑',
            onClick: handleEdit.bind(null, record),
            auth: 'mes:mis_production_order:edit'
+         },
+         {
+           label: '打印汇总配料单',
+           onClick: handlePrintOrderBatching.bind(null, record),
+           color: 'warning',
+          // disabled: !(record.status === '1' || record.status === '2' || record.status === '3'),
          }
        ]
    }

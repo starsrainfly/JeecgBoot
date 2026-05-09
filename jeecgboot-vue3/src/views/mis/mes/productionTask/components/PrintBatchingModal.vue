@@ -20,24 +20,26 @@
         <table class="info-table">
           <tbody>
           <tr>
-            <td class="label" style="width: 10%;">工作单号：</td>
-            <td style="width: 15%; white-space: nowrap; text-overflow: clip;">{{ printData.taskNo }}</td>
-            <td class="label" style="width: 10%;">生产批号：</td>
-            <td style="width: 15%; white-space: nowrap; text-overflow: clip;">{{ printData.batchNo }}</td>
-            <td class="label" style="width: 10%;">客户编号：</td>
-            <td style="width: 15%; white-space: nowrap; text-overflow: clip;">{{ printData.customerCode || '-' }}</td>
-            <td class="label" style="width: 10%;">生产数量：</td>
-            <td style="width: 15%; white-space: nowrap; text-overflow: clip;">{{ printData.plannedQty }} Kg</td>
+            <td class="label" style="width: 7%;"> {{ isOrderMode ? '订单号：' : '工单号：' }}</td>
+            <td style="width: 18%; white-space: nowrap; text-overflow: clip;"> {{ isOrderMode ? printData.orderNo : printData.taskNo }}</td>
+            <td class="label" style="width: 7%;">批号：</td>
+            <td style="width: 18%; white-space: nowrap; text-overflow: clip;">
+              {{ displayBatchNo }}
+            </td>
+            <td class="label" style="width: 7%;">客户号：</td>
+            <td style="width: 18%; white-space: nowrap; text-overflow: clip;">{{ printData.customerCode || '-' }}</td>
+            <td class="label" style="width: 7%;">数量：</td>
+            <td style="width: 18%; white-space: nowrap; text-overflow: clip;">{{ printData.plannedQty }} Kg</td>
           </tr>
           <tr>
-            <td class="label" style="width: 10%;">生产日期：</td>
-            <td style="width: 15%; white-space: nowrap; text-overflow: clip;">{{ formatDate(printData.productionDate) }}</td>
-            <td class="label" style="width: 10%;">产品名称：</td>
-            <td style="width: 15%; white-space: nowrap; text-overflow: clip;">{{ printData.productName }}</td>
-            <td class="label" style="width: 10%;">单釜数量：</td>
-            <td style="width: 15%; white-space: nowrap; text-overflow: clip;">{{ printData.batchSize }} Kg</td>
-            <td class="label" style="width: 10%;">釜数：</td>
-            <td style="width: 15%; white-space: nowrap; text-overflow: clip;">{{ printData.batchCount }}</td>
+            <td class="label" style="width: 7%;">日期：</td>
+            <td style="width: 18%; white-space: nowrap; text-overflow: clip;">{{ formatDate(printData.productionDate) }}</td>
+            <td class="label" style="width: 7%;">产品：</td>
+            <td style="width: 18%; white-space: nowrap; text-overflow: clip;">{{ printData.productName }}</td>
+            <td class="label" style="width: 7%;">单釜量：</td>
+            <td style="width: 18%; white-space: nowrap; text-overflow: clip;">{{ printData.batchSize }} Kg</td>
+            <td class="label" style="width: 7%;">釜数：</td>
+            <td style="width: 18%; white-space: nowrap; text-overflow: clip;">{{ printData.batchCount }}</td>
           </tr>
           </tbody>
         </table>
@@ -148,15 +150,17 @@
 </template>
 
 <script lang="ts" setup>
-  import {ref, reactive} from 'vue';
+  import {ref, reactive, computed} from 'vue';
   import {BasicModal, useModalInner} from '/@/components/Modal';
   import {getBatchingPrintData} from '../ProductionTask.api';
   import {useMessage} from '/@/hooks/web/useMessage';
   import dayjs from 'dayjs';
   import { printJS } from '/@/hooks/web/usePrintJS';
+  import {getOrderBatchingPrintData} from '../../productionOrder/ProductionOrder.api';
 
   const emit = defineEmits(['register', 'success']);
   const {createMessage} = useMessage();
+  const isOrderMode = ref(false);
 
   const printRef = ref();
   const printData = reactive({
@@ -182,14 +186,31 @@
     createBy: ''
   });
 
+  // 批号显示（订单模式：01,02,03... / 工单模式：batchNo）
+  const displayBatchNo = computed(() => {
+    if (!isOrderMode.value) return printData.batchNo;
+    const count = printData.batchCount || 1;
+    return Array.from({length: count}, (_, i) => String(i + 1).padStart(2, '0')).join(', ');
+  });
+
   const [registerModal, {setModalProps, closeModal}] = useModalInner(async (data) => {
    // setModalProps({confirmLoading: true});
+    isOrderMode.value = data.mode === 'order';
     setModalProps({
       width: '1100px',
       wrapClassName: 'batching-print-modal'  // 双重保险
     });
+
+    setModalProps({confirmLoading: true});
+
     try {
-      const res = await getBatchingPrintData({taskId: data.taskId});
+     // const res = await getBatchingPrintData({taskId: data.taskId});
+      let res;
+      if (data.mode === 'order') {
+        res = await getOrderBatchingPrintData({orderId: data.orderId});
+      } else {
+        res = await getBatchingPrintData({taskId: data.taskId});
+      }
       Object.assign(printData, res);
     } finally {
       setModalProps({confirmLoading: false});
@@ -215,8 +236,8 @@
       .company-header { text-align: center; margin-bottom: 8mm; }
       .company-header h2 { font-size: 16pt; font-weight: bold; letter-spacing: 2px; }
       .info-table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 5mm; font-size: 8.5pt; }
-      .info-table td { padding: 2mm 1.5mm; border: 0.5pt solid #333; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .info-table .label { font-weight: bold; background: #f5f5f5; text-align: right; text-overflow: clip; }
+      .info-table td { padding: 1.5mm 1mm; border: 0.5pt solid #333; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .info-table .label { font-weight: bold; background: #f5f5f5; text-align: right; padding-right: 0.5mm; text-overflow: clip; }
       .section { margin-bottom: 4mm; }
       .section-title { font-weight: bold; font-size: 11pt; margin-bottom: 2mm; }
       .section-content { font-size: 10pt; line-height: 1.6; }

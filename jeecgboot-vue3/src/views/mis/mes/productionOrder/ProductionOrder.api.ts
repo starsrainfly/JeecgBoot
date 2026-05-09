@@ -18,6 +18,8 @@ enum Api {
   getPlanDetailList = '/mes/productionPlan/listForOrder',  // 查询可用计划明细
   batchRelease = '/mes/productionOrder/batchRelease',              // 批量下达任务
   release = '/mes/productionOrder/release',
+
+  getOrderBatchingPrintData = '/mes/productionOrder/getOrderBatchingPrintData',
 }
 /**
  * 导出api
@@ -111,3 +113,9 @@ export const batchRelease = (params, handleSuccess) => {
     }
   });
 }
+
+/**
+ * 获取订单汇总配料单打印数据
+ */
+export const getOrderBatchingPrintData = (params) =>
+  defHttp.get({url: Api.getOrderBatchingPrintData, params});

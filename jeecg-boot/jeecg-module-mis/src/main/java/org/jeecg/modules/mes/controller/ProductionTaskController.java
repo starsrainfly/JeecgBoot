@@ -18,6 +18,8 @@ import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
 import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.util.oConvertUtils;
+import org.jeecg.modules.common.enums.ProductionBatchStatusEnum;
+import org.jeecg.modules.common.enums.ProductionOrderStatusEnum;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecg.modules.mdm.entity.ProcessRoutingStep;
@@ -280,6 +282,7 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 	  */
 	 @AutoLog(value = "我的工单-开始任务")
 	 @Operation(summary="我的工单-开始任务")
+	 @Transactional(rollbackFor = Exception.class)
 	 @RequestMapping(value = "/start", method = {RequestMethod.PUT,RequestMethod.POST})
 	 public Result<String> startTask(@RequestBody ProductionTask productionTask) {
 		 String taskId = productionTask.getId();
@@ -304,6 +307,16 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 		 task.setActualOperatorName(loginUser.getRealname());
 
 		 productionTaskService.updateById(task);
+		 //添加更新生产订单的实际开工时间
+		 ProductionBatch productionBatch = productionBatchService.getById(productionTask.getBatchId());
+		 if(productionBatch !=null) {
+			 ProductionOrder productionOrder = productionOrderService.getById(productionBatch.getOrderId());
+			 if(productionOrder !=null) {
+				 productionOrder.setActualStartTime(new Date());
+				 productionOrderService.updateById(productionOrder);
+			 }
+		 }
+
 		 return Result.OK("任务已开始");
 	 }
 
@@ -341,7 +354,8 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 	 /**
 	  * 如果是最后工序，更新批次为"可入库"
 	  */
-	 private void updateBatchIfFinishStep(ProductionTask task) {
+	 @Transactional(rollbackFor = Exception.class)
+	 public void updateBatchIfFinishStep(ProductionTask task) {
 		 String batchId = task.getBatchId();
 		 if (StrUtil.isEmpty(batchId)) {
 			 return;
@@ -367,7 +381,7 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 			 return;
 		 }
 
-		 batch.setStatus("COMPLETED");      // 生产完成
+		 batch.setStatus(ProductionBatchStatusEnum.COMPLETED.getValue());      // 生产完成
 		 batch.setInStockStatus("0");        // 未入库
 		 // remainQty 和 inStockQty 在 completeWeighing 时已初始化
 		 // 如果之前没初始化，这里兜底
@@ -382,6 +396,72 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 
 		 log.info("批次【{}】最后工序【{}】完工，生产完成，可入库",
 				 batch.getBatchNo(), step.getStepName());
+
+		 // 3. 订单级完工判定
+		 String orderId = batch.getOrderId();
+		 if (StrUtil.isNotEmpty(orderId)) {
+			 checkAndUpdateOrderCompletion(orderId);
+		 }
+	 }
+
+	 /**
+	  * 检查订单下所有批次完工状态
+	  * 部分完成 → 状态2，全部完成 → 状态3 + 完工时间
+	  */
+	 private void checkAndUpdateOrderCompletion(String orderId) {
+		 // 查询该订单下所有批次
+		 List<ProductionBatch> batchList = productionBatchService.list(
+				 new LambdaQueryWrapper<ProductionBatch>()
+						 .eq(ProductionBatch::getOrderId, orderId)
+		 );
+
+		 if (CollUtil.isEmpty(batchList)) {
+			 return;
+		 }
+
+		 long totalCount = batchList.size();
+		 long completedCount = batchList.stream()
+				 .filter(b -> ProductionBatchStatusEnum.COMPLETED.getValue().equals(b.getStatus()))
+				 .count();
+
+		 ProductionOrder order = productionOrderService.getById(orderId);
+		 if (order == null) {
+			 return;
+		 }
+
+		 String currentStatus = order.getStatus();
+		 String newStatus = null;
+
+		 if (completedCount == 0) {
+			 // 没有任何批次完工，保持原状态（理论上不会走到这里，因为当前批次刚被标记完成）
+			 return;
+		 } else if (completedCount < totalCount) {
+			 // 部分完成
+			 newStatus = ProductionOrderStatusEnum.PARTIAL_COMPLETED.getValue();
+		 } else {
+			 // 全部完成
+			 newStatus = ProductionOrderStatusEnum.COMPLETED.getValue();
+		 }
+
+		 // 防重复更新：状态未变化则不更新
+		 if (newStatus.equals(currentStatus)) {
+			 log.info("订单【{}】状态已为【{}】，无需重复更新", orderId, currentStatus);
+			 return;
+		 }
+
+		 order.setStatus(newStatus);
+
+		 // 只有全部完成时才更新实际完工时间
+		 if (ProductionOrderStatusEnum.COMPLETED.getValue().equals(newStatus)) {
+			 order.setActualEndTime(new Date());
+			 log.info("订单【{}】所有批次已完工（{}/{}），状态更新为【完成】，完工时间：{}",
+					 orderId, completedCount, totalCount, order.getActualEndTime());
+		 } else {
+			 log.info("订单【{}】部分完工（{}/{}），状态更新为【部分完成】",
+					 orderId, completedCount, totalCount);
+		 }
+
+		 productionOrderService.updateById(order);
 	 }
 
 	 /**

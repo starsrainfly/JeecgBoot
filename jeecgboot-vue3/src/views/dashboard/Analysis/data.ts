@@ -217,3 +217,68 @@ export const table1 = {
     total: 0,
   },
 };
+
+export interface DashboardCardItem {
+  icon: string;
+  title: string;
+  value?: number;
+  total?: number;
+  color?: string;
+  unit?: string;
+  footer?: string;
+  link?: string;
+}
+
+// 顶部4个核心指标卡
+export const coreIndicatorList: DashboardCardItem[] = [
+  {
+    title: '今日入库',
+    icon: 'ant-design:import-outlined',
+    value: 0,
+    total: 0,
+    color: 'green',
+    unit: '笔',
+    footer: '本月累计入库',
+   // link: '/mis/wms/MaterialInApprove,
+  },
+  {
+    title: '今日出库',
+    icon: 'ant-design:export-outlined',
+    value: 0,
+    total: 0,
+    color: 'blue',
+    unit: '笔',
+    footer: '本月累计出库',
+  //  link: '/mis/wms/ProductOutApprove',
+  },
+  {
+    title: '在制批次',
+    icon: 'ant-design:build-outlined',
+    value: 0,
+    total: 0,
+    color: 'orange',
+    unit: '批',
+    footer: '今日新开工',
+   // link: '/mis/mes/productionBatch',
+  },
+  {
+    title: '待审单据',
+    icon: 'ant-design:audit-outlined',
+    value: 0,
+    total: 0,
+    color: 'red',
+    unit: '单',
+    footer: '待我审核',
+   // link: '/dashboard/pending',
+  },
+];
+
+// 待办类型映射
+export const pendingTypeMap = {
+  'STOCK_IN': { label: '入库审核', color: 'green', link: '/mis/wms/MaterialInApprove/MaterialInApproveList' },
+  'STOCK_OUT': { label: '出库审核', color: 'blue', link: '/mis/wms/ProductOutApprove' },
+  'PRODUCTION': { label: '生产工单', color: 'orange', link: '/mis/mes/productionTask' },
+  'QUOTE': { label: '报价审核', color: 'purple', link: '/mis/scm/priceOfferApprove/PriceOfferApproveList' },
+  'SALES_ORDER': { label: '销售订单', color: '#eb2f96', link: '/mis/scm/SalesOrderApply' },
+  'DELIVERY': { label: '发货审核', color: '#13c2c2', link: '/mis/scm/delivery' },
+};

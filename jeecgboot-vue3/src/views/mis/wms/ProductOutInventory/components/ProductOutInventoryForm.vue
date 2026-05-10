@@ -35,8 +35,8 @@
   import { propTypes } from '/@/utils/propTypes';
   import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods';
   import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils';
-  import {getBpmFormSchema,stockOutDetailColumns} from '../ProductOut.data';
-  import {saveOrUpdate,stockOutDetailList} from '../ProductOut.api';
+  import {getBpmFormSchema,stockOutDetailColumns} from '../ProductOutInventory.data';
+  import {saveOrUpdate,stockOutDetailList} from '../ProductOutInventory.api';
 
   export default defineComponent({
     name: "ProductOutForm",

@@ -59,5 +59,298 @@
             LIMIT #{limit}
     </select>
 
+    <!-- 本月销售额（已审核通过的订单） -->
+    <!-- 本月订单金额（财务已审核通过的订单） -->
+    <select id="getMonthOrderAmount" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(order_total), 0)
+        FROM mis_sales_order
+        WHERE DATE_FORMAT(order_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+        AND finance_approve_status = '1'
+        AND del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND salesman_id = #{salesmanId}
+        </if>
+    </select>
+
+    <!-- 本月回款金额（从收款单取） -->
+    <select id="getMonthReceiptAmount" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(receipt_amount), 0)
+        FROM mis_receipt_order
+        WHERE DATE_FORMAT(receipt_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+        AND status = '1'
+        AND del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND salesman_id = #{salesmanId}
+        </if>
+    </select>
+
+    <!-- 待审核报价单数（approve_status = '0' 待审核） -->
+    <select id="getPendingQuoteCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_price_offer
+        WHERE approve_status = '0'
+        AND del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND salesman_id = #{salesmanId}
+        </if>
+    </select>
+
+    <!-- 待审核订单数（finance_approve_status = '0' 待审核，或 sales_approve_status 待销售审核） -->
+    <select id="getPendingOrderCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_sales_order
+        WHERE (finance_approve_status = '0' OR sales_approve_status = '0')
+        AND del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND salesman_id = #{salesmanId}
+        </if>
+    </select>
+
+    <!-- 本月新增客户 -->
+    <select id="getMonthNewCustomerCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_customer
+        WHERE DATE_FORMAT(create_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+        AND del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND salesman_id = #{salesmanId}
+        </if>
+    </select>
+
+    <!-- 本月待收款金额（收款计划中 plan_date 在本月且未收完款的） -->
+    <select id="getMonthUnpaidAmount" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(unpaid_amount), 0)
+        FROM mis_sales_payment_plan
+        WHERE DATE_FORMAT(plan_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+        AND unpaid_amount > 0
+        AND del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND salesman_id = #{salesmanId}
+        </if>
+    </select>
+
+    <!-- 待审核报价单列表（前10条） -->
+    <select id="getPendingQuotes" resultType="java.util.HashMap">
+        SELECT
+        po.id,
+        po.offer_no as offerNo,
+        po.customer_name as customerName,
+        c.customer_type as customerType,
+        po.offer_date as offerDate,
+        po.create_time as createTime
+        FROM mis_price_offer po
+        LEFT JOIN mis_customer c ON po.customer_id = c.id
+        WHERE po.approve_status = '0'
+        AND po.del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND po.salesman_id = #{salesmanId}
+        </if>
+        ORDER BY po.create_time DESC
+        LIMIT 10
+    </select>
+
+    <!-- 待审核订单列表（前10条） -->
+    <select id="getPendingOrders" resultType="java.util.HashMap">
+        SELECT
+        so.id,
+        so.order_no as orderNo,
+        so.customer_name as customerName,
+        so.order_total as orderTotal,
+        so.order_date as orderDate,
+        so.finance_approve_status as financeApproveStatus,
+        so.sales_approve_status as salesApproveStatus,
+        so.delivery_date as deliveryDate
+        FROM mis_sales_order so
+        WHERE (so.finance_approve_status = '0' OR so.sales_approve_status = '0')
+        AND so.del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND so.salesman_id = #{salesmanId}
+        </if>
+        ORDER BY so.create_time DESC
+        LIMIT 10
+    </select>
+
+    <!-- 待发货订单（财务已审核，发货未完成） -->
+    <select id="getPendingDeliveryOrders" resultType="java.util.HashMap">
+        SELECT
+        so.id,
+        so.order_no as orderNo,
+        so.customer_name as customerName,
+        so.order_total as orderTotal,
+        so.delivery_date as deliveryDate,
+        COALESCE(SUM(sod.order_qty - sod.delivery_qty), 0) as remainQty
+        FROM mis_sales_order so
+        LEFT JOIN mis_sales_order_detail sod ON so.id = sod.order_id
+        WHERE so.finance_approve_status = '1'
+        AND so.del_flag = '0'
+        AND sod.del_flag = '0'
+        AND sod.delivery_qty <![CDATA[ < ]]> sod.order_qty
+        <if test="salesmanId != null and salesmanId != ''">
+            AND so.salesman_id = #{salesmanId}
+        </if>
+        GROUP BY so.id, so.order_no, so.customer_name, so.order_total, so.delivery_date
+        ORDER BY so.delivery_date ASC
+        LIMIT 10
+    </select>
+
+    <!-- 近7天到期订单 -->
+    <select id="getNearDeliveryOrders" resultType="java.util.HashMap">
+        SELECT
+        so.id,
+        so.order_no as orderNo,
+        so.customer_name as customerName,
+        so.order_total as orderTotal,
+        so.delivery_date as deliveryDate,
+        DATEDIFF(so.delivery_date, CURDATE()) as daysRemain,
+        COALESCE(SUM(sod.order_qty - sod.delivery_qty), 0) as remainQty
+        FROM mis_sales_order so
+        LEFT JOIN mis_sales_order_detail sod ON so.id = sod.order_id
+        WHERE so.finance_approve_status = '1'
+        AND so.del_flag = '0'
+        AND sod.del_flag = '0'
+        AND so.delivery_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+        AND sod.delivery_qty <![CDATA[ < ]]> sod.order_qty
+        <if test="salesmanId != null and salesmanId != ''">
+            AND so.salesman_id = #{salesmanId}
+        </if>
+        GROUP BY so.id, so.order_no, so.customer_name, so.order_total, so.delivery_date
+        ORDER BY so.delivery_date ASC
+        LIMIT 10
+    </select>
+
+    <!-- 本月待收款计划（前10条） -->
+    <select id="getPendingPaymentPlans" resultType="java.util.HashMap">
+        SELECT
+        spp.id,
+        spp.plan_no as planNo,
+        spp.sales_order_no as salesOrderNo,
+        c.customer_name as customerName,
+        spp.plan_amount as planAmount,
+        spp.paid_amount as paidAmount,
+        spp.unpaid_amount as unpaidAmount,
+        spp.plan_date as planDate,
+        spp.plan_stage as planStage
+        FROM mis_sales_payment_plan spp
+        LEFT JOIN mis_sales_order so ON spp.sales_order_id = so.id
+        LEFT JOIN mis_customer c ON spp.customer_id = c.id
+        WHERE spp.unpaid_amount > 0
+        AND spp.del_flag = '0'
+        AND DATE_FORMAT(spp.plan_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+        <if test="salesmanId != null and salesmanId != ''">
+            AND spp.salesman_id = #{salesmanId}
+        </if>
+        ORDER BY spp.plan_date ASC
+        LIMIT 10
+    </select>
+
+    <!-- 近12个月销售趋势 -->
+    <select id="getMonthTrend" resultType="java.util.HashMap">
+        SELECT
+        DATE_FORMAT(m.order_date, '%Y-%m') as month,
+        COALESCE(SUM(m.order_total), 0) as amount,
+        COUNT(*) as orderCount,
+        COALESCE(SUM(d.receipt_amount), 0) as receiptAmount
+        FROM mis_sales_order m
+        LEFT JOIN (
+        SELECT
+        sales_order_id,
+        SUM(receipt_amount) as receipt_amount
+        FROM mis_receipt_order_detail
+        WHERE del_flag = '0'
+        GROUP BY sales_order_id
+        ) d ON m.id = d.sales_order_id
+        WHERE m.order_date >= DATE_SUB(DATE_FORMAT(NOW(), '%Y-%m-01'), INTERVAL 11 MONTH)
+        AND m.finance_approve_status = '1'
+        AND m.del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND m.salesman_id = #{salesmanId}
+        </if>
+        GROUP BY DATE_FORMAT(m.order_date, '%Y-%m')
+        ORDER BY month ASC
+    </select>
+
+    <!-- 本月产品销售TOP5 -->
+    <select id="getProductTop5" resultType="java.util.HashMap">
+        SELECT
+        p.product_name as productName,
+        COALESCE(SUM(sod.order_qty), 0) as totalQty,
+        COALESCE(SUM(sod.detail_amount), 0) as totalAmount
+        FROM mis_sales_order_detail sod
+        LEFT JOIN mis_sales_order so ON sod.order_id = so.id
+        LEFT JOIN mis_product p ON sod.product_id = p.id
+        WHERE
+         so.finance_approve_status = '1'
+        AND so.del_flag = '0'
+        AND sod.del_flag = '0'
+        <choose>
+            <when test="dateRange == 'week'">
+                AND so.order_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+            </when>
+            <when test="dateRange == 'month'">
+                AND so.order_date >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+            </when>
+            <otherwise>
+                AND DATE_FORMAT(so.order_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+            </otherwise>
+        </choose>
+        <if test="salesmanId != null and salesmanId != ''">
+            AND so.salesman_id = #{salesmanId}
+        </if>
+        GROUP BY sod.product_id, p.product_name
+        ORDER BY totalAmount DESC
+        LIMIT 5
+    </select>
+
+    <!-- 客户类型分布 -->
+    <select id="getCustomerTypeDist" resultType="java.util.HashMap">
+        SELECT
+        customer_type as customerType,
+        COUNT(*) as customerCount
+        FROM mis_customer
+        WHERE del_flag = '0'
+        <if test="salesmanId != null and salesmanId != ''">
+            AND salesman_id = #{salesmanId}
+        </if>
+        GROUP BY customer_type
+        ORDER BY customerCount DESC
+    </select>
+
+
+
+    <!-- ========== 新增：业务员业绩TOP5（首页用）========== -->
+    <select id="selectSalesmanTop5" resultType="java.util.HashMap">
+        SELECT
+            m.salesman_id as salesmanId,
+            MAX(m.salesman_name) as salesmanName,
+            COUNT(DISTINCT m.id) as orderCount,
+            COALESCE(SUM(m.order_total), 0) as orderAmount,
+            COALESCE(SUM(d.receipt_amount), 0) as collectionAmount
+        FROM mis_sales_order m
+                 LEFT JOIN (
+            SELECT
+                sales_order_id,
+                SUM(receipt_amount) as receipt_amount
+            FROM mis_receipt_order_detail
+            WHERE del_flag = '0'
+            GROUP BY sales_order_id
+        ) d ON m.id = d.sales_order_id
+        WHERE m.finance_approve_status = '1'
+          AND m.del_flag = '0'
+          AND m.salesman_id IS NOT NULL
+        <choose>
+            <when test="dateRange == 'week'">
+                AND m.order_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+            </when>
+            <when test="dateRange == 'month'">
+                AND m.order_date >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+            </when>
+            <otherwise>
+                AND m.order_date >= DATE_FORMAT(NOW(), '%Y-%m-01')
+            </otherwise>
+        </choose>
+        GROUP BY m.salesman_id
+        ORDER BY orderAmount DESC
+            LIMIT 5
+    </select>
 
 </mapper>

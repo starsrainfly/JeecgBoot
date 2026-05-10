@@ -34,4 +34,284 @@
         WHERE del_flag = '0'
         GROUP BY status
     </select>
+
+
+    <!-- ==================== 生产工作台专用SQL ==================== -->
+
+    <!-- 本月计划产量（从生产计划取 planned_qty） -->
+    <select id="getMonthPlanQty" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(planned_qty), 0)
+        FROM mis_production_plan
+        WHERE DATE_FORMAT(planned_start_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+          AND plan_status IN ('1', '2')
+          AND del_flag = '0'
+    </select>
+
+    <!-- 本月实际产量（从生产批次取 actual_qty，状态为 COMPLETED） -->
+    <select id="getMonthActualQty" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(actual_qty), 0)
+        FROM mis_production_batch
+        WHERE DATE_FORMAT(production_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+          AND status = 'COMPLETED'
+          AND del_flag = '0'
+    </select>
+
+    <!-- 进行中批次（PRODUCING） -->
+    <select id="getRunningBatchCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_production_batch
+        WHERE status = 'PRODUCING'
+          AND del_flag = '0'
+    </select>
+
+    <!-- 待配料批次（PENDING 或 WEIGHING） -->
+    <select id="getPendingBatchCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_production_batch
+        WHERE status IN ('PENDING', 'WEIGHING')
+          AND del_flag = '0'
+    </select>
+
+    <!-- 待派工工单（PENDING） -->
+    <select id="getPendingTaskCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_production_task
+        WHERE status = 'PENDING'
+          AND del_flag = '0'
+    </select>
+
+    <!-- ========== 工人视图指标 ========== -->
+
+    <!-- 我的本月产量（实际执行人是我，且工单已完成） -->
+    <select id="getMyMonthActualQty" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(pb.actual_qty), 0)
+        FROM mis_production_task pt
+                 LEFT JOIN mis_production_batch pb ON pt.batch_id = pb.id
+        WHERE pt.actual_operator_id = #{operatorId}
+          AND pt.status = 'COMPLETED'
+          AND pt.del_flag = '0'
+          AND pb.del_flag = '0'
+          AND DATE_FORMAT(pt.actual_end_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+    </select>
+
+    <!-- 我的待办工单（ASSIGNED 或 PROCESSING） -->
+    <select id="getMyPendingTaskCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_production_task
+        WHERE assigned_operator_id = #{operatorId}
+          AND status IN ('ASSIGNED', 'PROCESSING')
+          AND del_flag = '0'
+    </select>
+
+    <!-- 我的已完成工单 -->
+    <select id="getMyCompletedTaskCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM mis_production_task
+        WHERE actual_operator_id = #{operatorId}
+          AND status = 'COMPLETED'
+          AND del_flag = '0'
+          AND DATE_FORMAT(actual_end_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+    </select>
+
+    <!-- ========== 列表数据（管理者） ========== -->
+
+    <!-- 今日待开工批次（PENDING，今日计划生产） -->
+    <select id="getTodayBatches" resultType="java.util.HashMap">
+        SELECT
+            pb.id,
+            pb.batch_no as batchNo,
+            p.product_name as productName,
+            pb.product_code as productCode,
+            pb.planned_qty as plannedQty,
+            pb.production_date as productionDate,
+            po.order_no as orderNo
+        FROM mis_production_batch pb
+                 LEFT JOIN mis_product p ON pb.product_id = p.id
+                 LEFT JOIN mis_production_order po ON pb.order_id = po.id
+        WHERE pb.status = 'PENDING'
+          AND pb.production_date = CURDATE()
+          AND pb.del_flag = '0'
+        ORDER BY pb.production_date ASC
+            LIMIT 10
+    </select>
+
+    <!-- 进行中批次（WEIGHING, WEIGHED, PRODUCING） -->
+    <select id="getRunningBatches" resultType="java.util.HashMap">
+        SELECT
+            pb.id,
+            pb.batch_no as batchNo,
+            p.product_name as productName,
+            pb.product_code as productCode,
+            pb.planned_qty as plannedQty,
+            pb.actual_qty as actualQty,
+            pb.status,
+            pb.weighing_start_time as weighingStartTime,
+            po.order_no as orderNo,
+            CASE
+                WHEN pb.planned_qty > 0 THEN ROUND(pb.actual_qty / pb.planned_qty * 100, 1)
+                ELSE 0
+                END as progress
+        FROM mis_production_batch pb
+                 LEFT JOIN mis_product p ON pb.product_id = p.id
+                 LEFT JOIN mis_production_order po ON pb.order_id = po.id
+        WHERE pb.status IN ('WEIGHING', 'WEIGHED', 'PRODUCING')
+          AND pb.del_flag = '0'
+        ORDER BY pb.weighing_start_time DESC
+            LIMIT 10
+    </select>
+
+    <!-- 待配料批次（PENDING） -->
+    <select id="getPendingWeighBatches" resultType="java.util.HashMap">
+        SELECT
+            pb.id,
+            pb.batch_no as batchNo,
+            p.product_name as productName,
+            pb.product_code as productCode,
+            pb.planned_qty as plannedQty,
+            pb.production_date as productionDate,
+            r.routing_name as routingName,
+            po.order_no as orderNo
+        FROM mis_production_batch pb
+                 LEFT JOIN mis_product p ON pb.product_id = p.id
+                 LEFT JOIN mis_production_order po ON pb.order_id = po.id
+                 LEFT JOIN mis_process_routing r ON pb.recipe_id = r.id
+        WHERE pb.status = 'PENDING'
+          AND pb.del_flag = '0'
+        ORDER BY pb.production_date ASC
+            LIMIT 10
+    </select>
+
+    <!-- 待派工工单（PENDING） -->
+    <select id="getPendingTasks" resultType="java.util.HashMap">
+        SELECT
+            pt.id,
+            pt.task_no as taskNo,
+            pb.batch_no as batchNo,
+            p.product_name as productName,
+            pt.product_code as productCode,
+            prs.step_name as stepName,
+            prs.step_desc as stepDesc,
+            pt.plan_duration as planDuration,
+            e.equipment_name as equipmentName,
+            pt.sequence
+        FROM mis_production_task pt
+                 LEFT JOIN mis_production_batch pb ON pt.batch_id = pb.id
+                 LEFT JOIN mis_product p ON pt.product_id = p.id
+                 LEFT JOIN mis_process_routing_step prs ON pt.routing_detail_id = prs.id
+                 LEFT JOIN mis_equipment e ON pt.plan_equipment_id = e.id
+        WHERE pt.status = 'PENDING'
+          AND pt.del_flag = '0'
+        ORDER BY pt.create_time ASC
+            LIMIT 10
+    </select>
+
+    <!-- ========== 列表数据（工人） ========== -->
+
+    <!-- 我的工单（ASSIGNED 或 PROCESSING） -->
+    <select id="getMyTasks" resultType="java.util.HashMap">
+        SELECT
+            pt.id,
+            pt.task_no as taskNo,
+            pb.batch_no as batchNo,
+            p.product_name as productName,
+            pt.product_code as productCode,
+            pt.product_color as productColor,
+            prs.step_name as stepName,
+            prs.step_desc as stepDesc,
+            pt.status,
+            pt.plan_duration as planDuration,
+            e.equipment_name as equipmentName,
+            pt.sequence,
+            pt.create_time as createTime
+        FROM mis_production_task pt
+                 LEFT JOIN mis_production_batch pb ON pt.batch_id = pb.id
+                 LEFT JOIN mis_product p ON pt.product_id = p.id
+                 LEFT JOIN mis_process_routing_step prs ON pt.routing_detail_id = prs.id
+                 LEFT JOIN mis_equipment e ON pt.plan_equipment_id = e.id
+        WHERE pt.assigned_operator_id = #{operatorId}
+          AND pt.status IN ('ASSIGNED', 'PROCESSING')
+          AND pt.del_flag = '0'
+        ORDER BY pt.create_time ASC
+    </select>
+
+    <!-- ========== 预警数据 ========== -->
+
+    <!-- 安全库存预警（物料库存低于安全库存） -->
+    <select id="getSafetyStockWarnings" resultType="java.util.HashMap">
+        SELECT
+            s.id,
+            m.material_code as materialCode,
+            m.material_name as materialName,
+            s.goods_spec as goodsSpec,
+            s.quantity as currentQty,
+            s.safety_stock_qty as safetyStockQty,
+            (s.safety_stock_qty - s.quantity) as shortageQty
+        FROM mis_stock s
+                 LEFT JOIN mis_material m ON s.goods_id = m.id
+        WHERE s.goods_type = 'RAW'
+          AND s.quantity <![CDATA[ < ]]> s.safety_stock_qty
+          AND s.safety_stock_qty > 0
+          AND s.del_flag = '0'
+        ORDER BY shortageQty DESC
+            LIMIT 10
+    </select>
+
+    <!-- 设备状态异常（status != '0' 正常） -->
+    <select id="getEquipmentWarnings" resultType="java.util.HashMap">
+        SELECT
+            id,
+            equipment_code as equipmentCode,
+            equipment_name as equipmentName,
+            equipment_type as equipmentType,
+            status,
+            location
+        FROM mis_equipment
+        WHERE status != '0'
+        ORDER BY status DESC
+            LIMIT 10
+    </select>
+
+    <!-- ========== 图表数据 ========== -->
+
+    <!-- 近7天产量趋势 -->
+    <select id="getWeekTrend" resultType="java.util.HashMap">
+        SELECT
+            DATE_FORMAT(production_date, '%m-%d') as day,
+            COALESCE(SUM(actual_qty), 0) as actualQty,
+            COUNT(*) as batchCount
+        FROM mis_production_batch
+        WHERE production_date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+          AND status = 'COMPLETED'
+          AND del_flag = '0'
+        GROUP BY DATE_FORMAT(production_date, '%m-%d')
+        ORDER BY day ASC
+    </select>
+
+    <!-- 本月产品产量分布 -->
+    <select id="getProductDist" resultType="java.util.HashMap">
+        SELECT
+            p.product_name as productName,
+            COALESCE(SUM(pb.actual_qty), 0) as actualQty
+        FROM mis_production_batch pb
+                 LEFT JOIN mis_product p ON pb.product_id = p.id
+        WHERE DATE_FORMAT(pb.production_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+          AND pb.status = 'COMPLETED'
+          AND pb.del_flag = '0'
+        GROUP BY pb.product_id, p.product_name
+        ORDER BY actualQty DESC
+            LIMIT 10
+    </select>
+
+    <!-- 工单状态分布 -->
+    <select id="getTaskStatusDist" resultType="java.util.HashMap">
+        SELECT
+            status,
+            COUNT(*) as taskCount
+        FROM mis_production_task
+        WHERE del_flag = '0'
+          AND DATE_FORMAT(create_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+        GROUP BY status
+        ORDER BY taskCount DESC
+    </select>
+
 </mapper>

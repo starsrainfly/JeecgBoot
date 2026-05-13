@@ -73,7 +73,7 @@ export const StockMoveTaskColumns: BasicColumn[] = [
   {
     title: '货位',
     dataIndex: 'locationId_dictText',
-    width: 120,
+    width: 140,
 
   },
   {
@@ -179,7 +179,7 @@ export const StockMoveTaskSearchForm: FormSchema[] = [
 
 // ==================== 移库表单（弹窗内用） ====================
 
-export const StockMoveTaskFormSchema: FormSchema[] = [
+export const singleMoveFormSchema: FormSchema[] = [
   {
     field: 'fromStockId',
     label: '原库存ID',
@@ -257,6 +257,104 @@ export const StockMoveTaskFormSchema: FormSchema[] = [
     required: true,
     colProps: { span: 12 },
   },
+  {
+    field: 'moveReason',
+    label: '移库原因',
+    component: 'Input',
+    // componentProps: {
+    //   dictCode: 'wms_move_reason',
+    // },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'remark',
+    label: '备注',
+    component: 'InputTextArea',
+    componentProps: {
+      rows: 2,
+    },
+    colProps: { span: 24 },
+  },
+];
+
+export const batchMoveFormSchema: FormSchema[] = [
+  {
+    field: 'fromStockId',
+    label: '原库存ID',
+    component: 'Input',
+    show: false,
+  },
+  {
+    field: 'toWarehouseId',
+    label: '目标仓库',
+    component: 'JDictSelectTag',
+    componentProps: {
+      dictCode: `mis_warehouse,name,id,del_flag='0' and status='1'`,
+    },
+    required: true,
+    colProps: { span: 12 },
+  },
+  {
+    field: 'toAreaId',
+    label: '目标区域',
+    component: 'JDictSelectTag',
+    componentProps: ({ formModel }) => ({
+      key: formModel?.toWarehouseId || 'empty',
+      dictCode: formModel?.toWarehouseId
+        ? `mis_warehouse_area,name,id,del_flag='0' and status='1' and warehouse_id='${formModel.toWarehouseId}'`
+        : '',
+      placeholder: formModel?.toWarehouseId ? "请选择区域" : "请先选择仓库",
+    }),
+    // componentProps: {
+    //   dict: 'mis_warehouse_area,area_code,id,del_flag=0 and status=1',
+    // },
+    required: true,
+    colProps: { span: 12 },
+  },
+  {
+    field: 'toShelfId',
+    label: '目标货架',
+    component: 'JDictSelectTag',
+    componentProps: ({ formModel }) => ({
+      key: formModel?.toAreaId || 'empty',
+      dictCode: formModel?.toAreaId
+        ? `mis_warehouse_shelf,name,id,del_flag='0' and status='1' and area_id='${formModel.toAreaId}'`
+        : '',
+      placeholder: formModel?.toAreaId ? "请选择区域" : "请先选择仓库",
+    }),
+    // componentProps: {
+    //   dict: 'mis_warehouse_shelf,shelf_code,id,del_flag=0 and status=1',
+    // },
+    colProps: { span: 12 },
+  },
+  {
+    field: 'toLocationId',
+    label: '目标货位',
+    component: 'JDictSelectTag',
+    componentProps: ({ formModel }) => ({
+      key: formModel?.toShelfId || 'empty',
+      dictCode: formModel?.toShelfId
+        ? `mis_warehouse_location,name,id,del_flag='0' and status='1' and shelf_id='${formModel.toShelfId}'`
+        : '',
+      placeholder: formModel?.toShelfId ? "请选择目标货位" : "请先选择目标货架",
+    }),
+    // componentProps: {
+    //   dict: 'mis_warehouse_location,path_code,id,del_flag=0 and status=1',
+    // },
+    colProps: { span: 12 },
+  },
+  // {
+  //   field: 'moveQty',
+  //   label: '移库数量',
+  //   component: 'InputNumber',
+  //   componentProps: {
+  //     // min: 0.000001,
+  //     precision: 6,
+  //     style: { width: '100%' },
+  //   },
+  //   required: true,
+  //   colProps: { span: 12 },
+  // },
   {
     field: 'moveReason',
     label: '移库原因',

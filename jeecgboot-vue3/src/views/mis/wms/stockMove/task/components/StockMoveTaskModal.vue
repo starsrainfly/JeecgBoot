@@ -1,13 +1,13 @@
-<template>
+<<template>
   <BasicModal
     v-bind="$attrs"
     @register="registerModal"
-    :title="modalTitle"
+    destroyOnClose
+    :title="title"
     :width="800"
     @ok="handleSubmit"
-    :confirmLoading="confirmLoading"
   >
-    <!-- 原位置信息展示 -->
+    <!-- 单条：显示原库存信息 -->
     <div v-if="!isBatch && currentRecord" class="mb-4 p-4 bg-gray-50 rounded">
       <h4 class="font-bold mb-2">原位置信息</h4>
       <a-descriptions :column="2" size="small" bordered>
@@ -22,9 +22,15 @@
       </a-descriptions>
     </div>
 
-    <!-- 批量移库表格 -->
+    <!-- 批量：显示表格 -->
     <div v-else-if="isBatch" class="mb-4">
-      <a-alert :message="`已选择 ${moveRecords.length} 条库存记录`" type="info" show-icon class="mb-2" />
+      <a-alert
+        :message="`已选择 ${moveRecords.length} 条库存记录，将按库存数量全部移库`"
+        type="info"
+        show-icon
+        banner
+        class="mb-2"
+      />
       <BasicTable
         :columns="batchColumns"
         :dataSource="moveRecords"
@@ -32,83 +38,100 @@
         :showIndexColumn="true"
         size="small"
         bordered
+        rowKey="id"
       />
     </div>
 
-    <!-- 移库表单 -->
-    <StockMoveTaskForm ref="formRef" />
+    <!-- 表单 -->
+    <BasicForm @register="registerForm" />
   </BasicModal>
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, nextTick } from 'vue';
+  import { ref, computed, unref } from 'vue';
   import { BasicModal, useModalInner } from '/@/components/Modal';
+  import { BasicForm, useForm } from '/@/components/Form/index';
   import { BasicTable } from '/@/components/Table';
   import { Descriptions, Alert } from 'ant-design-vue';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { doMove, batchMove } from '../StockMoveTask.api';
-  import StockMoveTaskForm from './StockMoveTaskForm.vue';
+  import { singleMoveFormSchema, batchMoveFormSchema } from '../StockMoveTask.data';
 
   const ADescriptions = Descriptions;
   const ADescriptionsItem = Descriptions.Item;
   const AAlert = Alert;
 
-  const emit = defineEmits(['success', 'register']);
+  const emit = defineEmits(['register', 'success']);
 
   const { createMessage } = useMessage();
-  const confirmLoading = ref(false);
-  const formRef = ref<any>(null);
 
+  const isBatch = ref(false);
   const currentRecord = ref<any>(null);
   const moveRecords = ref<any[]>([]);
-  const isBatch = ref(false);
 
-  const modalTitle = computed(() => isBatch.value ? '批量移库' : '移库作业');
-
+  // 批量表格列
   const batchColumns = [
-    { title: '物料编码', dataIndex: 'goodsCode', width: 120 },
-    { title: '物料名称', dataIndex: 'goodsName', width: 150 },
-    { title: '批号', dataIndex: 'batchNo', width: 100 },
-    { title: '数量', dataIndex: 'quantity', width: 100 },
-    { title: '原仓库', dataIndex: 'warehouseId_dictText', width: 120 },
-    { title: '原区域', dataIndex: 'areaId_dictText', width: 120 },
+    { title: '物料编码', dataIndex: 'goodsCode', width: 110 },
+    { title: '物料名称', dataIndex: 'goodsName', width: 120 },
+    { title: '批号', dataIndex: 'batchNo', width: 120 },
+    { title: '移库数量', dataIndex: 'quantity', width: 80 },
+    { title: '单位', dataIndex: 'unit', width: 60 },
+    { title: '原仓库', dataIndex: 'warehouseId_dictText', width: 100 },
+    { title: '原区域', dataIndex: 'areaId_dictText', width: 100 },
   ];
 
-  const [registerModal, { closeModal }] = useModalInner((data) => {
-    nextTick(() => {
-      formRef.value?.resetFields();
-      moveRecords.value = [];
-      currentRecord.value = null;
-      isBatch.value = false;
+  // 设置标题
+  const title = computed(() => (unref(isBatch) ? '批量移库' : '移库作业'));
 
-      if (data.record && !data.isBatch) {
-        // 单条移库
-        currentRecord.value = data.record;
-        moveRecords.value = [data.record];
-        isBatch.value = false;
-
-        formRef.value?.setFieldsValue({
-          fromStockId: data.record.id,
-          moveQty: data.record.quantity,
-        });
-      } else if (data.records && data.isBatch) {
-        // 批量移库
-        moveRecords.value = data.records;
-        isBatch.value = true;
-      }
-    });
+  // 表单配置 —— 默认单条
+  const [registerForm, { setProps, resetFields, setFieldsValue, validate }] = useForm({
+    labelWidth: 120,
+    schemas: singleMoveFormSchema,
+    showActionButtonGroup: false,
+    baseColProps: { span: 12 },
   });
 
+  // 表单赋值
+  const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data) => {
+    // 重置表单
+    await resetFields();
+    setModalProps({ confirmLoading: false });
+
+    isBatch.value = !!data?.isBatch;
+    moveRecords.value = data?.records || (data?.record ? [data.record] : []);
+    currentRecord.value = data?.record || null;
+
+    // 切换表单 schema
+    if (unref(isBatch)) {
+      await setProps({ schemas: batchMoveFormSchema });
+    } else {
+      await setProps({ schemas: singleMoveFormSchema });
+    }
+
+    // 单条回显
+    if (!unref(isBatch) && currentRecord.value) {
+      await setFieldsValue({
+        fromStockId: currentRecord.value.id,
+        goodsName: currentRecord.value.goodsName,
+        goodsCode: currentRecord.value.goodsCode,
+        goodsSpec: currentRecord.value.goodsSpec,
+        batchNo: currentRecord.value.batchNo,
+        quantity: currentRecord.value.quantity,
+        unit: currentRecord.value.unit,
+        moveQty: currentRecord.value.quantity,
+      });
+    }
+  });
+
+  // 表单提交
   async function handleSubmit() {
     try {
-      const values = await formRef.value?.validate();
-      if (!values) return;
+      const values = await validate();
+      setModalProps({ confirmLoading: true });
 
-      confirmLoading.value = true;
-
-      if (isBatch.value) {
+      if (unref(isBatch) && moveRecords.value.length > 0) {
         // 批量移库
-        const batchData = moveRecords.value.map((record) => ({
+        const list = moveRecords.value.map((record) => ({
           fromStockId: record.id,
           toWarehouseId: values.toWarehouseId,
           toAreaId: values.toAreaId,
@@ -118,12 +141,12 @@
           moveReason: values.moveReason,
           remark: values.remark,
         }));
-        await batchMove(batchData);
+        await batchMove(list);
         createMessage.success('批量移库成功');
       } else {
         // 单条移库
-        const params = {
-          fromStockId: currentRecord.value.id,
+        await doMove({
+          fromStockId: moveRecords.value[0].id,
           toWarehouseId: values.toWarehouseId,
           toAreaId: values.toAreaId,
           toShelfId: values.toShelfId,
@@ -131,8 +154,7 @@
           moveQty: values.moveQty,
           moveReason: values.moveReason,
           remark: values.remark,
-        };
-        await doMove(params);
+        });
         createMessage.success('移库成功');
       }
 
@@ -142,7 +164,13 @@
       console.error('移库失败:', error);
       createMessage.error(error.message || '移库失败');
     } finally {
-      confirmLoading.value = false;
+      setModalProps({ confirmLoading: false });
     }
   }
 </script>
+
+<style lang="less" scoped>
+  :deep(.ant-input-number) {
+    width: 100%;
+  }
+</style>

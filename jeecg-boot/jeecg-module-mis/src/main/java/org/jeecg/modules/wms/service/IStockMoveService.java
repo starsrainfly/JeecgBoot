@@ -7,6 +7,7 @@ import org.jeecg.modules.wms.entity.StockMove;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * @Description: 移库记录表
@@ -23,10 +24,10 @@ public interface IStockMoveService extends IService<StockMove> {
     /**
      * 执行移库（支持部分移库拆分库存）
      */
-    void doMove(StockMove moveRecord, BigDecimal moveQty);
+    void doMove(StockMove moveRecord);
 
     /**
-     * 分页查询移库记录
+     * 批量移库（事务控制）
      */
-    IPage<StockMove> queryPageList(Page<StockMove> page, StockMove moveRecord);
+    void batchMove(List<StockMove> records);
 }

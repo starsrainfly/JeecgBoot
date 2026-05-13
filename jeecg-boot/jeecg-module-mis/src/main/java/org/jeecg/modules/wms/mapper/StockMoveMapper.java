@@ -18,4 +18,13 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 public interface StockMoveMapper extends BaseMapper<StockMove> {
 
     IPage<Stock> queryMovePendingList(Page<Stock> page, @Param("stock") Stock stock);
+    /**
+     * 查询目标位置是否已存在相同库存记录
+     */
+    Stock checkTargetStockExists(@Param("goodsId") String goodsId,
+                                 @Param("batchNo") String batchNo,
+                                 @Param("warehouseId") String warehouseId,
+                                 @Param("areaId") String areaId,
+                                 @Param("shelfId") String shelfId,
+                                 @Param("locationId") String locationId);
 }

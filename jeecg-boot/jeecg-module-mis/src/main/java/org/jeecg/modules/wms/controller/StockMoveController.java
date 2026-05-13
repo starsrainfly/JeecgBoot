@@ -181,8 +181,10 @@ public class StockMoveController extends JeecgController<StockMove, IStockMoveSe
 
 	 // ==================== 移库作业 ====================
 
+	 // ==================== 移库作业接口 ====================
+
 	 /**
-	  * 查询可移库库存列表
+	  * 查询可移库库存列表（已上架的库存）
 	  */
 	 @AutoLog(value = "移库作业-查询可移库库存")
 	 @Operation(summary = "移库作业-查询可移库库存")
@@ -197,44 +199,29 @@ public class StockMoveController extends JeecgController<StockMove, IStockMoveSe
 	 }
 
 	 /**
-	  * 执行移库
+	  * 执行移库（单条）
 	  */
 	 @AutoLog(value = "移库作业-执行移库")
 	 @Operation(summary = "移库作业-执行移库")
+	 @RequiresPermissions("wms:stock_move:doMove")
 	 @PostMapping(value = "/doMove")
-	 public Result<String> doMove(@RequestBody StockMove moveRecord,
-								  @RequestParam BigDecimal moveQty) {
-		 stockMoveService.doMove(moveRecord, moveQty);
+	 public Result<String> doMove(@RequestBody StockMove moveRecord) {
+		 stockMoveService.doMove(moveRecord);
 		 return Result.OK("移库成功");
 	 }
 
 	 /**
-	  * 批量移库
+	  * 批量移库（事务控制，任一失败全部回滚）
 	  */
 	 @AutoLog(value = "移库作业-批量移库")
 	 @Operation(summary = "移库作业-批量移库")
+	 @RequiresPermissions("wms:stock_move:batchMove")
 	 @PostMapping(value = "/batchMove")
 	 public Result<String> batchMove(@RequestBody List<StockMove> records) {
-		 for (StockMove record : records) {
-			 stockMoveService.doMove(record, record.getMoveQty());
-		 }
+		 stockMoveService.batchMove(records);
 		 return Result.OK("批量移库成功");
 	 }
 
-	 /**
-	  * 移库记录查询
-	  */
-	 @AutoLog(value = "移库记录-分页查询")
-	 @Operation(summary = "移库记录-分页查询")
-	 @GetMapping(value = "/moveList")
-	 public Result<IPage<StockMove>> queryMoveRecordList(
-			 @RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
-			 @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
-			 StockMove moveRecord) {
-		 Page<StockMove> page = new Page<>(pageNo, pageSize);
-		 IPage<StockMove> pageList = stockMoveService.queryPageList(page, moveRecord);
-		 return Result.OK(pageList);
-	 }
 
 
 }

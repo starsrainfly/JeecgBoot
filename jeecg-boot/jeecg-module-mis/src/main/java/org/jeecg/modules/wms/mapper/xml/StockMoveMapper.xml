@@ -6,10 +6,11 @@
         SELECT s.*
         FROM mis_stock s
         <where>
-            <!-- 可移库条件：必须有位置信息（已上架的） -->
+            s.del_flag = '0'
+            <!-- 已上架条件：必须有区域或货架信息 -->
             AND (
-            s.shelf_id IS NOT NULL AND s.shelf_id != ''
-            OR s.area_id IS NOT NULL AND s.area_id != ''
+            (s.shelf_id IS NOT NULL AND s.shelf_id != '')
+            OR (s.area_id IS NOT NULL AND s.area_id != '')
             )
             <!-- 动态条件 -->
             <if test="stock.warehouseId != null and stock.warehouseId != ''">
@@ -21,6 +22,9 @@
             <if test="stock.shelfId != null and stock.shelfId != ''">
                 AND s.shelf_id = #{stock.shelfId}
             </if>
+            <if test="stock.locationId != null and stock.locationId != ''">
+                AND s.location_id = #{stock.locationId}
+            </if>
             <if test="stock.goodsName != null and stock.goodsName != ''">
                 AND s.goods_name LIKE CONCAT('%', #{stock.goodsName}, '%')
             </if>
@@ -30,9 +34,25 @@
             <if test="stock.goodsType != null and stock.goodsType != ''">
                 AND s.goods_type = #{stock.goodsType}
             </if>
+            <if test="stock.isProduct != null and stock.isProduct != ''">
+                AND s.is_product = #{stock.isProduct}
+            </if>
             <!-- 只查有库存的 -->
             AND s.quantity > 0
         </where>
         ORDER BY s.create_time DESC
+    </select>
+
+    <!-- 查询目标位置是否已存在相同库存（用于合并库存） -->
+    <select id="checkTargetStockExists" resultType="org.jeecg.modules.wms.entity.Stock">
+        SELECT * FROM mis_stock
+        WHERE del_flag = '0'
+          AND goods_id = #{goodsId}
+          AND (batch_no = #{batchNo} OR (batch_no IS NULL AND #{batchNo} IS NULL))
+          AND warehouse_id = #{warehouseId}
+          AND (area_id = #{areaId} OR (area_id IS NULL AND #{areaId} IS NULL))
+          AND (shelf_id = #{shelfId} OR (shelf_id IS NULL AND #{shelfId} IS NULL))
+          AND (location_id = #{locationId} OR (location_id IS NULL AND #{locationId} IS NULL))
+            LIMIT 1
     </select>
 </mapper>

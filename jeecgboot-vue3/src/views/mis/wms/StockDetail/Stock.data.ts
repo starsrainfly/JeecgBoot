@@ -165,7 +165,7 @@ export const searchFormSchema: FormSchema[] = [
       componentProps: ({ formModel }) => ({
       key: formModel?.warehouseId || 'empty',
       dictCode: formModel?.warehouseId
-        ? `mis_warehouse_area,name,id,warehouse_id='${formModel.warehouseId}'`
+        ? `mis_warehouse_area,name,id,del_flag='0' and status='1' and warehouse_id='${formModel.warehouseId}'`
         : '',
       placeholder: formModel?.warehouseId ? "请选择区域" : "请先选择仓库",
     }),
@@ -181,7 +181,7 @@ export const searchFormSchema: FormSchema[] = [
      componentProps: ({ formModel }) => ({
       key: formModel?.areaId || 'empty',
       dictCode: formModel?.areaId
-        ? `mis_warehouse_shelf,name,id,area_id='${formModel.areaId}'`
+        ? `mis_warehouse_shelf,name,id,del_flag='0' and status='1' and area_id='${formModel.areaId}'`
         : '',
        placeholder: formModel?.areaId ? "请选择区域" : "请先选择仓库",
      }),
@@ -197,7 +197,7 @@ export const searchFormSchema: FormSchema[] = [
       componentProps: ({ formModel }) => ({
       key: formModel?.ShelfId || 'empty',
       dictCode: formModel?.ShelfId
-        ? `mis_warehouse_location,name,id,shelf_id='${formModel.ShelfId}'`
+        ? `mis_warehouse_location,name,id,del_flag='0' and status='1' and shelf_id='${formModel.ShelfId}'`
         : '',
       placeholder: formModel?.ShelfId ? "请选择目标货位" : "请先选择目标货架",
     }),

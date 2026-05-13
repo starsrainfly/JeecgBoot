@@ -223,7 +223,7 @@ export const shelfFormSchema: FormSchema[] = [
     componentProps: ({ formModel }) => ({
       key: formModel?.toWarehouseId || 'empty',
       dictCode: formModel?.toWarehouseId
-        ? `mis_warehouse_area,name,id,warehouse_id='${formModel.toWarehouseId}'`
+        ? `mis_warehouse_area,name,id,del_flag='0' and status='1' and warehouse_id='${formModel.toWarehouseId}'`
         : '',
       placeholder: formModel?.toWarehouseId ? "请选择区域" : "请先选择仓库",
       onChange: (val: string) => {
@@ -246,7 +246,7 @@ export const shelfFormSchema: FormSchema[] = [
     componentProps: ({ formModel }) => ({
       key: formModel?.toAreaId || 'empty',
       dictCode: formModel?.toAreaId
-        ? `mis_warehouse_shelf,name,id,area_id='${formModel.toAreaId}'`
+        ? `mis_warehouse_shelf,name,id,del_flag='0' and status='1' and area_id='${formModel.toAreaId}'`
         : '',
       placeholder: formModel?.toAreaId ? "请选择货架" : "请先选择区域",
       onChange: (val: string) => {
@@ -266,7 +266,7 @@ export const shelfFormSchema: FormSchema[] = [
     componentProps: ({ formModel }) => ({
       key: formModel?.toShelfId || 'empty',
       dictCode: formModel?.toShelfId
-        ? `mis_warehouse_location,name,id,shelf_id='${formModel.toShelfId}'`
+        ? `mis_warehouse_location,name,id,del_flag='0' and status='1' and shelf_id='${formModel.toShelfId}'`
         : '',
       placeholder: formModel?.toShelfId ? "请选择目标货位" : "请先选择目标货架",
     }),

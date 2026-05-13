@@ -299,6 +299,9 @@ export const recipeDetailColumns: JVxeColumn[] = [
       width:"100px",
       placeholder: '请输入${title}',
       defaultValue:'',
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
     },
     {
       title: '物料编码',

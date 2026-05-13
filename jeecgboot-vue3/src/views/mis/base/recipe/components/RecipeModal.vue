@@ -8,7 +8,6 @@
     @ok="handleSubmit"
   >
     <BasicForm @register="registerForm" ref="formRef" name="RecipeForm"/>
-    <!-- 子表单区域 -->
     <a-tabs v-model:activeKey="activeKey" animated @change="handleChangeTabs">
       <a-tab-pane tab="配方明细" key="recipeDetail" :forceRender="true">
         <JVxeTable
@@ -23,8 +22,8 @@
           :rowSelection="true"
           :disabled="formDisabled"
           :toolbar="true"
-          @valueChange="handleDetailValueChange"
-          @deleted="handleDetailDeleted"
+          @edit-closed="handleEditClosed"
+          @removed="handleDetailDeleted"
         />
       </a-tab-pane>
     </a-tabs>
@@ -32,7 +31,7 @@
 </template>
 
 <script lang="ts" setup>
-  import {ref, computed, unref, reactive, watch, nextTick} from 'vue';
+  import {ref, computed, unref, reactive, nextTick} from 'vue';
   import {BasicModal, useModalInner} from '/@/components/Modal';
   import {BasicForm, useForm} from '/@/components/Form/index';
   import { JVxeTable } from '/@/components/jeecg/JVxeTable'
@@ -43,16 +42,14 @@
   import { useMessage } from '/@/hooks/web/useMessage';
 
   const { createMessage } = useMessage();
-
-  // ========== 关键：必须声明 register 和 success 事件 ==========
   const emit = defineEmits(['register', 'success']);
 
   const isUpdate = ref(true);
   const formDisabled = ref(false);
-  const refKeys = ref(['recipeDetail', ]);
+  const refKeys = ref(['recipeDetail']);
   const activeKey = ref('recipeDetail');
   const recipeDetail = ref();
-  const tableRefs = {recipeDetail, };
+  const tableRefs = {recipeDetail};
 
   const recipeDetailTable = reactive({
     loading: false,
@@ -68,17 +65,13 @@
     getFieldsValue,
     validateFields,
     clearValidate,
-    updateSchema
   }] = useForm({
     schemas: formSchema,
     showActionButtonGroup: false,
     baseColProps: {span: 6},
-
   });
 
-  // ========== 关键：使用 useModalInner 并传入回调 ==========
   const [registerModal, {setModalProps, closeModal}] = useModalInner(async (data) => {
-    // 重置表单
     await reset();
     setModalProps({
       confirmLoading: false,
@@ -90,7 +83,6 @@
 
     if (unref(isUpdate)) {
       await setFieldsValue({ ...data.record });
-
       requestSubTableData(recipeDetailList, {id: data?.record?.id}, recipeDetailTable, () => {
         nextTick(() => {
           calculateProportionTotal();
@@ -101,7 +93,6 @@
         });
       });
     }
-
     setProps({ disabled: !data?.showFooter });
   });
 
@@ -113,92 +104,100 @@
     refKeys
   );
 
-  let lastProportionType = ref('1');
+  // ========== 编辑完成触发计算 ==========
+  // function handleEditClosed(event: any) {
+  //   const { row, column, value } = event || {};
+  //
+  //   if (column?.key === 'proportion' || column?.field === 'proportion') {
+  //     const index = recipeDetailTable.dataSource.findIndex((item: any) =>
+  //       item.id === row.id || (item._X_ROW_KEY && item._X_ROW_KEY === row._X_ROW_KEY)
+  //     );
+  //     if (index !== -1) {
+  //       recipeDetailTable.dataSource[index].proportion = value;
+  //     }
+  //
+  //     calculateProportionTotal();
+  //   }
+  // }
+  // ========== 编辑完成触发计算 ==========
+  function handleEditClosed(event: any) {
+    const { row, column, value } = event || {};
 
-  watch(
-    () => {
+    // 只处理配比列
+    if (column?.key === 'proportion' || column?.field === 'proportion') {
+      // 关键：直接从 JVxeTable 实例获取全部数据
+      const jvxeTable = recipeDetail.value;
+      if (!jvxeTable) return;
+
+      let tableData = [];
+      if (jvxeTable.getTableData) {
+        tableData = jvxeTable.getTableData();
+      } else if (jvxeTable.getData) {
+        tableData = jvxeTable.getData();
+      } else if (jvxeTable.getRecords) {
+        tableData = jvxeTable.getRecords();
+      } else if (jvxeTable.getCurrentData) {
+        tableData = jvxeTable.getCurrentData();
+      }
+
+      console.log('JVxeTable 数据:', tableData);
+
+      // 用实例数据计算，不依赖 dataSource
+      let total = 0;
+      tableData.forEach((item: any) => {
+        total += parseFloat(item.proportion) || 0;
+      });
+      total = Math.round(total * 100) / 100;
+
+      // 同时同步回 dataSource（保持后续逻辑一致）
+      recipeDetailTable.dataSource = tableData;
+
       try {
-        const values = getFieldsValue();
-        return values?.proportionType;
-      } catch (e) {
-        return '1';
-      }
-    },
-    (newType) => {
-      if (!newType) return;
-
-      // 类型变化时处理
-      if (newType !== lastProportionType.value) {
-        lastProportionType.value = newType;
-
-        // 延迟执行，确保表单已更新
-        setTimeout(() => {
-          if (newType === '1') {
-            // 标准类型：触发校验（显示错误提示）
-            validateFields(['proportionTotal']).catch(() => {});
-          } else {
-            // 特殊类型：清除错误提示
-            clearValidate(['proportionTotal']);
-          }
-        }, 100);
-      }
-    },
-    { immediate: false }
-  );
-
-  // 计算配比总和
-  function calculateProportionTotal() {
-    const tableData = recipeDetailTable.dataSource || [];
-    let total = 0;
-    tableData.forEach(row => {
-      total += parseFloat(row.proportion) || 0;
-    });
-
-    total = Math.round(total * 100) / 100;
-
-    try {
-      const currentValues = getFieldsValue();
-      if (currentValues) {
         setFieldsValue({ proportionTotal: total.toString() });
-      }
-    } catch (e) {
-      console.warn('设置配比总和失败:', e);
-    }
-  }
-
-  // 明细行值变化
-  function handleDetailValueChange({ row, column, value }: any) {
-    if (column.key === 'proportion') {
-      const index = recipeDetailTable.dataSource.findIndex((item: any) =>
-        item.id === row.id || (item._X_ROW_KEY && item._X_ROW_KEY === row._X_ROW_KEY)
-      );
-      if (index !== -1) {
-        recipeDetailTable.dataSource[index].proportion = value;
+      } catch (e) {
+        console.warn('设置配比总和失败:', e);
       }
 
-      calculateProportionTotal();
+      // 校验
       nextTick(() => {
         const currentType = getFieldsValue()?.proportionType;
         if (currentType === '1') {
           validateFields(['proportionTotal']).catch(() => {});
-        }
-        else{
+        } else {
           clearValidate(['proportionTotal']);
         }
       });
     }
   }
 
-  // 明细行删除
+  // ========== 删除行触发计算 ==========
   function handleDetailDeleted() {
+    console.log("delete detail row");
     nextTick(() => {
-      calculateProportionTotal();
+      doCalculate();
+    });
+  }
+
+  // ========== 计算配比总和 ==========
+  function calculateProportionTotal() {
+    const tableData = recipeDetailTable.dataSource || [];
+    let total = 0;
+    tableData.forEach(row => {
+      total += parseFloat(row.proportion) || 0;
+    });
+    total = Math.round(total * 100) / 100;
+
+    try {
+      setFieldsValue({ proportionTotal: total.toString() });
+    } catch (e) {
+      console.warn('设置配比总和失败:', e);
+    }
+
+    nextTick(() => {
       const currentType = getFieldsValue()?.proportionType;
       if (currentType === '1') {
         validateFields(['proportionTotal']).catch(() => {});
-      }
-      else{
-        // 特殊类型：清除错误提示
+      } else {
         clearValidate(['proportionTotal']);
       }
     });
@@ -217,14 +216,12 @@
 
   function classifyIntoFormData(allValues: any) {
     let main = Object.assign({}, allValues.formValue);
-
     const tableData = allValues.tablesValue[0].tableData || [];
     let total = 0;
     tableData.forEach((row: any) => {
       total += parseFloat(row.proportion) || 0;
     });
     main.proportionTotal = (Math.round(total * 100) / 100).toString();
-
     return {
       ...main,
       recipeDetailList: tableData,
@@ -249,13 +246,55 @@
       setModalProps({ confirmLoading: false });
     }
   }
+  let calculateTimer = null;
+  function handleDetailValueChange(row, value) {
+    if (calculateTimer) clearTimeout(calculateTimer);
+    calculateTimer = setTimeout(() => {
+      doCalculate();
+    }, 800);
+  }
+
+  function doCalculate() {
+    const jvxeTable = recipeDetail.value;
+    console.log("recipeDetail.vlaue",recipeDetail.value)
+    if (!jvxeTable) return;
+
+    let tableData = [];
+    if (jvxeTable.getTableData) {
+      tableData = jvxeTable.getTableData();
+    } else if (jvxeTable.getData) {
+      tableData = jvxeTable.getData();
+    }
+
+    let total = 0;
+    tableData.forEach(item => {
+      total += parseFloat(item.proportion) || 0;
+    });
+    total = Math.round(total * 100) / 100;
+
+    recipeDetailTable.dataSource = tableData;
+
+    try {
+      setFieldsValue({ proportionTotal: total.toString() });
+    } catch (e) {
+      console.warn('设置配比总和失败:', e);
+    }
+
+    nextTick(() => {
+      const currentType = getFieldsValue()?.proportionType;
+      if (currentType === '1') {
+        validateFields(['proportionTotal']).catch(() => {});
+      } else {
+        clearValidate(['proportionTotal']);
+      }
+    });
+  }
 </script>
 
 <style lang="less" scoped>
   :deep(.ant-input-number) {
     width: 100%;
   }
-
   :deep(.ant-calendar-picker) {
     width: 100%;
   }

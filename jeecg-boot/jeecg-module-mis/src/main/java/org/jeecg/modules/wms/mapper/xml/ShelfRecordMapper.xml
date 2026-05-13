@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.wms.mapper.ShelfRecordMapper">
+
+    <select id="queryPendingList" resultType="org.jeecg.modules.wms.entity.Stock">
+        SELECT
+        s.*
+        FROM mis_stock s
+        WHERE s.del_flag = '0'
+        AND s.quantity > 0
+        AND (s.shelf_id IS NULL OR s.shelf_id = '')
+        <if test="stock.warehouseId != null and stock.warehouseId != ''">
+            AND s.warehouse_id = #{stock.warehouseId}
+        </if>
+        <if test="stock.areaId != null and stock.areaId != ''">
+            AND s.area_id = #{stock.areaId}
+        </if>
+        <if test="stock.goodsName != null and stock.goodsName != ''">
+            AND s.goods_name LIKE CONCAT('%', #{stock.goodsName}, '%')
+        </if>
+        <if test="stock.batchNo != null and stock.batchNo != ''">
+            AND s.batch_no LIKE CONCAT('%', #{stock.batchNo}, '%')
+        </if>
+        <if test="stock.goodsType != null and stock.goodsType != ''">
+            AND s.goods_type = #{stock.goodsType}
+        </if>
+        <if test="stock.isProduct != null and stock.isProduct !=''">
+            AND s.is_product = #{stock.isProduct}
+        </if>
+        <if test="stock.shelfId != null and stock.shelfId !=''">
+            AND s.shelf_id = #{stock.shelfId}
+        </if>
+        <if test="stock.locationId != null and stock.locationId !=''">
+            AND s.location_id = #{stock.locationId}
+        </if>
+
+        ORDER BY s.create_time DESC
+    </select>
+</mapper>

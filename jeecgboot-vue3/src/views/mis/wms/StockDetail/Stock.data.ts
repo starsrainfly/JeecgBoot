@@ -5,18 +5,19 @@ import { render } from '/@/utils/common/renderUtils';
 import { getWeekMonthQuarterYear } from '/@/utils';
 //列表数据
 export const columns: BasicColumn[] = [
+   // {
+   //  title: '物料id',
+   //  align:"center",
+   //  dataIndex: 'goodsId',
+   //
+   // },
    {
-    title: '项目id',
-    align:"center",
-    dataIndex: 'goodsId'
-   },
-   {
-    title: '项目编码',
+    title: '编码',
     align:"center",
     dataIndex: 'goodsCode'
    },
    {
-    title: '项目名称',
+    title: '名称',
     align:"center",
     dataIndex: 'goodsName'
    },
@@ -28,30 +29,30 @@ export const columns: BasicColumn[] = [
    {
     title: '单位',
     align:"center",
-    dataIndex: 'unit_dictText'
+    dataIndex: 'unit'
    },
    {
-    title: '项目类型',
+    title: '类型',
     align:"center",
     dataIndex: 'goodsType_dictText'
    },
    {
-    title: '仓库id',
+    title: '仓库',
     align:"center",
     dataIndex: 'warehouseId_dictText'
    },
    {
-    title: '区域id',
+    title: '区域',
     align:"center",
     dataIndex: 'areaId_dictText'
    },
    {
-    title: '货架id',
+    title: '货架',
     align:"center",
     dataIndex: 'shelfId_dictText'
    },
    {
-    title: '位置id',
+    title: '位置',
     align:"center",
     dataIndex: 'locationId_dictText'
    },
@@ -75,7 +76,7 @@ export const columns: BasicColumn[] = [
     dataIndex: 'shelfLife'
    },
    {
-    title: '过期日（根据shelf_life自动计算）',
+    title: '过期日',
     align:"center",
     dataIndex: 'expiryDate',
     customRender:({text}) =>{
@@ -93,11 +94,11 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'lockedQty'
    },
-   {
-    title: '供应商id',
-    align:"center",
-    dataIndex: 'supplierId'
-   },
+   // {
+   //  title: '供应商id',
+   //  align:"center",
+   //  dataIndex: 'supplierId'
+   // },
    {
     title: '供应商名称',
     align:"center",
@@ -122,13 +123,13 @@ export const columns: BasicColumn[] = [
 //查询数据
 export const searchFormSchema: FormSchema[] = [
 	{
-      label: "项目编码",
+      label: "编码",
       field: 'goodsCode',
       component: 'Input',
       //colProps: {span: 6},
  	},
 	{
-      label: "项目名称",
+      label: "名称",
       field: 'goodsName',
       component: 'Input',
       //colProps: {span: 6},
@@ -140,7 +141,7 @@ export const searchFormSchema: FormSchema[] = [
       //colProps: {span: 6},
  	},
 	{
-      label: "项目类型",
+      label: "类型",
       field: 'goodsType',
       component: 'JSelectMultiple',
       componentProps:{
@@ -149,39 +150,60 @@ export const searchFormSchema: FormSchema[] = [
       //colProps: {span: 6},
  	},
 	{
-      label: "仓库id",
+      label: "仓库",
       field: 'warehouseId',
-      component: 'JSelectMultiple',
+      component: 'JDictSelectTag',
       componentProps:{
           dictCode:"mis_warehouse where del_flag='0' and status='1',name,id"
       },
       //colProps: {span: 6},
  	},
 	{
-      label: "区域id",
+      label: "区域",
       field: 'areaId',
-      component: 'JSelectMultiple',
-      componentProps:{
-          dictCode:"mis_warehouse_area where del_flag='0' and status='1',area_code,id"
-      },
+      component: 'JDictSelectTag',
+      componentProps: ({ formModel }) => ({
+      key: formModel?.warehouseId || 'empty',
+      dictCode: formModel?.warehouseId
+        ? `mis_warehouse_area,name,id,warehouse_id='${formModel.warehouseId}'`
+        : '',
+      placeholder: formModel?.warehouseId ? "请选择区域" : "请先选择仓库",
+    }),
+      // componentProps:{
+      //     dictCode:"mis_warehouse_area where del_flag='0' and status='1',area_code,id"
+      // },
       //colProps: {span: 6},
  	},
 	{
-      label: "货架id",
+      label: "货架",
       field: 'shelfId',
-      component: 'JSelectMultiple',
-      componentProps:{
-          dictCode:"mis_warehouse_shelf where del_flag ='0' and status='1',shelf_code,id"
-      },
+      component: 'JDictSelectTag',
+     componentProps: ({ formModel }) => ({
+      key: formModel?.areaId || 'empty',
+      dictCode: formModel?.areaId
+        ? `mis_warehouse_shelf,name,id,area_id='${formModel.areaId}'`
+        : '',
+       placeholder: formModel?.areaId ? "请选择区域" : "请先选择仓库",
+     }),
+      // componentProps:{
+      //     dictCode:"mis_warehouse_shelf where del_flag ='0' and status='1',shelf_code,id"
+      // },
       //colProps: {span: 6},
  	},
 	{
-      label: "位置id",
+      label: "位置",
       field: 'locationId',
       component: 'JSelectMultiple',
-      componentProps:{
-          dictCode:"mis_warehouse_location where del_flag='0' and status='1',path_code,id"
-      },
+      componentProps: ({ formModel }) => ({
+      key: formModel?.ShelfId || 'empty',
+      dictCode: formModel?.ShelfId
+        ? `mis_warehouse_location,name,id,shelf_id='${formModel.ShelfId}'`
+        : '',
+      placeholder: formModel?.ShelfId ? "请选择目标货位" : "请先选择目标货架",
+    }),
+      // componentProps:{
+      //     dictCode:"mis_warehouse_location where del_flag='0' and status='1',path_code,id"
+      // },
       //colProps: {span: 6},
  	},
 	{
@@ -200,7 +222,7 @@ export const searchFormSchema: FormSchema[] = [
       //colProps: {span: 6},
 	},
      {
-      label: "过期日（根据shelf_life自动计算）",
+      label: "过期日",
       field: "expiryDate",
       component: 'RangePicker',
       componentProps: {
@@ -208,12 +230,12 @@ export const searchFormSchema: FormSchema[] = [
       },
       //colProps: {span: 6},
 	},
-	{
-      label: "生产批号id",
-      field: 'productionBatchId',
-      component: 'Input',
-      //colProps: {span: 6},
- 	},
+	// {
+  //     label: "生产批号id",
+  //     field: 'productionBatchId',
+  //     component: 'Input',
+  //     //colProps: {span: 6},
+ 	// },
 	{
       label: "供应商名称",
       field: 'supplierName',
@@ -237,9 +259,10 @@ export const searchFormSchema: FormSchema[] = [
 //表单数据
 export const formSchema: FormSchema[] = [
   {
-    label: '项目id',
+    label: '物品id',
     field: 'goodsId',
     component: 'Input',
+    show:false,
     dynamicRules: ({model,schema}) => {
           return [
                  { required: true, message: '请输入项目id!'},
@@ -247,7 +270,7 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '项目编码',
+    label: '编码',
     field: 'goodsCode',
     component: 'Input',
     dynamicRules: ({model,schema}) => {
@@ -257,7 +280,7 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '项目名称',
+    label: '名称',
     field: 'goodsName',
     component: 'Input',
     dynamicRules: ({model,schema}) => {
@@ -285,7 +308,7 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '项目类型',
+    label: '类型',
     field: 'goodsType',
     component: 'JDictSelectTag',
     componentProps:{
@@ -298,7 +321,7 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '仓库id',
+    label: '仓库',
     field: 'warehouseId',
     component: 'JDictSelectTag',
     componentProps:{
@@ -311,7 +334,7 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '区域id',
+    label: '区域',
     field: 'areaId',
     component: 'JDictSelectTag',
     componentProps:{
@@ -319,7 +342,7 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '货架id',
+    label: '货架',
     field: 'shelfId',
     component: 'JDictSelectTag',
     componentProps:{
@@ -327,7 +350,7 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '位置id',
+    label: '位置',
     field: 'locationId',
     component: 'JDictSelectTag',
     componentProps:{
@@ -368,7 +391,7 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '过期日（根据shelf_life自动计算）',
+    label: '过期日',
     field: 'expiryDate',
     component: 'DatePicker',
     componentProps: {
@@ -399,6 +422,7 @@ export const formSchema: FormSchema[] = [
     label: '供应商id',
     field: 'supplierId',
     component: 'Input',
+    show:false
   },
   {
     label: '供应商名称',

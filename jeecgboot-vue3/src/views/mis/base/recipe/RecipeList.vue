@@ -195,7 +195,8 @@
            label: '编辑',
           // disabled: record.publishStatus === '1' || record.isActive !== '1',
            onClick: handleEdit.bind(null, record),
-           auth: 'Recipe:mis_recipe:edit'
+           auth: 'Recipe:mis_recipe:edit',
+           disabled:record.publishStatus === '1'
          }
        ]
    }
@@ -218,7 +219,8 @@
           confirm: handleDelete.bind(null, record),
           placement: 'topLeft'
         },
-        auth: 'Recipe:mis_recipe:delete'
+        auth: 'Recipe:mis_recipe:delete',
+        disabled:record.publishStatus === '1'
       },
       {
         label:'新增属性',

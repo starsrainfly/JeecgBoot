@@ -41,6 +41,11 @@ export const formSchema: FormSchema[] = [
     label: '计量单位',
     field: 'unit',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入计量单位!'},
+      ];
+    },
   },
   {
     label: '状态',
@@ -50,14 +55,14 @@ export const formSchema: FormSchema[] = [
       //dictCode: "sys_dict_item,item_text,item_value,dict_id='1280401766745718786'"
       dictCode: 'status',
       numberToString: true,
-     // placeholder: '请选择状态',
-     //  options: [
-     //    { label: '正常', value: 1 },
-     //    { label: '冻结', value: 2 },
-     //  ],
-      // type:'radioButton'
+
      },
-    // defaultValue: '1',
+     defaultValue: '1',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入状态!'},
+      ];
+    },
   },
 	// TODO 主键隐藏字段，目前写死为ID
 	{

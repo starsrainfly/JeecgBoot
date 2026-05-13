@@ -72,20 +72,35 @@ export const formSchema: FormSchema[] = [
     label: '币种代码',
     field: 'currencyCode',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入币种代码!'},
+      ];
+    },
   },
   {
     label: '币种名称',
     field: 'currencyName',
     component: 'Input',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入币种名称!'},
+      ];
+    },
   },
   {
     label: '状态',
     field: 'status',
-    defaultValue: 1,
+    defaultValue: '1',
     component: 'JDictSelectTag',
     componentProps:{
         dictCode:"status"
      },
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入状态!'},
+      ];
+    },
   },
 	// TODO 主键隐藏字段，目前写死为ID
 	{

@@ -8,28 +8,32 @@ export const columns: BasicColumn[] = [
    {
     title: '物料编码',
     align: 'left',
-    dataIndex: 'materialCode'
+    dataIndex: 'materialCode',
+     width:300,
+     sorter: true,
    },
    {
     title: '物料名称',
     align: 'center',
-    dataIndex: 'materialName'
+    dataIndex: 'materialName',
+     sorter: true,
    },
    {
     title: '物料英文名称',
     align: 'center',
     dataIndex: 'materialNameEn'
    },
+  {
+    title: '规格型号',
+    align: 'center',
+    dataIndex: 'materialSpec'
+  },
    {
     title: '描述',
     align: 'center',
     dataIndex: 'description'
    },
-   {
-    title: '规格型号',
-    align: 'center',
-    dataIndex: 'materialSpec'
-   },
+
    // {
    //  title: '版本',
    //  align: 'center',
@@ -261,7 +265,7 @@ export const formSchema: FormSchema[] = [
   {
     label: '状态',
     field: 'status',
-    defaultValue: "1",
+    defaultValue: '1',
     component: 'JDictSelectTag',
     componentProps:{
         dictCode:"status"

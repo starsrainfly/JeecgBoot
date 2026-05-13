@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.wms.mapper.StockMoveMapper">
+
+    <select id="queryMovePendingList" resultType="org.jeecg.modules.wms.entity.Stock">
+        SELECT s.*
+        FROM mis_stock s
+        <where>
+            <!-- 可移库条件：必须有位置信息（已上架的） -->
+            AND (
+            s.shelf_id IS NOT NULL AND s.shelf_id != ''
+            OR s.area_id IS NOT NULL AND s.area_id != ''
+            )
+            <!-- 动态条件 -->
+            <if test="stock.warehouseId != null and stock.warehouseId != ''">
+                AND s.warehouse_id = #{stock.warehouseId}
+            </if>
+            <if test="stock.areaId != null and stock.areaId != ''">
+                AND s.area_id = #{stock.areaId}
+            </if>
+            <if test="stock.shelfId != null and stock.shelfId != ''">
+                AND s.shelf_id = #{stock.shelfId}
+            </if>
+            <if test="stock.goodsName != null and stock.goodsName != ''">
+                AND s.goods_name LIKE CONCAT('%', #{stock.goodsName}, '%')
+            </if>
+            <if test="stock.batchNo != null and stock.batchNo != ''">
+                AND s.batch_no = #{stock.batchNo}
+            </if>
+            <if test="stock.goodsType != null and stock.goodsType != ''">
+                AND s.goods_type = #{stock.goodsType}
+            </if>
+            <!-- 只查有库存的 -->
+            AND s.quantity > 0
+        </where>
+        ORDER BY s.create_time DESC
+    </select>
+</mapper>

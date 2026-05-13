@@ -9,7 +9,8 @@ export const columns: BasicColumn[] = [
     title: '产品编码',
     align: 'center',
     sorter: true,
-    dataIndex: 'productCode'
+    dataIndex: 'productCode',
+     width:280
    },
    {
     title: '产品名称',
@@ -209,7 +210,7 @@ export const formSchema: FormSchema[] = [
   {
     label: '状态',
     field: 'status',
-    defaultValue: "1",
+    defaultValue: '1',
     component: 'JDictSelectTag',
     componentProps:{
         dictCode:"status"

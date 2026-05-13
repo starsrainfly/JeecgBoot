@@ -113,8 +113,20 @@ export const formSchema: FormSchema[] = [
     component: 'JDictSelectTag',
     componentProps:{
         dictCode:"wms_location_level",
-        type: "radio"
-     },
+        type: "radio",
+      buttonStyle:'solid',
+    },
+    // component: 'RadioGroup',
+    //
+    // componentProps: {
+    //   buttonStyle:'solid',
+    //   options: [
+    //     { label: '仅仓库', value: 'WAREHOUSE' },
+    //     { label: '仓库 + 区域', value: 'AREA' },
+    //     { label: '仓库 + 区域 + 货架', value: 'SHELF' },
+    //     { label: '仓库 + 区域 + 货架 + 货位', value: 'LOCATION' },
+    //   ],
+    // },
     dynamicRules: ({model,schema}) => {
           return [
                  { required: true, message: '请输入位置管理粒度!'},

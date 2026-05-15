@@ -232,10 +232,10 @@
     // === 生成二维码内容（含各层级ID，类型LOCATION）===
     data.qrContent = JSON.stringify({
       t: 'LOCATION',                                    // 类型
-      wId: locationInfo.warehouseId || '',                // 仓库ID
-      aId: locationInfo.areaId || '',                     // 区域ID
-      shId: locationInfo.shelfId || '',                   // 货架ID
-      lId: locationInfo.locationId || formValues.locationId || '',  // 库位ID
+      w: locationInfo.warehouseId || '',                // 仓库ID
+      a: locationInfo.areaId || '',                     // 区域ID
+      sh: locationInfo.shelfId || '',                   // 货架ID
+      l: locationInfo.locationId || formValues.locationId || '',  // 库位ID
       p: data.pathCode,                                   // 组合码（人工可读）
     });
 

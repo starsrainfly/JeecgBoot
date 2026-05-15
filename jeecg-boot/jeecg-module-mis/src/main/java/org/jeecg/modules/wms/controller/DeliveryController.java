@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.jeecg.modules.common.utils.QrCodeParser;
 import org.jeecg.modules.scm.entity.SalesOrder;
 import org.jeecg.modules.scm.entity.SalesOrderDetail;
 import org.jeecg.modules.scm.mapper.SalesOrderDetailMapper;
@@ -24,6 +25,7 @@ import org.jeecg.modules.scm.service.ISalesOrderService;
 import org.jeecg.modules.wms.entity.*;
 import org.jeecg.modules.wms.service.*;
 import org.jeecg.modules.wms.vo.*;
+import org.jeecg.modules.mdm.vo.*;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -395,6 +397,7 @@ public class DeliveryController {
 		// ========== 解析扫码内容 ==========
 		String goodsCode = null;
 		String batchNo = null;
+		String templateType = null;
 
 		if (scanCode == null || scanCode.trim().isEmpty()) {
 			result.setMatched(false);
@@ -402,43 +405,60 @@ public class DeliveryController {
 			return Result.OK(result);
 		}
 
-		String code = scanCode.trim();
-		if (code.startsWith("{")) {
-			// ===== 新系统 JSON 格式 =====
-			try {
-				JSONObject json = JSON.parseObject(code);
-				goodsCode = json.getString("p");
-				batchNo = json.getString("b");
-			} catch (Exception e) {
-				result.setMatched(false);
-				result.setMsg("二维码格式错误");
-				return Result.OK(result);
-			}
-		} else if (code.contains(";")) {
-			// ===== 老系统 ; 分隔格式 =====
-			// 格式：orderNo;productNo;batchNo;productDate;deliverDate;singleWeight
-			String[] parts = code.split(";");
-			if (parts.length >= 3) {
-				// parts[0] = orderNo（订单号，忽略）
-				// parts[1] = productNo（产品编码）
-				// parts[2] = batchNo（批次号）
-				goodsCode = parts[1];
-				batchNo = parts[2];
-			}
-		}
 
-		// 解析扫码内容：支持 goodsCode 或 goodsCode|batchNo 或 goodsCode|batchNo|stockId
-//		String goodsCode = scanCode;
-//		String batchNo = null;
-//		if (scanCode != null && scanCode.contains("|")) {
-//			String[] parts = scanCode.split("\\|");
-//			goodsCode = parts[0];
-//			if (parts.length > 1) {
-//				batchNo = parts[1];
+		String code = scanCode.trim();
+		QrParseResult qrParseResult = QrCodeParser.parse(scanCode);
+		// 当前业务只处理产品标签
+		if (!"PRODUCT".equals(qrParseResult.getTagType())) {
+			result.setMatched(false);
+			result.setMsg("请扫描产品标签二维码");
+			return Result.OK(result);
+		}
+		 goodsCode = qrParseResult.getProductCode();  // 产品编码
+		 batchNo = qrParseResult.getBatchNo();        // 批次号（可能为null）
+
+
+//		if (code.startsWith("{")) {
+//			// ===== 新系统 JSON 格式 =====
+//			try {
+//				JSONObject json = JSON.parseObject(code);
+//				goodsCode = json.getString("p");
+//				batchNo = json.getString("b");
+//				templateType = json.getString("t");
+//				if(templateType == null || !templateType.equals("PRODUCT")){
+//					return Result.error("不是产品二维码");
+//				}
+//			} catch (Exception e) {
+//				result.setMatched(false);
+//				result.setMsg("二维码格式错误");
+//				return Result.OK(result);
+//			}
+//		} else if (code.contains(";")) {
+//			// ===== 老系统 ; 分隔格式 =====
+//			// 格式：orderNo;productNo;batchNo;productDate;deliverDate;singleWeight
+//			String[] parts = code.split(";");
+//			if (parts.length >= 3) {
+//				// parts[0] = orderNo（订单号，忽略）
+//				// parts[1] = productNo（产品编码）
+//				// parts[2] = batchNo（批次号）
+//				goodsCode = parts[1];
+//				batchNo = parts[2];
 //			}
 //		}
+//
+//		// 解析扫码内容：支持 goodsCode 或 goodsCode|batchNo 或 goodsCode|batchNo|stockId
+////		String goodsCode = scanCode;
+////		String batchNo = null;
+////		if (scanCode != null && scanCode.contains("|")) {
+////			String[] parts = scanCode.split("\\|");
+////			goodsCode = parts[0];
+////			if (parts.length > 1) {
+////				batchNo = parts[1];
+////			}
+////		}
+
        // 校验
-		if (oConvertUtils.isEmpty(goodsCode)) {
+		if (oConvertUtils.isEmpty(goodsCode) ) {
 			result.setMatched(false);
 			result.setMsg("二维码缺少产品编码");
 			return Result.OK(result);

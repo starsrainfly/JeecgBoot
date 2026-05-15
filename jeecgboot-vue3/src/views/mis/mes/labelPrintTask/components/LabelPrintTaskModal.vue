@@ -229,6 +229,7 @@
 
     // 默认格式（模板未定义时）
     const content = {
+      t: 'PRODUCT',
       p: values.productCode || '',
       b: values.batchNo || '',
       d: values.produceDate || new Date().toISOString().split('T')[0],

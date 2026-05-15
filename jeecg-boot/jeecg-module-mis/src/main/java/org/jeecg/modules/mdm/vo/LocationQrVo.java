@@ -30,6 +30,8 @@ import lombok.Data;
  *   "height": 1.50,
  *   "volume": 1.44
  * }
+ *
+ * {"t":"LOCATION","wid":"...","aid":"...","sid":"...","lid":"...","path":"..."}
  */
 @Data
 @Schema(description = "库位二维码解析结果")

@@ -4,7 +4,10 @@
    <BasicTable @register="registerTable" :rowSelection="rowSelection">
      <!--插槽:table标题-->
       <template #tableTitle>
-          <a-button type="primary" v-auth="'mes:mis_label_print_task:add'" @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
+          <a-button type="primary" v-auth="'mes:mis_label_print_task:add'" @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增产品标签</a-button>
+        <a-button @click="handleAddLocation" preIcon="ant-design:environment-outlined" style="margin-right: 8px; background: #52c41a; border-color: #52c41a; color: #fff">
+          新增库位标签
+        </a-button>
           <a-button  type="primary" v-auth="'mes:mis_label_print_task:exportXls'" preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
           <j-upload-button type="primary" v-auth="'mes:mis_label_print_task:importExcel'" preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
           <a-dropdown v-if="selectedRowKeys.length > 0">
@@ -33,6 +36,8 @@
     </BasicTable>
     <!-- 表单区域 -->
     <LabelPrintTaskModal @register="registerModal" @success="handleSuccess"></LabelPrintTaskModal>
+    <!-- 库位标签Modal（新增） -->
+    <LabelPrintTaskLocationModal @register="registerLocationModal" @success="handleSuccess"></LabelPrintTaskLocationModal>
     <!-- 【添加】打印弹窗组件 -->
     <LabelPrintModal
       ref="printModalRef"  @confirm="handlePrintSuccess"  @cancel="handlePrintCancel"  />
@@ -51,6 +56,7 @@
   import { useMessage } from '/@/hooks/web/useMessage';
   import { useUserStore } from '/@/store/modules/user';
   import LabelPrintModal from './components/LabelPrintModal.vue'
+  import LabelPrintTaskLocationModal from './components/LabelPrintTaskLocationModal.vue'
 
   const printModalRef = ref();
 
@@ -64,6 +70,8 @@
 
   //注册model
   const [registerModal, {openModal}] = useModal();
+  // 注册库位标签Modal
+  const [registerLocationModal, { openModal: openLocationModal }] = useModal();
   //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
@@ -124,25 +132,53 @@
        showFooter: true,
      });
   }
+/**
+ * 新增库位标签
+ * */
+  function handleAddLocation() {
+    openLocationModal(true, { isUpdate: false, showFooter: true });
+  }
    /**
     * 编辑事件
     */
   function handleEdit(record: Recordable) {
-     openModal(true, {
-       record,
-       isUpdate: true,
-       showFooter: true,
-     });
+    const templateType = record.templateType;
+    if(templateType === 'PRODUCT'){
+      openModal(true, {
+        record,
+        isUpdate: true,
+        showFooter: true,
+      });
+    }
+    else if(templateType === 'LOCATION'){
+      openLocationModal(true,{
+        record,
+        isUpdate: true,
+        showFooter:true,
+      });
+    }
+
    }
    /**
     * 详情
    */
   function handleDetail(record: Recordable) {
-     openModal(true, {
-       record,
-       isUpdate: true,
-       showFooter: false,
-     });
+     const templateType = record.templateType;
+     if(templateType === 'PRODUCT') {
+       openModal(true, {
+         record,
+         isUpdate: true,
+         showFooter: false,
+       });
+     }
+     else if(templateType === 'LOCATION'){
+       openLocationModal(true,{
+         record,
+         isUpdate: true,
+         showFooter:false,
+       });
+     }
+
    }
    /**
     * 删除事件

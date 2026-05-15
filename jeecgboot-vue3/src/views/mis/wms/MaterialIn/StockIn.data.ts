@@ -109,6 +109,7 @@ export const searchFormSchema: FormSchema[] = [
       label: "入库类型",
       field: "stockInType",
       component: 'JSelectMultiple',
+      defaultValue:'PURCHASE',
       componentProps:{
           dictCode:"wms_stock_in_type"
       },

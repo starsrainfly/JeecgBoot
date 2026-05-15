@@ -89,7 +89,7 @@ public class Material implements Serializable {
 	@Excel(name = "是否符合ROHS", width = 15, dicCode = "yn")
 	@Dict(dicCode = "yn")
     @Schema(description = "是否符合ROHS")
-    private Integer isrohs;
+    private String isRohs;
 	/**备注*/
 	@Excel(name = "备注", width = 15)
     @Schema(description = "备注")

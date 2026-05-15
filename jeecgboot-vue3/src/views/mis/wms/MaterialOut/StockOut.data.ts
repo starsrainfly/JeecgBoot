@@ -26,11 +26,11 @@ export const columns: BasicColumn[] = [
    //  align:"center",
    //  dataIndex: 'customerName'
    // },
-   {
-    title: '领用人id',
-    align:"center",
-    dataIndex: 'requesterUserId_dictText'
-   },
+   // {
+   //  title: '领用人id',
+   //  align:"center",
+   //  dataIndex: 'requesterUserId_dictText'
+   // },
    {
     title: '领用人',
     align:"center",

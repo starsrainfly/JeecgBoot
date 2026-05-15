@@ -125,6 +125,7 @@ export const searchFormSchema: FormSchema[] = [
       label: "出库类型",
       field: "stockOutType",
       component: 'JSelectMultiple',
+      defaultValue:'PRODUCTION',
       componentProps:{
           dictCode:"wms_stock_out_type"
       },

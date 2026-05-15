@@ -88,7 +88,7 @@
   import {BasicForm, useForm} from '/@/components/Form/index';
   import { useMessage } from '/@/hooks/web/useMessage';
   import {formSchema} from '../LabelPrintTask.data';
-  import {saveOrUpdate, printLabel, getCompanyInfo} from '../LabelPrintTask.api';
+  import {saveOrUpdate, printLabel, getCompanyInfo, getTemplateInfo} from '../LabelPrintTask.api';
   import LabelPreview from './LabelPreview.vue';
 
   const emit = defineEmits(['register','success']);
@@ -173,7 +173,9 @@
     previewData.templateId = formValues.templateId || '';
     previewData.copies = formValues.copies || 1;
     previewData.status = formValues.status || 'PENDING';
-    previewData.templateJson = formValues.templateJson || '';
+
+
+    previewData.templateJson = formValues.templateJson ||'';
     previewData.produceDate = formValues.produceDate || new Date().toLocaleDateString('zh-CN');
     previewData.qcStatus = formValues.qcStatus || '合格';
 

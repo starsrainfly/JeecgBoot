@@ -465,6 +465,7 @@ export const deliveryDetailColumns: JVxeColumn[] = [
         validateRules: [
           { required: true, message: '${title}不能为空' },
         ],
+      visible:false
     },
     {
       title: '产品编码',

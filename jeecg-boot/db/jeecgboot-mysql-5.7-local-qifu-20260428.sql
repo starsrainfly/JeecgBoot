@@ -2,7 +2,8 @@
 SQLyog Ultimate v12.08 (64 bit)
 MySQL - 5.7.27-log : Database - jeecg-boot
 *********************************************************************
-*/
+*/
+
 
 /*!40101 SET NAMES utf8 */;
 
@@ -1451,7 +1452,7 @@ CREATE TABLE `mis_material` (
   `description` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '描述',
   `material_spec` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '规格型号',
   `version` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '版本',
-  `isrohs` int(10) DEFAULT '0' COMMENT '是否符合ROHS',
+  `isrohs` varchar(32) DEFAULT '0' COMMENT '是否符合ROHS',
   `remark` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '备注',
   `del_flag` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '是否删除',
   `status` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT '1' COMMENT '状态',

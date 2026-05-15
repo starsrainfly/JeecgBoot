@@ -90,6 +90,15 @@ public class LabelPrintTask implements Serializable {
 	@Excel(name = "模板编码", width = 15)
     @Schema(description = "模板编码")
     private String templateCode;
+    /**模板类型：PRODUCT产品标签/BATCH批次标签/LOCATION库位标签*/
+    @Excel(name = "模板类型：PRODUCT产品标签/BATCH批次标签/LOCATION库位标签", width = 15, dicCode = "mdm_label_template_type")
+    @Dict(dicCode = "mdm_label_template_type")
+    @Schema(description = "模板类型：PRODUCT产品标签/BATCH批次标签/LOCATION库位标签")
+    private String templateType;
+    /**模板名称*/
+    @Excel(name = "模板名称", width = 15)
+    @Schema(description = "模板名称")
+    private String templateName;
 	/**标签枚数*/
 	@Excel(name = "标签枚数", width = 15)
     @Schema(description = "标签枚数")
@@ -146,6 +155,48 @@ public class LabelPrintTask implements Serializable {
 	@Excel(name = "打印机名称", width = 15)
     @Schema(description = "打印机名称")
     private String printerName;
+    /**仓库ID*/
+    @Excel(name = "仓库ID", width = 15)
+    @Schema(description = "仓库ID")
+    private String warehouseId;
+    /**区域ID*/
+    @Excel(name = "区域ID", width = 15)
+    @Schema(description = "区域ID")
+    private String areaId;
+    /**货架ID*/
+    @Excel(name = "货架ID", width = 15)
+    @Schema(description = "货架ID")
+    private String shelfId;
+    /**货位id*/
+    @Excel(name = "货位id", width = 15)
+    @Schema(description = "货位id")
+    private String locationId;
+    /**货位编码*/
+    @Excel(name = "货位编码", width = 15)
+    @Schema(description = "货位编码")
+    private String locationCode;
+    /**货位*/
+    @Excel(name = "货位", width = 15)
+    @Schema(description = "货位")
+    private String locationName;
+    /**货位组合码*/
+    @Excel(name = "货位组合码", width = 15)
+    @Schema(description = "货位组合码")
+    private String pathCode;
+    /**所属仓库名称*/
+    @Excel(name = "所属仓库", width = 15)
+    @Schema(description = "所属仓库名称")
+    private String warehouseName;
+
+    /**所属区域名称*/
+    @Excel(name = "所属区域", width = 15)
+    @Schema(description = "所属区域名称")
+    private String areaName;
+
+    /**所属货架名称*/
+    @Excel(name = "所属货架", width = 15)
+    @Schema(description = "所属货架名称")
+    private String shelfName;
 	/**备注*/
 	@Excel(name = "备注", width = 15)
     @Schema(description = "备注")

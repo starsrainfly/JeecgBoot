@@ -78,18 +78,40 @@ public class SupplierPage {
 	@Excel(name = "等级", width = 15)
 	@Schema(description = "等级")
     private java.math.BigDecimal level;
-	/**省市区*/
-	@Schema(description = "省市区")
-    @Excel(name = "省市区", width = 15,exportConvert=true,importConvert = true )
-    private java.lang.String areaId;
-
-    public String convertisAreaId() {
-        return SpringContextUtils.getBean(ProvinceCityArea.class).getText(areaId);
-    }
-
-    public void convertsetAreaId(String text) {
-        this.areaId = SpringContextUtils.getBean(ProvinceCityArea.class).getCode(text);
-    }
+//	/**省市区*/
+//	@Schema(description = "省市区")
+//    @Excel(name = "省市区", width = 15,exportConvert=true,importConvert = true )
+//    private java.lang.String areaId;
+//
+//    public String convertisAreaId() {
+//        return SpringContextUtils.getBean(ProvinceCityArea.class).getText(areaId);
+//    }
+//
+//    public void convertsetAreaId(String text) {
+//        this.areaId = SpringContextUtils.getBean(ProvinceCityArea.class).getCode(text);
+//    }
+@Excel(name = "贸易类型", width = 15, dicCode = "scm_trade_type")
+@Dict(dicCode = "scm_trade_type")
+@Schema(description = "贸易类型")
+private String tradeType;
+	@Excel(name = "国家/区域", width = 15, dicCode = "mdm_country_code")
+	@Dict(dicCode = "mdm_country_code")
+	@Schema(description = "国家/区域")
+	private String regionCode;
+	/**区编码*/
+	@Excel(name = "区编码", width = 15, exportConvert=true,importConvert = true)
+	@Schema(description = "区编码")
+	private String districtCode;
+	public String convertisDistrictCode() {
+		return SpringContextUtils.getBean(ProvinceCityArea.class).getText(districtCode);
+	}
+	public void convertsetDistrictCode(String text) {
+		this.districtCode = SpringContextUtils.getBean(ProvinceCityArea.class).getCode(text);
+	}
+	/**区名称*/
+	@Excel(name = "区名称", width = 15)
+	@Schema(description = "区名称")
+	private String districtName;
 	/**供应商地址*/
 	@Excel(name = "供应商地址", width = 15)
 	@Schema(description = "供应商地址")

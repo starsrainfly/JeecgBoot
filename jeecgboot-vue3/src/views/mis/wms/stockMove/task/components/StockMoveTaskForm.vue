@@ -4,7 +4,7 @@
 
 <script lang="ts" setup>
   import { BasicForm, useForm } from '/@/components/Form';
-  import { StockMoveTaskFormSchema } from '../StockMoveTask.data';
+  import { singleMoveFormSchema } from '../StockMoveTask.data';
 
   const props = defineProps<{
     record?: Recordable;
@@ -14,7 +14,7 @@
 
   const [registerForm, { validate, resetFields, setFieldsValue, updateSchema }] = useForm({
     labelWidth: 100,
-    schemas: StockMoveTaskFormSchema,
+    schemas: singleMoveFormSchema,
     showActionButtonGroup: false,
     baseColProps: { span: 12 },
   });

@@ -10,13 +10,20 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'taskNo'
    },
-
+  { title: '模板类型',
+    dataIndex: 'templateType_dictText',
+    align: 'center'
+  },
    {
     title: '批次号',
     align:"center",
     dataIndex: 'batchNo'
    },
-
+  {
+    title:'库位组合码',
+    align:'center',
+    dataIndex:'pathCode'
+  },
    {
     title: '触发方式',
     align:"center",
@@ -152,15 +159,24 @@ export const searchFormSchema: FormSchema[] = [
 
       //colProps: {span: 6},
  	},
-	{
-      label: "触发方式",
-      field: 'triggerType',
-      component: 'JSelectMultiple',
-      componentProps:{
-          dictCode:"mdm_trigger_type"
-      },
-      //colProps: {span: 6},
- 	},
+	// {
+  //     label: "触发方式",
+  //     field: 'triggerType',
+  //     component: 'JSelectMultiple',
+  //     componentProps:{
+  //         dictCode:"mdm_trigger_type"
+  //     },
+  //     //colProps: {span: 6},
+ 	// },
+  {
+    label: "标签类型",
+    field: 'templateType',
+    component: 'JSelectMultiple',
+    componentProps:{
+      dictCode:"mdm_label_template_type"
+    },
+    //colProps: {span: 6},
+  },
 	{
       label: "产品编码",
       field: 'productCode',
@@ -216,6 +232,9 @@ export const searchFormSchema: FormSchema[] = [
               { source: 'label_height', target: 'labelHeight' },
               { source: 'content_json', target: 'templateJson' },
             ],
+          param: {
+            templateType: 'LOCATION',  // 传业务员ID参数
+          },
             multi:false,
         }
     },
@@ -362,8 +381,13 @@ export const formSchema: FormSchema[] = [
 
   },
   {
-    label: '模板编码',
+    label: '模板JSON',
     field: 'templateJson',
+    component:'Input',
+  },
+  {
+    label: '模板名称',
+    field: 'templateName',
     component:'Input',
   },
   {
@@ -378,6 +402,7 @@ export const formSchema: FormSchema[] = [
             fieldConfig: [
                 { source: 'id', target: 'templateId' },
                 { source: 'template_code', target: 'templateCode' },
+              { source: 'template_name', target: 'templateName' },
                 { source: 'label_width', target: 'labelWidth' },
                 { source: 'label_height', target: 'labelHeight' },
               { source: 'content_json', target: 'templateJson' },
@@ -444,11 +469,11 @@ export const formSchema: FormSchema[] = [
     componentProps:{
         dictCode:"sys_depart where del_flag='0' and org_category='1' and org_type='1',depart_name,id"
      },
-    dynamicRules: ({model,schema}) => {
-          return [
-                 { required: true, message: '请输入公司!'},
-          ];
-     },
+    // dynamicRules: ({model,schema}) => {
+    //       return [
+    //              { required: true, message: '请输入公司!'},
+    //       ];
+    //  },
   },
   // {
   //   label: '公司名称',
@@ -491,6 +516,141 @@ export const formSchema: FormSchema[] = [
 	  component: 'Input',
 	  show: false
 	},
+];
+
+
+// 库位标签表单配置
+export const locationFormSchema: FormSchema[] = [
+  {
+    label: '作业编号',
+    field: 'taskNo',
+    component: 'Input',
+    componentProps: { readonly: true }
+  },
+
+  // 仓库 → 区域 → 货架 → 库位 级联
+  {
+    label: '仓库',
+    field: 'warehouseId',
+    component: 'JDictSelectTag',
+    componentProps: {
+      dictCode: "mis_warehouse where del_flag='0' and status='1',name,id"
+    },
+    dynamicRules: () => [{ required: true, message: '请选择仓库!' }],
+  },
+  {
+    label: '区域',
+    field: 'areaId',
+    component: 'JDictSelectTag',
+    componentProps: ({ formModel }) => ({
+      key: formModel?.warehouseId || 'empty',
+      dictCode: formModel?.warehouseId
+        ? `mis_warehouse_area where del_flag='0' and status='1' and warehouse_id='${formModel.warehouseId}',name,id`
+        : '',
+      placeholder: formModel?.warehouseId ? "请选择区域" : "请先选择仓库",
+    }),
+    dynamicRules: () => [{ required: true, message: '请选择区域!' }],
+  },
+  {
+    label: '货架',
+    field: 'shelfId',
+    component: 'JDictSelectTag',
+    componentProps: ({ formModel }) => ({
+      key: formModel?.areaId || 'empty',
+      dictCode: formModel?.areaId
+        ? `mis_warehouse_shelf where del_flag='0' and status='1' and area_id='${formModel.areaId}',name,id`
+        : '',
+      placeholder: formModel?.areaId ? "请选择货架" : "请先选择区域",
+    }),
+    dynamicRules: () => [{ required: true, message: '请选择货架!' }],
+  },
+  {
+    label: '库位',
+    field: 'locationId',
+    component: 'JDictSelectTag',
+    componentProps: ({ formModel }) => ({
+      key: formModel?.shelfId || 'empty',
+      dictCode: formModel?.shelfId
+        ? `mis_warehouse_location where del_flag='0' and status='1' and shelf_id='${formModel.shelfId}',location_code,id`
+        : '',
+      placeholder: formModel?.shelfId ? "请选择库位" : "请先选择货架",
+    }),
+    dynamicRules: () => [{ required: true, message: '请选择库位!' }],
+  },
+  {
+    label: '模板名称',
+    field: 'templateName',
+    component:'Input',
+  },
+  { label: '模板配置', field: 'templateJson', component: 'InputTextArea',  },
+  // 模板选择 - 过滤LOCATION类型
+  {
+    label: '模板',
+    field: 'templateId',
+    component: 'JPopup',
+    componentProps: ({ formActionType }) => {
+      const { setFieldsValue } = formActionType;
+      return {
+        setFieldsValue: setFieldsValue,
+        code: "mdm_label_template",
+        fieldConfig: [
+          { source: 'id', target: 'templateId' },
+          { source: 'template_code', target: 'templateCode' },
+          {source: 'template_name', target: 'templateName'},
+          { source: 'template_type', target: 'templateType' },
+          { source: 'label_width', target: 'labelWidth' },
+          { source: 'label_height', target: 'labelHeight' },
+          { source: 'content_json', target: 'templateJson' },
+        ],
+        multi: false,
+        param: { templateType: 'LOCATION' }
+      }
+    },
+    dynamicRules: () => [{ required: true, message: '请选择模板!' }],
+  },
+  { label: '模板类型', field: 'templateType', component: 'Input', show: false },
+  { label: '模板编码', field: 'templateCode', component: 'Input', show: false },
+  { label: '标签宽度（mm）', field: 'labelWidth', component: 'InputNumber', show: false },
+  { label: '标签高度（mm)', field: 'labelHeight', component: 'InputNumber', show: false },
+  // { label: '模板配置', field: 'templateJson', component: 'InputTextArea', show: false },
+
+  // 隐藏字段：库位信息（从loadLocationDetail回填）
+  { label: '库位编码', field: 'locationCode', component: 'Input', show: false },
+  { label: '库位名称', field: 'locationName', component: 'Input', show: false },
+  { label: '组合码', field: 'pathCode', component: 'Input', show: false },
+
+  { label: '仓库名称', field: 'warehouseName', component: 'Input', show: false },
+  { label: '区域名称', field: 'areaName', component: 'Input', show: false },
+  { label: '货架名称', field: 'shelfName', component: 'Input', show: false },
+
+  { label: '标签枚数', field: 'labelQty', component: 'InputNumber', defaultValue: 1 },
+  { label: '打印份数', field: 'copies', component: 'InputNumber', defaultValue: 1 },
+
+  {
+    label: '公司',
+    field: 'companyId',
+    component: 'JDictSelectTag',
+    componentProps: {
+      dictCode: "sys_depart where del_flag='0' and org_category='1' and org_type='1',depart_name,id"
+    },
+    // dynamicRules: () => [{ required: true, message: '请选择公司!' }],
+  },
+
+  {
+    label: '触发方式',
+    field: 'triggerType',
+    defaultValue: "MANUAL",
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"mdm_trigger_type"
+    },
+    show:false,
+
+  },
+  { label: '状态', field: 'status', defaultValue: "PENDING", component: 'JDictSelectTag', componentProps: { dictCode: "mdm_print_status" }, show: false },
+  { label: '标签数据JSON', field: 'labelDataJson', component: 'InputTextArea', show: false },
+  { label: '备注', field: 'remark', component: 'InputTextArea' },
+  { label: '', field: 'id', component: 'Input', show: false },
 ];
 
 // 高级查询数据

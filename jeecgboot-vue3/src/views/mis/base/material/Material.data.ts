@@ -245,8 +245,8 @@ export const formSchema: FormSchema[] = [
   },
   {
     label: '是否符合ROHS',
-    field: 'isrohs',
-    defaultValue: "0",
+    field: 'isRohs',
+
     component: 'JDictSelectTag',
     componentProps:{
         dictCode:"yn"

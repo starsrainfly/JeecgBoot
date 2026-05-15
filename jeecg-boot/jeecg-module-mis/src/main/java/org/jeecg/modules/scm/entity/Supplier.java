@@ -74,6 +74,28 @@ public class Supplier implements Serializable {
     @Dict(dicCode = "supplier_type")
     @Schema(description = "供应商类型")
     private java.lang.String supplierType;
+    @Excel(name = "贸易类型", width = 15, dicCode = "scm_trade_type")
+    @Dict(dicCode = "scm_trade_type")
+    @Schema(description = "贸易类型")
+    private String tradeType;
+    @Excel(name = "国家/区域", width = 15, dicCode = "mdm_country_code")
+    @Dict(dicCode = "mdm_country_code")
+    @Schema(description = "国家/区域")
+    private String regionCode;
+    /**区编码*/
+    @Excel(name = "区编码", width = 15, exportConvert=true,importConvert = true)
+    @Schema(description = "区编码")
+    private String districtCode;
+    public String convertisDistrictCode() {
+        return SpringContextUtils.getBean(ProvinceCityArea.class).getText(districtCode);
+    }
+    public void convertsetDistrictCode(String text) {
+        this.districtCode = SpringContextUtils.getBean(ProvinceCityArea.class).getCode(text);
+    }
+    /**区名称*/
+    @Excel(name = "区名称", width = 15)
+    @Schema(description = "区名称")
+    private String districtName;
 	/**账期(天)*/
 	@Excel(name = "账期(天)", width = 15)
     @Schema(description = "账期(天)")

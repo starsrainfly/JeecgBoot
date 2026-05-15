@@ -10,6 +10,7 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.jeecg.modules.common.service.ISerialNoService;
 import org.jeecgframework.poi.excel.ExcelImportUtil;
 import org.jeecgframework.poi.excel.def.NormalExcelConstants;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -65,6 +66,8 @@ public class SupplierController {
 	private ISupplierContactService supplierContactService;
 	@Autowired
 	private ISupplierPurchaserService supplierPurchaserService;
+	@Autowired
+	private ISerialNoService serialNoService;
 	
 	/**
 	 * 分页列表查询
@@ -106,6 +109,11 @@ public class SupplierController {
 	public Result<String> add(@RequestBody SupplierPage supplierPage) {
 		Supplier supplier = new Supplier();
 		BeanUtils.copyProperties(supplierPage, supplier);
+		String supplierCode = serialNoService.generateSupplierCode(supplier.getTradeType(),
+				supplier.getDistrictCode(),supplier.getRegionCode());
+		String districtName = supplier.convertisDistrictCode().replace("/","");
+		supplier.setDistrictName(districtName);
+		supplier.setSupplierCode(supplierCode);
 		supplierService.saveMain(supplier, supplierPage.getSupplierQualificationList(),supplierPage.getSupplierContactList(),supplierPage.getSupplierPurchaserList());
 		return Result.OK("添加成功！");
 	}
@@ -127,6 +135,10 @@ public class SupplierController {
 		if(supplierEntity==null) {
 			return Result.error("未找到对应数据");
 		}
+
+		String districtName = supplier.convertisDistrictCode().replace("/","");
+		supplier.setDistrictName(districtName);
+
 		supplierService.updateMain(supplier, supplierPage.getSupplierQualificationList(),supplierPage.getSupplierContactList(),supplierPage.getSupplierPurchaserList());
 		return Result.OK("编辑成功!");
 	}

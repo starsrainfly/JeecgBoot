@@ -56,7 +56,7 @@ export const columns: BasicColumn[] = [
     {
       title: '付款方式',
       align:"center",
-      dataIndex: 'paymentType_dictText'
+      dataIndex: 'paymentMethod_dictText'
     },
    {
     title: '省市区',
@@ -119,7 +119,11 @@ export const searchFormSchema: FormSchema[] = [
 	{
       label: "客户评分",
       field: "customerRating",
-      component: 'InputNumber',
+      component: 'Rate',
+      componentProps:{
+        allowHalf:true,
+      },
+     // component: 'InputNumber',
       //colProps: {span: 6},
  	},
   {
@@ -151,7 +155,14 @@ export const searchFormSchema: FormSchema[] = [
       component: 'Input',
       //colProps: {span: 6},
  	},
-
+  {
+    label: '付款方式',
+    field: 'paymentMethod',
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"payment_method"
+    },
+  },
 
   {
     label: "省市区",
@@ -217,6 +228,7 @@ export const formSchema: FormSchema[] = [
     component: 'Rate',
     componentProps:{
      // disabled:!isAdmin,
+      allowHalf:true,
     },
     defaultValue:2,
     dynamicRules: ({model,schema}) => {
@@ -275,10 +287,10 @@ export const formSchema: FormSchema[] = [
   },
   {
     label: '付款方式',
-    field: 'paymentType',
+    field: 'paymentMethod',
     component: 'JDictSelectTag',
     componentProps:{
-      dictCode:"payment_type"
+      dictCode:"payment_method"
     },
     dynamicRules: ({model,schema}) => {
       return [
@@ -742,7 +754,7 @@ export const superQuerySchema = {
   status: {title: '状态',order: 15,view: 'list', type: 'string',dictCode: 'status',},
   approvalDate: {title: '审核时间',order: 16,view: 'datetime', type: 'string',},
   approvalStatus: {title: '审核状态',order: 17,view: 'list', type: 'string',dictCode: 'approval_status',},
-  paymentType: {title: '付款方式',order: 18,view: 'list', type: 'string',dictCode: 'payment_type',},
+  paymentMethod: {title: '付款方式',order: 18,view: 'list', type: 'string',dictCode: 'payment_method',},
   approvalUser: {title: '审核人',order: 19,view: 'text', type: 'string',},
   //子表高级查询
   customerAddress: {

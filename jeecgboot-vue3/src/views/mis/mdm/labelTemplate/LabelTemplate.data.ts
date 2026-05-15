@@ -270,13 +270,16 @@ export const baseFormSchema: FormSchema[] = [
   {
     label: '模板类型',
     field: 'templateType',
-    component: 'ASelect',
-    componentProps: {
-      options: [
-        { label: '产品标签', value: 'PRODUCT' },
-        { label: '库位标签', value: 'LOCATION' },
-      ],
+    component: 'JDictSelectTag',
+    componentProps:{
+      dictCode:"mdm_label_template_type"
     },
+    // componentProps: {
+    //   options: [
+    //     { label: '产品标签', value: 'PRODUCT' },
+    //     { label: '库位标签', value: 'LOCATION' },
+    //   ],
+    // },
     dynamicRules: () => [{ required: true, message: '请选择模板类型!' }],
     colProps: { span: 8 },
   },

@@ -58,6 +58,12 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'supplierType_dictText'
    },
+  {
+    title: '贸易类型',
+    align:"center",
+    dataIndex: 'tradeType_dictText',
+
+  },
    {
     title: '账期(天)',
     align:"center",
@@ -71,7 +77,7 @@ export const columns: BasicColumn[] = [
    {
     title: '省市区',
     align:"center",
-    dataIndex: 'areaId',
+    dataIndex: 'districtName',
    },
    {
     title: '供应商地址',
@@ -135,6 +141,15 @@ export const searchFormSchema: FormSchema[] = [
       },
       //colProps: {span: 6},
  	},
+  {
+    label: '贸易类型',
+    field: 'tradeType',
+    component: 'JDictSelectTag',
+    componentProps: {
+      dictCode: 'scm_trade_type',  // N-内贸, W-外贸
+    },
+    defaultValue:'N',
+  },
 	{
       label: "账期(天)",
       field: "paymentDays",
@@ -144,12 +159,16 @@ export const searchFormSchema: FormSchema[] = [
 	{
       label: "等级",
       field: "level",
-      component: 'InputNumber',
+    component: 'Rate',
+    componentProps:{
+      allowHalf:true,
+    },
+     // component: 'InputNumber',
       //colProps: {span: 6},
  	},
 	{
       label: "省市区",
-      field: "areaId",
+      field: "districtCode",
       component: 'JAreaLinkage',
       componentProps: {
         saveCode: 'region',
@@ -177,11 +196,8 @@ export const formSchema: FormSchema[] = [
     label: '供应商编码',
     field: 'supplierCode',
     component: 'Input',
-    dynamicRules: ({model,schema}) => {
-          return [
-                 { required: true, message: '请输入供应商编码!'},
-          ];
-     },
+    dynamicDisabled:true,
+
   },
   {
     label: '供应商名称',
@@ -277,6 +293,20 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
+    label: '贸易类型',
+    field: 'tradeType',
+    component: 'JDictSelectTag',
+    componentProps: {
+      dictCode: 'scm_trade_type',  // N-内贸, W-外贸
+    },
+    defaultValue:'N',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入贸易类型!'},
+      ];
+    },
+  },
+  {
     label: '账期(天)',
     field: 'paymentDays',
     component: 'InputNumber',
@@ -289,16 +319,20 @@ export const formSchema: FormSchema[] = [
   {
     label: '等级',
     field: 'level',
-    component: 'InputNumber',
-    dynamicRules: ({model,schema}) => {
-          return [
-                 { required: true, message: '请输入等级!'},
-          ];
-     },
+    component: 'Rate',
+    componentProps:{
+      allowHalf:true,
+    },
+    required:true
+    // dynamicRules: ({model,schema}) => {
+    //       return [
+    //              { required: true, message: '请输入等级!'},
+    //       ];
+    //  },
   },
   {
     label: '省市区',
-    field: 'areaId',
+    field: 'districtCode',
     component: 'JAreaLinkage',
     componentProps: {
       saveCode: 'region',
@@ -323,6 +357,21 @@ export const formSchema: FormSchema[] = [
     label: '备注',
     field: 'remark',
     component: 'Input',
+  },
+  {
+    label: '国家/地区',
+    field: 'regionCode',        // 外贸：存2位国家码
+    component: 'JDictSelectTag',
+    //show: ({ values }) => values.tradeType === 'W',
+    componentProps: {
+      dictCode: 'mdm_country_code', // US/JP/DE...
+    },
+    defaultValue:'CN',
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入国家/地区!'},
+      ];
+    },
   },
   {
     label: '状态',
@@ -577,7 +626,7 @@ export const superQuerySchema = {
   supplierType: {title: '供应商类型',order: 9,view: 'list', type: 'string',dictCode: 'supplier_type',},
   paymentDays: {title: '账期(天)',order: 10,view: 'number', type: 'number',},
   level: {title: '等级',order: 11,view: 'number', type: 'number',},
-  areaId: {title: '省市区',order: 12,view: 'pca', type: 'string',},
+  districtCode: {title: '省市区',order: 12,view: 'pca', type: 'string',},
   supplierAddress: {title: '供应商地址',order: 13,view: 'text', type: 'string',},
   remark: {title: '备注',order: 14,view: 'text', type: 'string',},
   status: {title: '状态',order: 15,view: 'list', type: 'string',dictCode: 'status',},

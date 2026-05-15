@@ -319,6 +319,18 @@ public class LabelPrintTaskServiceImpl extends ServiceImpl<LabelPrintTaskMapper,
                 return StringUtils.defaultString("合格");
             case "qrCode":
                 return StringUtils.defaultString(task.getQrContent(), "");
+            case "warehouseName":
+                return StringUtils.defaultString(task.getWarehouseName(), "");
+            case "areaName":
+                return StringUtils.defaultString(task.getAreaName(), "");
+            case "shelfName":
+                return StringUtils.defaultString(task.getShelfName(), "");
+            case "LocationName":
+                return StringUtils.defaultString(task.getLocationName(), "");
+            case "pathCode":
+                return StringUtils.defaultString(task.getPathCode(), "");
+            case "LocationCode":
+                return StringUtils.defaultString(task.getLocationCode(), "");
             default:
                 return "";
         }

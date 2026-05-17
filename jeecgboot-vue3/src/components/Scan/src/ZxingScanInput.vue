@@ -6,6 +6,7 @@
       :value="props.value"
       @update:value="onInputChange"
       @keydown="onKeydown"
+      @blur = "onBlur"
       placeholder="请输入或扫描（支持扫码枪）"
     />
 <!--    <a-button class="ml-2" type="default" @click="openScan">-->
@@ -13,7 +14,7 @@
 <!--        <Icon icon="ant-design:camera-outlined" />-->
 <!--      </template>-->
 <!--    </a-button>-->
-    <a-button class="ml-2" @click="openScan" preIcon="ant-design:camera-outlined" />
+    <a-button class="ml-2" type="primary" @click="openScan" preIcon="ant-design:camera-outlined" />
     <a-modal
       v-model:visible="scanVisible"
       title="摄像头扫码"
@@ -52,17 +53,20 @@
   import { ref } from 'vue';
   import { Icon } from '/@/components/Icon';
   import { useMessage } from '/@/hooks/web/useMessage';
-  import { BrowserQRCodeReader } from '@zxing/browser';
+  import { BrowserMultiFormatReader } from '@zxing/browser';
 
   const props = defineProps<{ value?: string }>();
-  const emit = defineEmits(['update:value', 'change']);
+  const emit = defineEmits(['update:value', 'change', 'blur']);
   const { createMessage } = useMessage();
 
   const inputRef = ref<<HTMLInputElement | null>(null);
   const scanVisible = ref(false);
   const scanTip = ref('');
-  let codeReader: BrowserQRCodeReader | null = null;
+  let codeReader: BrowserMultiFormatReader | null = null;
   let controls: any = null;
+
+  // ===== 关键：标记输入来源 =====
+  let isScanInput = false;   // true=扫码枪/摄像头，false=手动输入
 
   // ===== 扫码枪支持 =====
   let keyBuffer = '';
@@ -71,7 +75,12 @@
 
   function onInputChange(val: string) {
     emit('update:value', val);
-    emit('change', val);
+    // 只有扫码枪/摄像头输入才 emit change
+    if (isScanInput) {
+      emit('change', val);
+      isScanInput = false;  // 重置标志
+    }
+
   }
 
   function onKeydown(e: KeyboardEvent) {
@@ -82,6 +91,7 @@
     if (e.key === 'Enter') {
       if (keyBuffer.length > 0 && timeDiff < SCAN_THRESHOLD_MS) {
         e.preventDefault();
+        isScanInput = true;   // ← 标记为扫码输入
         onInputChange(keyBuffer);
         keyBuffer = '';
         return;
@@ -96,6 +106,10 @@
     keyBuffer += e.key;
   }
 
+  function onBlur() {
+    if (!props.value || props.value.trim().length < 3) return;
+    emit('blur', props.value);
+  }
   // ===== ZXing 摄像头扫码 =====
   async function openScan() {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -131,21 +145,30 @@
       }
 
       // 创建 ZXing 读取器
-      codeReader = new BrowserQRCodeReader();
+      codeReader = new BrowserMultiFormatReader();
 
       // 从摄像头解码，绑定到 video 元素
       controls = await codeReader.decodeFromConstraints(
-        { video: { facingMode: 'environment' } },
+        {
+          video:
+            {
+              facingMode: 'environment',
+              width:{ideal:640},// 降低分辨率
+              height:{ideal:480},
+            }
+          },
         videoElement,
         (result, error) => {
           if (result) {
             const text = result.getText();
             scanTip.value = '识别成功：' + text;
+            isScanInput = true;   // ← 标记为摄像头扫码
             onInputChange(text);
             setTimeout(() => stopScan(), 300);
           }
           // error 每帧未识别，静默忽略
         }
+
       );
 
       scanTip.value = '请将条码/二维码对准框内';
@@ -185,8 +208,8 @@
   .scan-wrapper {
     position: relative;
     width: 100%;
-    max-width: 380px;
-    height: 240px;
+    max-width: 420px;
+    height: 280px;
     background: #000;
     border-radius: 4px;
     overflow: hidden;
@@ -209,8 +232,8 @@
     z-index: 10;
   }
 
-  @scan-box-size: 220px;
-  @scan-box-top: 10px;
+  @scan-box-size: 260px;
+  @scan-box-top: 5px;
 
   .scan-mask-top,
   .scan-mask-bottom,

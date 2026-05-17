@@ -49,7 +49,7 @@
   import { useListPage } from '/@/hooks/system/useListPage';
   import { useModal } from '/@/components/Modal';
   import { useMessage } from '/@/hooks/web/useMessage';
-  import DeliveryTaskModal from './components/DeliveryTaskModal.vue';
+  import DeliveryTaskModal from './components/DeliveryTaskHtml5Modal.vue';
   import { taskColumns, taskSearchFormSchema } from './DeliveryTask.data';
   import { getTaskList } from './DeliveryTask.api';
 

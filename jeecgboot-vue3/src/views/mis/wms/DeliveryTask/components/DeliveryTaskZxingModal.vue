@@ -1,4 +1,4 @@
-<template>
+<<template>
   <BasicModal
     v-bind="$attrs"
     @register="registerModal"
@@ -22,18 +22,11 @@
       <a-row :gutter="16" class="mb-2">
         <a-col :xs="24" :sm="16">
           <a-form-item label="产品扫码" :labelCol="{ span: 4 }" :wrapperCol="{ span: 20 }">
-            <div class="scan-input flex items-center">
-              <a-input
-                ref="productInputRef"
-                v-model:value="scanCodeVal"
-                @keydown="onProductKeydown"
-                placeholder="请扫描产品二维码"
-                allowClear
-              />
-              <a-button class="ml-2" type="primary" size="small" @click="openProductScan">
-                <Icon icon="ant-design:camera-outlined" />
-              </a-button>
-            </div>
+            <ZxingScanInput
+              v-model:value="scanCodeVal"
+              @change="handleProductScan"
+              placeholder="请扫描产品二维码"
+            />
           </a-form-item>
         </a-col>
         <a-col :xs="24" :sm="8">
@@ -63,8 +56,6 @@
 
       <!-- 本次发货明细 -->
       <a-card title="本次发货" :bordered="false" :bodyStyle="{ padding: '4px' }" class="mb-2" size="small">
-       <!--汇总信息-->
-
         <template #extra>
           <a-button type="primary" danger size="small" @click="clearItems">清空</a-button>
         </template>
@@ -93,18 +84,13 @@
           <a-col :xs="24" :sm="12" :lg="8">
             <div class="logistics-input-row ">
               <span class="logistics-label">物流单号</span>
-              <a-input
-                ref="logisticsInputRef"
+              <ZxingScanInput
                 v-model:value="logisticsNo"
-                @keydown="onLogisticsKeydown"
-                @blur="onLogisticsBlur"
+                @change="handleLogisticsScan"
+                @blur ="handleLogisticsScan"
                 placeholder="扫描或输入"
-                allowClear
-
+                style="flex: 1;"
               />
-              <a-button class="ml-2" type="primary" size="small" @click="openLogisticsScan">
-                <Icon icon="ant-design:camera-outlined" />
-              </a-button>
             </div>
           </a-col>
           <!-- 提示信息 -->
@@ -126,38 +112,6 @@
         />
       </a-card>
     </div>
-
-    <!-- 产品摄像头扫码弹窗 -->
-    <a-modal
-      v-model:visible="productScanVisible"
-      title="摄像头扫码-产品"
-      :footer="null"
-      :width="460"
-      :destroyOnClose="true"
-      @cancel="stopProductScan"
-    >
-      <div class="scan-box">
-        <div id="product-scan-reader" class="scan-reader" />
-        <p v-if="productScanTip" class="scan-tip">{{ productScanTip }}</p>
-        <a-button type="primary" block class="mt-2" @click="stopProductScan">停止扫描</a-button>
-      </div>
-    </a-modal>
-
-    <!-- 物流摄像头扫码弹窗 -->
-    <a-modal
-      v-model:visible="logisticsScanVisible"
-      title="摄像头扫码-物流单号"
-      :footer="null"
-      :width="460"
-      :destroyOnClose="true"
-      @cancel="stopLogisticsScan"
-    >
-      <div class="scan-box">
-        <div id="logistics-scan-reader" class="scan-reader" />
-        <p v-if="logisticsScanTip" class="scan-tip">{{ logisticsScanTip }}</p>
-        <a-button type="primary" block class="mt-2" @click="stopLogisticsScan">停止扫描</a-button>
-      </div>
-    </a-modal>
   </BasicModal>
 </template>
 
@@ -168,6 +122,7 @@
   import { BasicForm, useForm } from '/@/components/Form';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { Icon } from '/@/components/Icon';
+  import { ZxingScanInput } from '/@/components/Scan';
 
   import {
     pendingLineColumns,
@@ -200,19 +155,12 @@
   const productScanType = ref<'success' | 'error' | 'warning'>('success');
   const matchedStocks = ref<any[]>([]);
   const matchedOrderLines = ref<any[]>([]);
-  const productInputRef = ref<HTMLInputElement | null>(null);
-  const productScanVisible = ref(false);
-  const productScanTip = ref('');
-  let productHtml5QrCode: any = null;
 
   // ==================== 物流单号扫码 ====================
   const logisticsNo = ref('');
   const logisticsScanMsg = ref('');
   const logisticsScanType = ref<'success' | 'error' | 'warning'>('success');
-  const logisticsInputRef = ref<HTMLInputElement | null>(null);
-  const logisticsScanVisible = ref(false);
-  const logisticsScanTip = ref('');
-  let logisticsHtml5QrCode: any = null;
+  const identifying = ref(false);
 
   // ==================== 表格数据 ====================
   const orderLineData = ref<any[]>([]);
@@ -239,7 +187,6 @@
     columns: stockColumns,
     canResize: false,
     pagination: false,
-
   });
 
   const [registerDeliveryTable, { setTableData: setDeliveryData }] = useTable({
@@ -250,10 +197,7 @@
     ],
     canResize: false,
     pagination: false,
-
   });
-
-  const identifying = ref(false);
 
   // 物流表单（不含trackingNo）
   const [registerLogisticsForm, { setFieldsValue, validate, resetFields, getFieldsValue, updateSchema }] = useForm({
@@ -262,18 +206,6 @@
     baseColProps: { xs: 24, sm: 12, md: 8 },
     labelWidth: 80,
   });
-
-
-
-  // ==================== 关键：监听物流单号变化 ====================
-  // watch(logisticsNo, async (val) => {
-  //   console.log('=== watch 物流单号 ===', val);
-  //   if (!val || val.trim() === '') return;
-  //
-  //   const code = val.trim();
-  //   await setFieldsValue({ trackingNo: code });
-  //   await handleLogisticsScan(code);
-  // });
 
   // ==================== Modal 初始化 ====================
   const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data) => {
@@ -324,7 +256,6 @@
     const newVal = Number(val);
     console.log('数量手动修改:', record.productionBatchNo, '新值:', newVal);
 
-    // 找到 deliveryItems 中对应行并更新
     const idx = deliveryItems.value.findIndex(
       (i) => i.stockId === record.stockId && i.productionBatchNo === record.productionBatchNo
     );
@@ -345,32 +276,6 @@
   }
 
   // ==================== 产品扫码处理 ====================
-  let productKeyBuffer = '';
-  let productLastKeyTime = 0;
-  const SCAN_THRESHOLD_MS = 80;
-
-  function onProductKeydown(e: KeyboardEvent) {
-    const now = Date.now();
-    const timeDiff = now - productLastKeyTime;
-    productLastKeyTime = now;
-
-    if (e.key === 'Enter') {
-      if (productKeyBuffer.length > 0 && timeDiff < SCAN_THRESHOLD_MS) {
-        e.preventDefault();
-        handleProductScan(productKeyBuffer);
-        productKeyBuffer = '';
-        return;
-      }
-      productKeyBuffer = '';
-      return;
-    }
-
-    if (timeDiff > SCAN_THRESHOLD_MS) {
-      productKeyBuffer = '';
-    }
-    productKeyBuffer += e.key;
-  }
-
   async function handleProductScan(val: string) {
     if (!val?.trim()) return;
     try {
@@ -385,14 +290,13 @@
         matchedOrderLines.value = res.orderLines || [];
         setStockData(matchedStocks.value);
 
-        // 自动添加第一条库存（扫码快捷方式）
         if (matchedStocks.value.length > 0 && matchedOrderLines.value.length > 0) {
           addStockToDelivery(matchedStocks.value[0]);
         }
       } else {
         productScanMsg.value = res?.msg || '未匹配';
         productScanType.value = 'error';
-        matchedOrderLines.value = [];  // 清空
+        matchedOrderLines.value = [];
       }
     } catch (err: any) {
       productScanMsg.value = err?.message || '扫码失败';
@@ -402,77 +306,11 @@
     scanCodeVal.value = '';
   }
 
-  async function openProductScan() {
-    if (typeof window === 'undefined' || !navigator.mediaDevices) {
-      createMessage.error('当前环境不支持摄像头');
-      return;
-    }
-    productScanVisible.value = true;
-    await nextTick();
-
-    productScanTip.value = '正在启动摄像头…';
-    try {
-      const { Html5Qrcode } = await import('html5-qrcode');
-      productHtml5QrCode = new Html5Qrcode('product-scan-reader');
-      await productHtml5QrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 320, height: 320 } },
-        (decodedText: string) => {
-          console.log('产品扫码结果:', decodedText);
-          scanCodeVal.value = decodedText;
-          handleProductScan(decodedText);
-          productScanTip.value = '识别成功：' + decodedText;
-          setTimeout(() => stopProductScan(), 300);
-        },
-        () => {}
-      );
-      productScanTip.value = '请将条码对准框内';
-    } catch (err: any) {
-      productScanTip.value = '摄像头启动失败';
-      createMessage.error('摄像头启动失败：' + (err?.message || String(err)));
-    }
-  }
-
-  async function stopProductScan() {
-    productScanVisible.value = false;
-    if (productHtml5QrCode) {
-      try { await productHtml5QrCode.stop(); productHtml5QrCode.clear(); } catch (e) {}
-      productHtml5QrCode = null;
-    }
-  }
-
   // ==================== 物流单号扫码处理 ====================
-  let logisticsKeyBuffer = '';
-  let logisticsLastKeyTime = 0;
-
-  function onLogisticsKeydown(e: KeyboardEvent) {
-    const now = Date.now();
-    const timeDiff = now - logisticsLastKeyTime;
-    logisticsLastKeyTime = now;
-
-    if (e.key === 'Enter') {
-      if (logisticsKeyBuffer.length > 0 && timeDiff < SCAN_THRESHOLD_MS) {
-        e.preventDefault();
-        logisticsNo.value = logisticsKeyBuffer;
-        logisticsKeyBuffer = '';
-        return;
-      }
-      logisticsKeyBuffer = '';
-      return;
-    }
-
-    if (timeDiff > SCAN_THRESHOLD_MS) {
-      logisticsKeyBuffer = '';
-    }
-    logisticsKeyBuffer += e.key;
-  }
-
-  // 核心：物流单号识别
   async function handleLogisticsScan(code: string) {
     console.log('=== handleLogisticsScan 执行 ===', code);
-    if (identifying.value) return;  // 防止重复调用
-    if (!code) return;
-
+    if (identifying.value) return;
+    if (!code || code.trim().length < 5) return;   // 物流单号至少5位才识别
     identifying.value = true;
 
     try {
@@ -484,7 +322,6 @@
         logisticsScanType.value = 'success';
         console.log("识别成功：", res.companyName + " " + res.companyCode + " " + res.companyType);
 
-        // 先回填单号和公司信息
         await setFieldsValue({
           trackingNo: code,
           logisticsCompanyId: res.id,
@@ -492,7 +329,6 @@
           logisticsCompanyCode: res.companyCode,
         });
 
-        // 延迟给字典组件赋值
         setTimeout(async () => {
           await setFieldsValue({
             logisticsType: res.companyType,
@@ -507,48 +343,8 @@
     } catch (err: any) {
       logisticsScanMsg.value = '物流识别失败：' + (err?.message || '未知错误');
       logisticsScanType.value = 'error';
-    }
-    finally {
+    } finally {
       identifying.value = false;
-    }
-  }
-
-  async function openLogisticsScan() {
-    if (typeof window === 'undefined' || !navigator.mediaDevices) {
-      createMessage.error('当前环境不支持摄像头');
-      return;
-    }
-    logisticsScanVisible.value = true;
-    await nextTick();
-
-    logisticsScanTip.value = '正在启动摄像头…';
-    try {
-      const { Html5Qrcode } = await import('html5-qrcode');
-      logisticsHtml5QrCode = new Html5Qrcode('logistics-scan-reader');
-      await logisticsHtml5QrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 320, height: 320 } },
-        (decodedText: string) => {
-          console.log('物流扫码结果:', decodedText);
-          logisticsNo.value = decodedText;
-          handleLogisticsScan(decodedText);  // 立即识别
-          logisticsScanTip.value = '识别成功：' + decodedText;
-          setTimeout(() => stopLogisticsScan(), 300);
-        },
-        () => {}
-      );
-      logisticsScanTip.value = '请将条码对准框内';
-    } catch (err: any) {
-      logisticsScanTip.value = '摄像头启动失败';
-      createMessage.error('摄像头启动失败：' + (err?.message || String(err)));
-    }
-  }
-
-  async function stopLogisticsScan() {
-    logisticsScanVisible.value = false;
-    if (logisticsHtml5QrCode) {
-      try { await logisticsHtml5QrCode.stop(); logisticsHtml5QrCode.clear(); } catch (e) {}
-      logisticsHtml5QrCode = null;
     }
   }
 
@@ -558,7 +354,6 @@
 
     if (!stock) return;
 
-    // 查找订单明细
     let orderLine = matchedOrderLines.value?.[0];
     if (!orderLine) {
       orderLine = orderLineData.value.find(
@@ -571,7 +366,6 @@
       return;
     }
 
-    // ========== 所有变量提前定义 ==========
     const orderRemaining = Number(orderLine.orderQty || 0) - Number(orderLine.deliveredQty || 0);
     const available = Number(stock.quantity || 0) - Number(stock.lockedQty || 0);
 
@@ -583,7 +377,6 @@
 
     console.log('订单剩余:', orderRemaining, '库存可用:', available, '本次已发:', currentSum, '还缺:', stillNeed);
 
-    // ========== 校验 ==========
     if (orderRemaining <= 0) {
       createMessage.warning('该产品订单数量已发完');
       return;
@@ -597,10 +390,8 @@
       return;
     }
 
-    // ========== 计算本次应发 ==========
     const addQty = Math.min(stillNeed, available);
 
-    // 查找是否已有相同批次
     const existingIndex = deliveryItems.value.findIndex(
       (item) => item.sourceDetailId === orderLine.id
         && item.productionBatchNo === stock.batchNo
@@ -608,12 +399,9 @@
 
     console.log('本次应发:', addQty, '是否累加:', existingIndex > -1);
 
-    // ========== 执行添加 ==========
     if (existingIndex > -1) {
-      // 同批次累加
       const afterAdd = deliveryItems.value[existingIndex].actualQty + addQty;
       if (afterAdd > orderRemaining) {
-        // 保险：理论上不会触发，因为 addQty <= stillNeed
         deliveryItems.value[existingIndex].actualQty = orderRemaining - (currentSum - deliveryItems.value[existingIndex].actualQty);
         createMessage.warning('累加后超过订单数量，已自动调整');
       } else {
@@ -622,9 +410,7 @@
       setDeliveryData([...deliveryItems.value]);
       createMessage.success('数量已累加');
     } else {
-      // 不同批次，新增行
       if (addQty < stillNeed) {
-        // 库存不够发满，提示
         createConfirm({
           iconType: 'warning',
           title: '库存不足',
@@ -638,7 +424,7 @@
       }
     }
   }
-  // 新增行（抽离出来复用）
+
   function doAddNewItem(stock: any, orderLine: any, qty: number) {
     deliveryItems.value.push({
       sourceDetailId: orderLine.id,
@@ -656,27 +442,6 @@
       unitPrice: orderLine.unitPrice  || 0,
       scanCode: scanCodeVal.value || stock.goodsCode,
       unit:stock.unit || 'kg',
-    });
-    setDeliveryData([...deliveryItems.value]);
-    createMessage.success('已添加');
-  }
-  function doAddItem(stock: any, orderLine: any, qty: number) {
-    deliveryItems.value.push({
-      sourceDetailId: orderLine.id,
-      stockId: stock.id,
-      goodsId: stock.goodsId,
-      goodsCode: stock.goodsCode,
-      goodsName: stock.goodsName,
-      productionBatchId: stock.productionBatchId,
-      productionBatchNo: stock.batchNo,
-      productionDate: stock.productionDate,
-      expiryDate: stock.expiryDate,
-      warehouseId: stock.warehouseId,
-      warehouseName: stock.warehouseId_dictText,
-      actualQty: qty,
-      unitPrice: orderLine.unitPrice,
-      unit:stock.unit || 'kg',
-      scanCode: scanCodeVal.value || stock.goodsCode,
     });
     setDeliveryData([...deliveryItems.value]);
     createMessage.success('已添加');
@@ -708,9 +473,8 @@
       const logistics = await validate();
       const params = {
         ...logistics,
-        // 订单信息（字段名要匹配后端）
-        sourceOrderId: orderInfo.orderId,      //
-        sourceOrderNo: orderInfo.orderNo,        //
+        sourceOrderId: orderInfo.orderId,
+        sourceOrderNo: orderInfo.orderNo,
         customerId: orderInfo.customerId,
         customerName: orderInfo.customerName,
         consignee: orderInfo.consignee,
@@ -719,8 +483,7 @@
         companyId: orderInfo.companyId,
         companyCode: orderInfo.companyCode,
         companyName: orderInfo.companyName,
-        logisticsNo:logisticsNo.value,
-        // 发货明细
+        logisticsNo: logisticsNo.value,
         deliveryItems: deliveryItems.value.map((item) => ({
           sourceDetailId: item.sourceDetailId,
           stockId: item.stockId,
@@ -757,14 +520,16 @@
     const fmt = (n: number) => String(n).padStart(2, '0');
     return `${now.getFullYear()}-${fmt(now.getMonth() + 1)}-${fmt(now.getDate())} ${fmt(now.getHours())}:${fmt(now.getMinutes())}:${fmt(now.getSeconds())}`;
   }
+
   function formatDate(date: any): string {
     if (!date) return '';
-    if (typeof date === 'string') return date;  // 已经是字符串
+    if (typeof date === 'string') return date;
     if (date instanceof Date) {
       return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     }
     return String(date);
   }
+
   async function resetAll() {
     deliveryItems.value = [];
     setDeliveryData([]);
@@ -777,30 +542,6 @@
     matchedOrderLines.value = [];
     await resetFields();
   }
-
-
-  // 失去焦点识别（手机输入完成）
-  function onLogisticsBlur() {
-    const code = logisticsNo.value?.trim();
-    if (code && !identifying.value) {
-      // 可选：延迟识别，避免频繁触发
-      // debouncedBlurScan(code);
-      handleLogisticsScan(code);
-    }
-  }
-
-  // 手动点击识别按钮
-  async function manualIdentify() {
-    const code = logisticsNo.value?.trim();
-    if (!code) {
-      createMessage.warning('请输入物流单号');
-      return;
-    }
-    await handleLogisticsScan(code);
-  }
-
-
-
 </script>
 
 <style lang="less" scoped>
@@ -834,28 +575,6 @@
     :deep(.ant-form-item-control) {
       line-height: 1.5;
     }
-  }
-
-  .scan-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .scan-reader {
-    width: 100%;
-    max-width: 380px;
-    min-height: 240px;
-    background: #000;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .scan-tip {
-    margin-top: 8px;
-    color: #666;
-    font-size: 13px;
-    text-align: center;
   }
 
   // 手机端适配
@@ -905,7 +624,7 @@
 
   .logistics-input-row {
     display: flex;
-    align-items: center;  // 垂直居中
+    align-items: center;
     min-height: 32px;
 
     .logistics-label {

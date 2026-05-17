@@ -18,12 +18,33 @@
       v-model:visible="scanVisible"
       title="摄像头扫码"
       :footer="null"
-      :width="420"
+      :width="460"
       :destroyOnClose="true"
       @cancel="stopScan"
     >
       <div class="scan-box">
-        <div id="scan-reader" ref="readerRef" class="scan-reader" />
+        <!-- 扫描区域容器 -->
+        <div class="scan-wrapper">
+          <div id="scan-reader" ref="readerRef" class="scan-reader" />
+
+          <!-- 扫描框叠加层：角标 + 动画线 -->
+          <div class="scan-overlay">
+            <!-- 四角定位标 -->
+            <div class="corner corner-tl"></div>
+            <div class="corner corner-tr"></div>
+            <div class="corner corner-bl"></div>
+            <div class="corner corner-br"></div>
+
+            <!-- 扫描动画线 -->
+            <div class="scan-line-box">
+              <div class="scan-line"></div>
+            </div>
+
+            <!-- 扫描文字提示 -->
+            <div class="scan-text">将二维码/条码放入框内，即可自动扫描</div>
+          </div>
+        </div>
+
         <p v-if="scanTip" class="scan-tip">{{ scanTip }}</p>
         <a-button type="primary" block class="mt-2" @click="stopScan">停止扫描</a-button>
       </div>
@@ -103,24 +124,17 @@
       html5QrCode = new Html5Qrcode('scan-reader');
       await html5QrCode.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { fps: 10, qrbox: { width: 320, height: 320 } },
         (decodedText: string) => {
-          // console.error('===== 扫码回调进入 =====');
-          // console.error('decodedText:', decodedText);
-          // console.error('emit 函数存在:', typeof emit === 'function');
-
           onInputChange(decodedText);
-         // console.log("emit change");
           scanTip.value = '识别成功：' + decodedText;
-          // emit('update:value', decodedText);
-          // emit('change', decodedText);
           setTimeout(() => stopScan(), 300);
         },
         () => {
           // 帧级别扫码失败，静默忽略
         }
       );
-      scanTip.value = '请将条码/二维码对准框内';
+      scanTip.value = '';
     } catch (err: any) {
       scanTip.value = '摄像头启动失败，请检查权限或换用扫码枪';
       createMessage.error('摄像头启动失败：' + (err?.message || String(err)));
@@ -150,17 +164,152 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 8px;
   }
+
+  // 扫描区域容器：相对定位，用于叠加层定位
+  .scan-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    height: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+  }
+
   .scan-reader {
     width: 100%;
-    max-width: 380px;
-    min-height: 240px;
-    background: #000;
-    border-radius: 4px;
+    height: 100%;
+    border-radius: 8px;
     overflow: hidden;
+
+    // 深度选择器：覆盖 html5-qrcode 内部样式，扩大扫描框
+    :deep(video) {
+      object-fit: cover;
+    }
+
+    :deep(#qr-shaded-region) {
+      border-width: 40px !important;
+    }
   }
+
+  // 扫描框叠加层
+  .scan-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // 四角定位标（类似微信扫码框的四个角）
+  .corner {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-color: #00ff00;
+    border-style: solid;
+    z-index: 10;
+  }
+
+  .corner-tl {
+    top: 36px;
+    left: 36px;
+    border-width: 4px 0 0 4px;
+    border-top-left-radius: 4px;
+  }
+
+  .corner-tr {
+    top: 36px;
+    right: 36px;
+    border-width: 4px 4px 0 0;
+    border-top-right-radius: 4px;
+  }
+
+  .corner-bl {
+    bottom: 36px;
+    left: 36px;
+    border-width: 0 0 4px 4px;
+    border-bottom-left-radius: 4px;
+  }
+
+  .corner-br {
+    bottom: 36px;
+    right: 36px;
+    border-width: 0 4px 4px 0;
+    border-bottom-right-radius: 4px;
+  }
+
+  // 扫描线容器：限定在扫描框区域内
+  .scan-line-box {
+    position: absolute;
+    top: 36px;
+    left: 36px;
+    right: 36px;
+    bottom: 36px;
+    overflow: hidden;
+    z-index: 11;
+  }
+
+  // 扫描动画线（类似微信的从上到下移动的横线）
+  .scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 255, 0, 0.1) 20%,
+      rgba(0, 255, 0, 0.9) 50%,
+      rgba(0, 255, 0, 0.1) 80%,
+      transparent 100%
+    );
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 0 0 20px rgba(0, 255, 0, 0.4);
+    border-radius: 2px;
+    animation: scanMove 2s linear infinite;
+  }
+
+  // 扫描线动画：从上到下循环移动
+  // 使用 :global 包裹 keyframes，避免 scoped 样式导致动画失效
+  @keyframes scanMove {
+    0% {
+      transform: translateY(0);
+      opacity: 0.6;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(328px);
+      opacity: 0.6;
+    }
+  }
+
+  // 扫描提示文字
+  .scan-text {
+    position: absolute;
+    bottom: 48px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    z-index: 12;
+    padding: 0 20px;
+  }
+
   .scan-tip {
-    margin-top: 8px;
+    margin-top: 12px;
     color: #666;
     font-size: 13px;
     text-align: center;

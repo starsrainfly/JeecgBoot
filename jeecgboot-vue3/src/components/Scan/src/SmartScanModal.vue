@@ -127,11 +127,11 @@
       }
 
       // 产品码（带批次）
-      if (t === 'PRODUCT' || data.productCode || data.p) {
+      if (t === 'PRODUCT' ||  data.p) {
         return {
           type: 'PRODUCT',
-          goodsCode: data.productCode || data.p || data.goodsCode || data.code,
-          batchNo: data.batchNo || data.batch || data.b,
+          goodsCode: data.p ,
+          batchNo:  data.b,
           // 产品码可能也带ID
           goodsId: data.productId || data.goodsId || data.id ,
         };

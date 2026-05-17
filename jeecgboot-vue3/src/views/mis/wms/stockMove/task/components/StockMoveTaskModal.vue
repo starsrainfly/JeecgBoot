@@ -7,6 +7,17 @@
     :width="800"
     @ok="handleSubmit"
   >
+    <!-- 扫码区域 -->
+    <div class="scan-area">
+      <Html5ScanInput
+        placeholder="请扫描目标库位二维码"
+        @change="handleLocationScan"
+        style="width: 100%"
+      />
+      <div v-if="scannedLocation" class="scan-result">
+        <a-tag color="blue">已识别目标库位: {{ scannedLocation.pathCode || '仓库内位置' }}</a-tag>
+      </div>
+    </div>
     <!-- 单条：显示原库存信息 -->
     <div v-if="!isBatch && currentRecord" class="mb-4 p-4 bg-gray-50 rounded">
       <h4 class="font-bold mb-2">原位置信息</h4>
@@ -48,7 +59,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, unref } from 'vue';
+  import { ref, computed, unref, nextTick } from 'vue';
   import { BasicModal, useModalInner } from '/@/components/Modal';
   import { BasicForm, useForm } from '/@/components/Form/index';
   import { BasicTable } from '/@/components/Table';
@@ -56,6 +67,7 @@
   import { useMessage } from '/@/hooks/web/useMessage';
   import { doMove, batchMove } from '../StockMoveTask.api';
   import { singleMoveFormSchema, batchMoveFormSchema } from '../StockMoveTask.data';
+  import { Html5ScanInput } from '/@/components/Scan';
 
   const ADescriptions = Descriptions;
   const ADescriptionsItem = Descriptions.Item;
@@ -68,7 +80,7 @@
   const isBatch = ref(false);
   const currentRecord = ref<any>(null);
   const moveRecords = ref<any[]>([]);
-
+  const scannedLocation = ref<any>(null);
   // 批量表格列
   const batchColumns = [
     { title: '物料编码', dataIndex: 'goodsCode', width: 110 },
@@ -96,7 +108,7 @@
     // 重置表单
     await resetFields();
     setModalProps({ confirmLoading: false });
-
+    scannedLocation.value = null;
     isBatch.value = !!data?.isBatch;
     moveRecords.value = data?.records || (data?.record ? [data.record] : []);
     currentRecord.value = data?.record || null;
@@ -122,6 +134,81 @@
       });
     }
   });
+
+  // ============ 扫码解析库位二维码 ============
+  async function handleLocationScan(scanResult: string) {
+    try {
+      const parsed = JSON.parse(scanResult);
+      if (parsed.t !== 'LOCATION') {
+        createMessage.warning('请扫描库位标签二维码（非产品标签）');
+        return;
+      }
+
+      const { w, a, sh, l, p } = parsed;
+      if (!w) {
+        createMessage.error('库位二维码缺少仓库信息');
+        return;
+      }
+
+      scannedLocation.value = {
+        warehouseId: w,
+        areaId: a || null,
+        shelfId: sh || null,
+        locationId: l || null,
+        pathCode: p || '',
+      };
+
+      // 重置下级
+      await setFieldsValue({
+        toWarehouseId: undefined,
+        toAreaId: undefined,
+        toShelfId: undefined,
+        toLocationId: undefined,
+      });
+      await nextTick();
+
+      // 设置仓库
+      await setFieldsValue({ toWarehouseId: w });
+      await nextTick();
+
+      // 设置区域
+      if (a) {
+        await setFieldsValue({ toAreaId: a });
+        await nextTick();
+      }
+
+      // 设置货架
+      if (sh) {
+        await setFieldsValue({ toShelfId: sh });
+        await nextTick();
+      }
+
+      // 设置货位
+      if (l) {
+        await setFieldsValue({ toLocationId: l });
+        await nextTick();
+      }
+
+      // 强制校验刷新
+      try {
+        await validate();
+      } catch (e) {
+        // 忽略校验错误，仅刷新状态
+      }
+
+      // 强制刷新表单
+      await nextTick();
+      await setProps({
+        schemas: unref(isBatch) ? batchMoveFormSchema : singleMoveFormSchema
+      });
+
+      createMessage.success(`目标库位识别成功: ${p || w}`);
+
+    } catch (err) {
+      console.error('扫码解析失败:', err);
+      createMessage.error('二维码解析失败，请确认扫描的是库位标签');
+    }
+  }
 
   // 表单提交
   async function handleSubmit() {

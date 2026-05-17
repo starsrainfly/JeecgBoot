@@ -4,6 +4,13 @@
    <BasicTable @register="registerTable" :rowSelection="rowSelection">
      <!--插槽:table标题-->
       <template #tableTitle>
+        <a-button
+          type="primary"
+          @click="scanVisible = true"
+          preIcon="ant-design:scan-outlined"
+        >
+          扫码查库库
+        </a-button>
           <a-button type="primary" v-auth="'wms:mis_stock:add'" @click="handleAdd" preIcon="ant-design:plus-outlined"> 新增</a-button>
           <a-button  type="primary" v-auth="'wms:mis_stock:exportXls'" preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
           <j-upload-button type="primary" v-auth="'wms:mis_stock:importExcel'" preIcon="ant-design:import-outlined" @click="onImportXls">导入</j-upload-button>
@@ -33,7 +40,13 @@
     </BasicTable>
     <!-- 表单区域 -->
     <StockModal @register="registerModal" @success="handleSuccess"></StockModal>
+    <!--智能扫码-->
+    <SmartScanModal
+      v-model:visible="scanVisible"
+      @query="handleScanQuery"
+    />
   </div>
+
 </template>
 
 <script lang="ts" name="wms-stock" setup>
@@ -46,6 +59,11 @@
   import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './Stock.api';
   import { downloadFile } from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
+
+  import { SmartScanModal } from '/@/components/Scan';
+
+  const scanVisible = ref(false);
+
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
   const userStore = useUserStore();
@@ -182,7 +200,11 @@
        ]
    }
 
-
+  function handleScanQuery(params) {
+    // params 已经是 { warehouseId, areaId... } 或 { goodsCode, batchNo... }
+    Object.assign(queryParam, params);
+    reload();
+  }
 
 </script>
 

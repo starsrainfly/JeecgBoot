@@ -1,5 +1,5 @@
 <template>
-  <div class="scan-input flex items-center">
+  <div class="html5-scan-input flex items-center">
     <a-input
       ref="inputRef"
       v-bind="$attrs"
@@ -110,7 +110,7 @@
           // console.error('emit 函数存在:', typeof emit === 'function');
 
           onInputChange(decodedText);
-         // console.log("emit change");
+          // console.log("emit change");
           scanTip.value = '识别成功：' + decodedText;
           // emit('update:value', decodedText);
           // emit('change', decodedText);
@@ -142,7 +142,7 @@
 </script>
 
 <style lang="less" scoped>
-  .scan-input {
+  .html5-scan-input {
     display: flex;
     width: 100%;
   }

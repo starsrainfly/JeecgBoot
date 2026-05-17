@@ -211,36 +211,36 @@ export const searchFormSchema: FormSchema[] = [
       component: 'Input',
       //colProps: {span: 6},
  	},
-  {
-    label:'模板json',
-    field:'templateJson',
-    component:'Input'
-  },
-	{
-      label: "模板编码",
-      field: 'templateCode',
-    component: 'JPopup',
-    componentProps: ({ formActionType }) => {
-        const {setFieldsValue} = formActionType;
-        return{
-            setFieldsValue:setFieldsValue,
-            code:"mdm_label_template",
-            fieldConfig: [
-              { source: 'id', target: 'templateId' },
-              { source: 'template_code', target: 'templateCode' },
-              { source: 'label_width', target: 'labelWidth' },
-              { source: 'label_height', target: 'labelHeight' },
-              { source: 'content_json', target: 'templateJson' },
-            ],
-          param: {
-            templateType: 'LOCATION',  // 传业务员ID参数
-          },
-            multi:false,
-        }
-    },
+  // {
+  //   label:'模板json',
+  //   field:'templateJson',
+  //   component:'Input'
+  // },
+	// {
+  //     label: "模板编码",
+  //     field: 'templateCode',
+  //   component: 'JPopup',
+  //   componentProps: ({ formActionType }) => {
+  //       const {setFieldsValue} = formActionType;
+  //       return{
+  //           setFieldsValue:setFieldsValue,
+  //           code:"mdm_label_template",
+  //           fieldConfig: [
+  //             { source: 'id', target: 'templateId' },
+  //             { source: 'template_code', target: 'templateCode' },
+  //             { source: 'label_width', target: 'labelWidth' },
+  //             { source: 'label_height', target: 'labelHeight' },
+  //             { source: 'content_json', target: 'templateJson' },
+  //           ],
+  //         param: {
+  //           templateType: 'LOCATION',  // 传业务员ID参数
+  //         },
+  //           multi:false,
+  //       }
+  //   },
 
       //colProps: {span: 6},
- 	},
+ //	},
 	{
       label: "公司",
       field: 'companyId',
@@ -384,6 +384,9 @@ export const formSchema: FormSchema[] = [
     label: '模板JSON',
     field: 'templateJson',
     component:'Input',
+    componentProps:{
+      readonly: true,
+    }
   },
   {
     label: '模板名称',
@@ -562,7 +565,7 @@ export const locationFormSchema: FormSchema[] = [
         : '',
       placeholder: formModel?.areaId ? "请选择货架" : "请先选择区域",
     }),
-    dynamicRules: () => [{ required: true, message: '请选择货架!' }],
+    // dynamicRules: () => [{ required: true, message: '请选择货架!' }],
   },
   {
     label: '库位',
@@ -575,18 +578,33 @@ export const locationFormSchema: FormSchema[] = [
         : '',
       placeholder: formModel?.shelfId ? "请选择库位" : "请先选择货架",
     }),
-    dynamicRules: () => [{ required: true, message: '请选择库位!' }],
+    // dynamicRules: () => [{ required: true, message: '请选择库位!' }],
   },
   {
     label: '模板名称',
     field: 'templateName',
     component:'Input',
+    componentProps:{
+      readonly: true,
+    }
   },
-  { label: '模板配置', field: 'templateJson', component: 'InputTextArea',  },
+  { label: '模板配置',
+    field: 'templateJson',
+    component: 'InputTextArea',
+    componentProps:{
+      readonly: true,
+      }
+    },
+  {
+    label:'模板Id',
+    field:'templateId',
+    component:'Input',
+    show:false
+  },
   // 模板选择 - 过滤LOCATION类型
   {
-    label: '模板',
-    field: 'templateId',
+    label: '模板编码',
+    field: 'templateCode',
     component: 'JPopup',
     componentProps: ({ formActionType }) => {
       const { setFieldsValue } = formActionType;
@@ -609,7 +627,7 @@ export const locationFormSchema: FormSchema[] = [
     dynamicRules: () => [{ required: true, message: '请选择模板!' }],
   },
   { label: '模板类型', field: 'templateType', component: 'Input', show: false },
-  { label: '模板编码', field: 'templateCode', component: 'Input', show: false },
+  //{ label: '模板编码', field: 'templateCode', component: 'Input', show: false },
   { label: '标签宽度（mm）', field: 'labelWidth', component: 'InputNumber', show: false },
   { label: '标签高度（mm)', field: 'labelHeight', component: 'InputNumber', show: false },
   // { label: '模板配置', field: 'templateJson', component: 'InputTextArea', show: false },

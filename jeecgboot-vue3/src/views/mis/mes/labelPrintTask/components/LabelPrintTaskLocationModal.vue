@@ -53,6 +53,7 @@
   const isUpdate = ref(true);
   const isDetail = ref(false);
   const printSettings = reactive({ copies: 1 });
+  const isInitializing = ref(false);
 
   const previewData = reactive({
     labelWidth: 60,
@@ -88,17 +89,33 @@
     schemas: locationFormSchema,
     showActionButtonGroup: false,
     baseColProps: { span: 24 },
-    onValuesChange: (changedValues, allValues) => {
-      syncPreviewData(allValues);
-      // 库位变化时加载详情
-      if (changedValues.locationId) {
-        loadLocationDetail(changedValues.locationId);
-      }
-      // 模板变化时更新预览
-      if (changedValues.templateId) {
-        loadTemplateDetail(changedValues.templateId);
-      }
-    },
+    // onValuesChange: (changedValues, allValues) => {
+    // syncPreviewData(allValues);
+    // // 任何层级变化都触发加载和清空下级
+    // if (changedValues.warehouseId) {
+    //   loadWarehouseDetail(changedValues.warehouseId);
+    //  setFieldsValue({ areaId: undefined, shelfId: undefined, locationId: undefined });
+    //  clearLocationInfo();
+    // }
+    // if (changedValues.areaId) {
+    //   loadAreaDetail(changedValues.areaId);
+    //  setFieldsValue({ shelfId: undefined, locationId: undefined });
+    //  clearLocationInfo('area');
+    // }
+    // if (changedValues.shelfId) {
+    //   loadShelfDetail(changedValues.shelfId);
+    //  setFieldsValue({ locationId: undefined });
+    //  clearLocationInfo('shelf');
+    // }
+    // // 库位变化时加载详情
+    // if (changedValues.locationId) {
+    //   loadLocationDetail(changedValues.locationId);
+    // }
+    // // 模板变化时更新预览
+    // if (changedValues.templateId) {
+    //   loadTemplateDetail(changedValues.templateId);
+    // }
+    // },
   });
 
   // 加载库位详情（含各层级ID）
@@ -112,6 +129,32 @@
 
       const result = res?.result || res;
       if (result) {
+        // 保留仓库、区域、货架
+        const keepWarehouseId = locationInfo.warehouseId;
+        const keepWarehouseName = locationInfo.warehouseName;
+        //  const keepWarehouseCode = locationInfo.warehouseCode;
+        const keepAreaId = locationInfo.areaId;
+        const keepAreaName = locationInfo.areaName;
+        // const keepAreaCode = locationInfo.areaCode;
+        const keepShelfId = locationInfo.shelfId;
+        const keepShelfName = locationInfo.shelfName;
+        //  const keepShelfCode = locationInfo.shelfCode;
+
+        // 只清库位
+        locationInfo.locationId = '';
+        locationInfo.locationCode = '';
+        locationInfo.locationName = '';
+        locationInfo.pathCode = '';
+
+        locationInfo.warehouseId = keepWarehouseId;
+        locationInfo.warehouseName = keepWarehouseName;
+        // locationInfo.warehouseCode = keepWarehouseCode;
+        locationInfo.areaId = keepAreaId;
+        locationInfo.areaName = keepAreaName;
+        //  locationInfo.areaCode = keepAreaCode;
+        locationInfo.shelfId = keepShelfId;
+        locationInfo.shelfName = keepShelfName;
+        // locationInfo.shelfCode = keepShelfCode;
         // 缓存所有ID和编码
         locationInfo.locationId = result.id || '';
         locationInfo.locationCode = result.locationCode || '';
@@ -271,34 +314,229 @@
     }
   }
 
-  function startCheckTimer() {
+  function startCheckTimer(initialValues = {}) {
     if (checkTimer) clearInterval(checkTimer);
-    let lastValues = {};
+    let lastValues = { ...initialValues }; // 用传入的值初始化，而不是空对象
     checkTimer = setInterval(async () => {
       try {
         const values = await getFieldsValue();
-        const keyFields = ['locationId', 'templateId', 'companyId', 'templateJson'];
+        const keyFields = ['warehouseId','areaId','shelfId','locationId', 'templateId', 'companyId', 'templateJson'];
         let hasChanged = false;
+        let needSync = false;
+
         for (const key of keyFields) {
           if (values[key] !== lastValues[key]) {
             hasChanged = true;
+
+            // 处理清空的情况（从有值变无值）
+            if (!values[key] && lastValues[key]) {
+              if (key === 'locationId') {
+                clearLocationInfo('location');
+                needSync = true;
+              } else if (key === 'shelfId') {
+                clearLocationInfo('shelf');
+                needSync = true;
+              } else if (key === 'areaId') {
+                clearLocationInfo('area');
+                needSync = true;
+              } else if (key === 'warehouseId') {
+                clearLocationInfo();
+                needSync = true;
+              }
+            }
+
             if (key === 'companyId' && values[key]) {
               await loadCompanyInfo(values[key]);
+              needSync = true
             }
             if (key === 'locationId' && values[key]) {
               await loadLocationDetail(values[key]);
+              needSync = true
             }
             if (key === 'templateId' && values[key]) {
               await loadTemplateDetail(values[key]);
+              needSync = true
+            }
+            if(key === 'warehouseId' && values[key]){
+              await loadWarehouseDetail(values[key],true);
+              needSync = true
+            }
+            if(key === 'areaId' && values[key]){
+              await loadAreaDetail(values[key],true);
+              needSync = true
+            }
+            if(key === 'shelfId' && values[key]){
+              await loadShelfDetail(values[key],true);
+              needSync = true
             }
           }
         }
         if (hasChanged) {
           lastValues = { ...values };
-          await syncPreviewData(values);
+          if (needSync) {
+            await syncPreviewData(values);
+          }
         }
       } catch (e) {}
     }, 300);
+  }
+
+  //新增三个方法 加载仓库 区域 货架
+  async function loadWarehouseDetail(warehouseId: string, fromUserSelect = true) {
+    if (!warehouseId) return;
+    try {
+      const res = await defHttp.get({
+        url: '/wms/warehouse/queryById',
+        params: { id: warehouseId }
+      }, { isTransformResponse: false });
+      const result = res?.result || res;
+      if (result) {
+        // 只有用户选择时才清空下级
+        if (fromUserSelect) {
+          clearLocationInfo();
+          await setFieldsValue({
+            areaId: undefined,
+            shelfId: undefined,
+            locationId: undefined,
+            areaName: '',
+            shelfName: '',
+            locationName: '',
+            locationCode: '',
+            pathCode: '',
+          });
+        }
+
+        locationInfo.warehouseId = result.id || '';
+        locationInfo.warehouseName = result.name || '';
+        locationInfo.warehouseCode = result.code || '';
+
+        await setFieldsValue({ warehouseName: locationInfo.warehouseName });
+      }
+    } catch (e) {
+      console.error('加载仓库详情失败', e);
+    }
+  }
+
+  async function loadAreaDetail(areaId: string, fromUserSelect = true) {
+    if (!areaId) return;
+    try {
+      const res = await defHttp.get({
+        url: '/wms/warehouseArea/queryById',
+        params: { id: areaId }
+      }, { isTransformResponse: false });
+      const result = res?.result || res;
+      if (result) {
+        if (fromUserSelect) {
+          // 保留仓库，清空货架及以下
+          const keepWarehouseId = locationInfo.warehouseId;
+          const keepWarehouseName = locationInfo.warehouseName;
+          const keepWarehouseCode = locationInfo.warehouseCode;
+
+          clearLocationInfo('area');
+
+          locationInfo.warehouseId = keepWarehouseId;
+          locationInfo.warehouseName = keepWarehouseName;
+          locationInfo.warehouseCode = keepWarehouseCode;
+
+          await setFieldsValue({
+            shelfId: undefined,
+            locationId: undefined,
+            shelfName: '',
+            locationName: '',
+            locationCode: '',
+            pathCode: '',
+          });
+        }
+
+        locationInfo.areaId = result.id || '';
+        locationInfo.areaName = result.name || '';
+        locationInfo.areaCode = result.code || '';
+
+        // 自动回填仓库（如果区域带了warehouseId且当前没选仓库）
+        if (result.warehouseId && !locationInfo.warehouseId) {
+          await setFieldsValue({ warehouseId: result.warehouseId });
+          await loadWarehouseDetail(result.warehouseId, fromUserSelect);
+        }
+
+        await setFieldsValue({ areaName: locationInfo.areaName });
+      }
+    } catch (e) {
+      console.error('加载区域详情失败', e);
+    }
+  }
+
+  async function loadShelfDetail(shelfId: string, fromUserSelect = true) {
+    if (!shelfId) return;
+    try {
+      const res = await defHttp.get({
+        url: '/wms/warehouseShelf/queryById',
+        params: { id: shelfId }
+      }, { isTransformResponse: false });
+      const result = res?.result || res;
+      if (result) {
+        if (fromUserSelect) {
+          // 保留仓库和区域
+          const keepWarehouseId = locationInfo.warehouseId;
+          const keepWarehouseName = locationInfo.warehouseName;
+          const keepWarehouseCode = locationInfo.warehouseCode;
+          const keepAreaId = locationInfo.areaId;
+          const keepAreaName = locationInfo.areaName;
+          const keepAreaCode = locationInfo.areaCode;
+
+          clearLocationInfo('shelf');
+
+          locationInfo.warehouseId = keepWarehouseId;
+          locationInfo.warehouseName = keepWarehouseName;
+          locationInfo.warehouseCode = keepWarehouseCode;
+          locationInfo.areaId = keepAreaId;
+          locationInfo.areaName = keepAreaName;
+          locationInfo.areaCode = keepAreaCode;
+
+          await setFieldsValue({
+            locationId: undefined,
+            locationName: '',
+            locationCode: '',
+            pathCode: '',
+          });
+        }
+
+        locationInfo.shelfId = result.id || '';
+        locationInfo.shelfName = result.name || '';
+        locationInfo.shelfCode = result.code || '';
+
+        // 自动回填区域
+        if (result.areaId && !locationInfo.areaId) {
+          await setFieldsValue({ areaId: result.areaId });
+          await loadAreaDetail(result.areaId, fromUserSelect);
+        }
+
+        await setFieldsValue({ shelfName: locationInfo.shelfName });
+      }
+    } catch (e) {
+      console.error('加载货架详情失败', e);
+    }
+  }
+
+  function clearLocationInfo(level?:string) {
+    if (!level) {
+      Object.assign(locationInfo, {
+        warehouseId: '', warehouseName: '', warehouseCode: '',
+        areaId: '', areaName: '', areaCode: '',
+        shelfId: '', shelfName: '', shelfCode: '',
+        locationId: '', locationCode: '', locationName: '', pathCode: ''
+      });
+    } else if (level === 'area') {
+      Object.assign(locationInfo, {
+        areaId: '', areaName: '', areaCode: '',
+        shelfId: '', shelfName: '', shelfCode: '',
+        locationId: '', locationCode: '', locationName: '', pathCode: ''
+      });
+    } else if (level === 'shelf') {
+      Object.assign(locationInfo, {
+        shelfId: '', shelfName: '', shelfCode: '',
+        locationId: '', locationCode: '', locationName: '', pathCode: ''
+      });
+    }
   }
 
   const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data) => {
@@ -325,14 +563,22 @@
     if (unref(isUpdate) && data.record) {
       await setFieldsValue({ ...data.record });
       const r = data.record;
+     // const templateRes = await getTemplateInfo({id:r.templateId});
+      await loadTemplateDetail(r.templateId);
       previewData.labelWidth = r.labelWidth || 60;
       previewData.labelHeight = r.labelHeight || 35;
       previewData.copies = r.copies || 1;
       previewData.status = r.status || 'PENDING';
-      previewData.templateJson = r.templateJson || '';
-      previewData.templateName = r.templateName || '';
+    //  previewData.templateJson = r.templateJson ||'';
+    //  previewData.templateName = r.templateName || '';
       printSettings.copies = r.copies || 1;
 
+      if(r.warehouseId){
+        await loadWarehouseDetail(r.warehouseId, false);
+      }
+      if(r.areaId){
+        await loadAreaDetail(r.areaId, false);
+      }
       // 如果有locationId，加载详情
       if (r.locationId) {
         await loadLocationDetail(r.locationId);
@@ -350,6 +596,9 @@
       if (r.qrContent) {
         previewData.qrContent = r.qrContent;
       }
+      // 最后同步一次预览
+      const values = await getFieldsValue();
+      await syncPreviewData(values);
     } else {
       // 新增状态重置
       previewData.labelWidth = 60;
@@ -365,7 +614,8 @@
     }
 
     setProps({ disabled: !data?.showFooter });
-    startCheckTimer();
+    const initValues = await getFieldsValue();
+    startCheckTimer(initValues);
   });
 
   onUnmounted(() => {

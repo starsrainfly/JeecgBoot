@@ -153,21 +153,39 @@ export const searchFormSchema: FormSchema[] = [
       label: "仓库",
       field: 'warehouseId',
       component: 'JDictSelectTag',
-      componentProps:{
-          dictCode:"mis_warehouse where del_flag='0' and status='1',name,id"
+    componentProps: ({ formModel, formActionType }) => ({
+      dictCode: "mis_warehouse where del_flag='0' and status='1',name,id",
+      // 关键：仓库变更时清空所有下级
+      onChange: (value: string) => {
+        // 清空区域、货架、货位
+        formActionType?.setFieldsValue({
+          areaId: undefined,
+          shelfId: undefined,
+          locationId: undefined,
+        });
       },
+    }),
+      // componentProps:{
+      //     dictCode:"mis_warehouse where del_flag='0' and status='1',name,id"
+      // },
       //colProps: {span: 6},
  	},
 	{
       label: "区域",
       field: 'areaId',
       component: 'JDictSelectTag',
-      componentProps: ({ formModel }) => ({
+      componentProps: ({ formModel, formActionType }) => ({
       key: formModel?.warehouseId || 'empty',
       dictCode: formModel?.warehouseId
         ? `mis_warehouse_area,name,id,del_flag='0' and status='1' and warehouse_id='${formModel.warehouseId}'`
         : '',
       placeholder: formModel?.warehouseId ? "请选择区域" : "请先选择仓库",
+        onChange: (value: string) => {
+          formActionType?.setFieldsValue({
+            shelfId: undefined,
+            locationId: undefined,
+          });
+        },
     }),
       // componentProps:{
       //     dictCode:"mis_warehouse_area where del_flag='0' and status='1',area_code,id"
@@ -178,12 +196,17 @@ export const searchFormSchema: FormSchema[] = [
       label: "货架",
       field: 'shelfId',
       component: 'JDictSelectTag',
-     componentProps: ({ formModel }) => ({
+     componentProps: ({ formModel, formActionType }) => ({
       key: formModel?.areaId || 'empty',
       dictCode: formModel?.areaId
         ? `mis_warehouse_shelf,name,id,del_flag='0' and status='1' and area_id='${formModel.areaId}'`
         : '',
        placeholder: formModel?.areaId ? "请选择区域" : "请先选择仓库",
+       onChange: (value: string) => {
+         formActionType?.setFieldsValue({
+           locationId: undefined,
+         });
+       },
      }),
       // componentProps:{
       //     dictCode:"mis_warehouse_shelf where del_flag ='0' and status='1',shelf_code,id"
@@ -195,11 +218,11 @@ export const searchFormSchema: FormSchema[] = [
       field: 'locationId',
       component: 'JSelectMultiple',
       componentProps: ({ formModel }) => ({
-      key: formModel?.ShelfId || 'empty',
-      dictCode: formModel?.ShelfId
-        ? `mis_warehouse_location,name,id,del_flag='0' and status='1' and shelf_id='${formModel.ShelfId}'`
+      key: formModel?.shelfId || 'empty',
+      dictCode: formModel?.shelfId
+        ? `mis_warehouse_location,name,id,del_flag='0' and status='1' and shelf_id='${formModel.shelfId}'`
         : '',
-      placeholder: formModel?.ShelfId ? "请选择目标货位" : "请先选择目标货架",
+      placeholder: formModel?.shelfId ? "请选择目标货位" : "请先选择目标货架",
     }),
       // componentProps:{
       //     dictCode:"mis_warehouse_location where del_flag='0' and status='1',path_code,id"

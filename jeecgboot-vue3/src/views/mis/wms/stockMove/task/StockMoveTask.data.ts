@@ -190,9 +190,21 @@ export const singleMoveFormSchema: FormSchema[] = [
     field: 'toWarehouseId',
     label: '目标仓库',
     component: 'JDictSelectTag',
-    componentProps: {
-      dictCode: `mis_warehouse,name,id,del_flag='0' and status='1'`,
-    },
+    componentProps: ({ formModel, formActionType }) => ({
+      dictCode: "mis_warehouse where del_flag='0' and status='1',name,id",
+      // 关键：仓库变更时清空所有下级
+      onChange: (value: string) => {
+        // 清空区域、货架、货位
+        formActionType?.setFieldsValue({
+          toAreaId: undefined,
+          toShelfId: undefined,
+          toLocationId: undefined,
+        });
+      },
+    }),
+    // componentProps: {
+    //   dictCode: `mis_warehouse,name,id,del_flag='0' and status='1'`,
+    // },
     required: true,
     colProps: { span: 12 },
   },
@@ -200,12 +212,18 @@ export const singleMoveFormSchema: FormSchema[] = [
     field: 'toAreaId',
     label: '目标区域',
     component: 'JDictSelectTag',
-    componentProps: ({ formModel }) => ({
+    componentProps: ({ formModel,formActionType }) => ({
       key: formModel?.toWarehouseId || 'empty',
       dictCode: formModel?.toWarehouseId
         ? `mis_warehouse_area,name,id,del_flag='0' and status='1' and warehouse_id='${formModel.toWarehouseId}'`
         : '',
       placeholder: formModel?.toWarehouseId ? "请选择区域" : "请先选择仓库",
+      onChange: (value: string) => {
+        formActionType?.setFieldsValue({
+          toShelfId: undefined,
+          toLocationId: undefined,
+        });
+      },
     }),
     // componentProps: {
     //   dict: 'mis_warehouse_area,area_code,id,del_flag=0 and status=1',
@@ -217,12 +235,17 @@ export const singleMoveFormSchema: FormSchema[] = [
     field: 'toShelfId',
     label: '目标货架',
     component: 'JDictSelectTag',
-    componentProps: ({ formModel }) => ({
+    componentProps: ({ formModel,formActionType }) => ({
       key: formModel?.toAreaId || 'empty',
       dictCode: formModel?.toAreaId
         ? `mis_warehouse_shelf,name,id,del_flag='0' and status='1' and area_id='${formModel.toAreaId}'`
         : '',
       placeholder: formModel?.toAreaId ? "请选择区域" : "请先选择仓库",
+      onChange: (value: string) => {
+        formActionType?.setFieldsValue({
+          toLocationId: undefined,
+        });
+      },
     }),
     // componentProps: {
     //   dict: 'mis_warehouse_shelf,shelf_code,id,del_flag=0 and status=1',
@@ -288,9 +311,21 @@ export const batchMoveFormSchema: FormSchema[] = [
     field: 'toWarehouseId',
     label: '目标仓库',
     component: 'JDictSelectTag',
-    componentProps: {
-      dictCode: `mis_warehouse,name,id,del_flag='0' and status='1'`,
-    },
+    componentProps: ({ formModel, formActionType }) => ({
+      dictCode: "mis_warehouse where del_flag='0' and status='1',name,id",
+      // 关键：仓库变更时清空所有下级
+      onChange: (value: string) => {
+        // 清空区域、货架、货位
+        formActionType?.setFieldsValue({
+          toAreaId: undefined,
+          toShelfId: undefined,
+          toLocationId: undefined,
+        });
+      },
+    }),
+    // componentProps: {
+    //   dictCode: `mis_warehouse,name,id,del_flag='0' and status='1'`,
+    // },
     required: true,
     colProps: { span: 12 },
   },
@@ -298,12 +333,19 @@ export const batchMoveFormSchema: FormSchema[] = [
     field: 'toAreaId',
     label: '目标区域',
     component: 'JDictSelectTag',
-    componentProps: ({ formModel }) => ({
+    componentProps: ({ formModel,formActionType }) => ({
       key: formModel?.toWarehouseId || 'empty',
       dictCode: formModel?.toWarehouseId
         ? `mis_warehouse_area,name,id,del_flag='0' and status='1' and warehouse_id='${formModel.toWarehouseId}'`
         : '',
       placeholder: formModel?.toWarehouseId ? "请选择区域" : "请先选择仓库",
+      onChange: (value: string) => {
+        // 清空区域、货架、货位
+        formActionType?.setFieldsValue({
+          toShelfId: undefined,
+          toLocationId: undefined,
+        });
+      },
     }),
     // componentProps: {
     //   dict: 'mis_warehouse_area,area_code,id,del_flag=0 and status=1',
@@ -315,12 +357,18 @@ export const batchMoveFormSchema: FormSchema[] = [
     field: 'toShelfId',
     label: '目标货架',
     component: 'JDictSelectTag',
-    componentProps: ({ formModel }) => ({
+    componentProps: ({ formModel,formActionType }) => ({
       key: formModel?.toAreaId || 'empty',
       dictCode: formModel?.toAreaId
         ? `mis_warehouse_shelf,name,id,del_flag='0' and status='1' and area_id='${formModel.toAreaId}'`
         : '',
       placeholder: formModel?.toAreaId ? "请选择区域" : "请先选择仓库",
+      onChange: (value: string) => {
+        // 清空区域、货架、货位
+        formActionType?.setFieldsValue({
+          toLocationId: undefined,
+        });
+      },
     }),
     // componentProps: {
     //   dict: 'mis_warehouse_shelf,shelf_code,id,del_flag=0 and status=1',

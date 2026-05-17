@@ -5,6 +5,24 @@
     <div v-if="isBatch" class="batch-tip">
       <a-alert type="info" :message="`已选择 ${records.length} 条记录，将统一上架到目标位置`" banner />
     </div>
+
+    <!-- 扫码区域 -->
+    <div class="scan-area">
+      <Html5ScanInput
+        placeholder="请扫描库位二维码"
+        @change="handleLocationScan"
+        style="width: 100%"
+      />
+      <div v-if="scannedLocation" class="scan-result">
+        <a-tag color="blue">
+          已识别库位: {{ scannedLocation.pathCode || '仓库内位置' }}
+        </a-tag>
+        <a-tag v-if="scannedLocation.locationName" color="cyan">
+          {{ scannedLocation.locationName }}
+        </a-tag>
+      </div>
+    </div>
+
     <BasicForm @register="registerForm" />
   </BasicModal>
 </template>
@@ -15,12 +33,16 @@
   import { BasicForm, useForm } from '/@/components/Form/index';
   import { shelfFormSchema,batchShelfFormSchema  } from '../ShelfTask.data';
   import { doShelf, batchShelf } from '../ShelfTask.api';
+  import { Html5ScanInput } from '/@/components/Scan';
+  import { useMessage } from '/@/hooks/web/useMessage';
 
+  const { createMessage } = useMessage();
   // Emits声明
   const emit = defineEmits(['register', 'success']);
 
   const isBatch = ref(false);
   const records = ref<any[]>([]);
+  const scannedLocation = ref<any>(null);
 
   // 当前表单值缓存
   const formCache = ref({
@@ -41,6 +63,76 @@
   // 设置标题
   const title = computed(() => (unref(isBatch) ? '批量上架' : '上架操作'));
 
+  // ============ 扫码解析库位二维码 ============
+  async function handleLocationScan(scanResult: string) {
+    try {
+      const parsed = JSON.parse(scanResult);
+      console.log("scanResult:",scanResult);
+      console.log("parsed:",parsed);
+      // 严格校验标签类型
+      if (parsed.t !== 'LOCATION') {
+        createMessage.warning('请扫描库位标签二维码（非产品标签）');
+        return;
+      }
+
+      const { w, a, sh, l, p } = parsed;
+
+      if (!w) {
+        createMessage.error('库位二维码缺少仓库信息');
+        return;
+      }
+
+      scannedLocation.value = {
+        warehouseId: w,
+        areaId: a || null,
+        shelfId: sh || null,
+        locationId: l || null,
+        pathCode: p || '',
+        locationName: l ? '' : '', // 如有需要可从字典反查
+      };
+console.log("scannedLocation.value:",scannedLocation.value);
+      // 获取事件处理器
+      const events = (window as any).shelfTaskEvents || {};
+
+      // Step 1: 设置仓库，触发级联清空
+      await setFieldsValue({ toWarehouseId: w });
+      events.handleWarehouseChange?.(w);
+
+      // Step 2: 如有区域，设置并触发
+      if (a) {
+        await nextTick(); // 等待仓库级联key更新
+        await setFieldsValue({ toAreaId: a });
+        events.handleAreaChange?.(a);
+      }
+
+      // Step 3: 如有货架，设置并触发
+      if (sh) {
+        await nextTick();
+        await setFieldsValue({ toShelfId: sh });
+        events.handleShelfChange?.(sh);
+      }
+
+      // Step 4: 如有货位，设置
+      if (l) {
+        await nextTick();
+        await setFieldsValue({ toLocationId: l });
+
+      }
+      await validate(); // 强制校验刷新
+      // Step 5: 强制刷新表单确保JDictSelectTag重新渲染
+      await nextTick();
+      await setProps({
+        schemas: unref(isBatch) ? batchShelfFormSchema : shelfFormSchema
+      });
+      console.log("getFieldsValue:", getFieldsValue());
+      createMessage.success(`库位识别成功: ${p || w}`);
+
+    } catch (err) {
+      console.error('扫码解析失败:', err);
+      createMessage.error('二维码解析失败，请确认扫描的是库位标签');
+    }
+  }
+
   // ============ 联动事件处理 ============
   async function handleWarehouseChange(warehouseId: string) {
 
@@ -49,6 +141,7 @@
 
     // 清空下级
     await setFieldsValue({
+      toWarehouseId: warehouseId,
       toAreaId: undefined,
       toShelfId: undefined,
       toLocationId: undefined,
@@ -97,6 +190,7 @@
     setModalProps({ confirmLoading: false });
 
     formCache.value = { toWarehouseId: '', toAreaId: '', toShelfId: '' };
+    scannedLocation.value = null;
 
     isBatch.value = !!data?.isBatch;
     records.value = data?.records || (data?.record ? [data.record] : []);

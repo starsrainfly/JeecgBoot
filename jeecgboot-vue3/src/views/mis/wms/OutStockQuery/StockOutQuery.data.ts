@@ -10,7 +10,7 @@ export const stockOutDetailQueryColumns: BasicColumn[] = [
   },
   {
     title: '出库类型',
-    dataIndex: 'stockOutType',
+    dataIndex: 'stockOutType_dictText',
     width: 100,
   },
   {
@@ -118,7 +118,7 @@ export const stockOutDetailQueryColumns: BasicColumn[] = [
   },
   {
     title: '业务状态',
-    dataIndex: 'status',
+    dataIndex: 'status_dictText',
     width: 100,
   },
   {

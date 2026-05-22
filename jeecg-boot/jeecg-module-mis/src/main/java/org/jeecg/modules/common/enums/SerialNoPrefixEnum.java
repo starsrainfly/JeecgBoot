@@ -8,7 +8,7 @@ public enum SerialNoPrefixEnum {
     PRODUCTION_PLAN("PL", "生产计划"),
     PRODUCTION_ORDER("MO", "生产订单"),
     PRODUCTION_WORK_ORDER("WO","生产工单"),
-    PRODUCTION_BATCH_ORDER("BT","批次单号"),
+    PRODUCTION_BATCH_ORDER("BT","批次单"),
     RECEIVABLE_PLAN("SK", "应收计划"),      // 销售收款计划
     PAYABLE_PLAN("FK", "应付计划"),         // 采购付款计划
     RECEIPT_VOUCHER("RC", "收款单"),        // 实际收款单据
@@ -16,13 +16,15 @@ public enum SerialNoPrefixEnum {
     PURCHASE_ORDER("PO", "采购订单"),
     STOCK_IN("RI","入库单"),
     STOCK_OUT("DO","出库单"),
-    RETURN_ORDER("RO","退货单号"),
+    RETURN_ORDER("RO","退货单"),
     MATERIAL_REQUISITION("MR", "物料需求单"),
     DELIVERY_NOTE_ORDER("DN","发货单"),
     QUOTATION_ORDER("QT", "报价单"),
     SHELF_ON("SH","上架"),
+    INVENTORY_CHECK("IC","盘库单"),
+    INVENTORY_ADJUST("IA","调整单"),
     MOVE_STOCK("MS","移库"),
-    LABEL_PRINT("LP","标签打印单号");
+    LABEL_PRINT("LP","标签打印单");
 
     private final String prefix;
     private final String description;

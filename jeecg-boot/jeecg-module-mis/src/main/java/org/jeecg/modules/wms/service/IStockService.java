@@ -55,4 +55,20 @@ public interface IStockService extends IService<Stock> {
      * 查询库存占用情况
      */
     Map<String, Object> selectStockOccupancy(String warehouseId, String goodsId);
+
+    /**
+     * 盘盈 直接更新对应记录数量
+     * @param id
+     * @param qty
+     * @return
+     */
+    boolean increaseQty(String id, BigDecimal qty);
+
+    /**
+     * 盘亏 直接出库 不检查锁定问题
+     * @param id
+     * @param qty
+     * @return
+     */
+    boolean decreaseQty(String id, BigDecimal qty);
 }

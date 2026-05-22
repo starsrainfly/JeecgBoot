@@ -92,4 +92,24 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
     public Map<String, Object> selectStockOccupancy(String warehouseId, String goodsId) {
         return stockMapper.selectStockOccupancy(warehouseId, goodsId);
     }
+
+    @Override
+    public boolean increaseQty(String id, BigDecimal qty) {
+        int rows = stockMapper.increaseQty(id, qty);
+        if(rows == 0) {
+            throw new RuntimeException("盘盈直接更新库存失败");
+        }
+        log.info("直接增加 更新库存 ：stockId={}, 增加数量={}", id, qty);
+        return true;
+    }
+
+    @Override
+    public boolean decreaseQty(String id, BigDecimal qty) {
+        int rows = stockMapper.decreaseQty(id, qty);
+        if(rows == 0) {
+            throw new RuntimeException("盘亏 库存直接扣减失败，可能可用库存不足");
+        }
+        log.info("盘亏 直接扣减库存：stockId={}, 扣减数量={}", id, qty);
+        return true;
+    }
 }

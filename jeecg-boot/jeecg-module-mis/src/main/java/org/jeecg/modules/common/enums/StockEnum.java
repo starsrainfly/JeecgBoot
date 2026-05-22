@@ -13,7 +13,7 @@ public class StockEnum {
         PRODUCTION("PRODUCTION", "生产入库"),
         TRANSFER("TRANSFER", "调拨入库"),
         RETURN("RETURN", "销售退货"),
-        INVENTORY("INVENTORY", "盘盈入库"),
+        INVENTORY("ADJUST_PROFIT", "盘盈入库"),
         RECYCLE("RECYCLE","退废/回收"),
         OTHER("OTHER", "其他入库");
 
@@ -34,9 +34,9 @@ public class StockEnum {
         SALES("SALES", "销售出库"),
         RETURN("RETURN", "采购退货"),
         TRANSFER("TRANSFER", "调拨出库"),
-        PRODUCTION("RETURN", "生产领料"),
-        INVENTORY("INVENTORY", "盘亏出库"),
-        SCRAP("SCRAP_RETURN","报废出库");
+        PRODUCTION("PRODUCTION", "生产领料"),
+        INVENTORY("ADJUST_LOSS", "盘亏出库"),
+        SCRAP("SCRAP","报废出库");
 
 
         @EnumValue  // 1. 存入数据库时，只存 code ("PURCHASE")

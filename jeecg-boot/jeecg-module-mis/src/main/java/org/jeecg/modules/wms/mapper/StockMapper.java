@@ -91,6 +91,21 @@ public interface StockMapper extends BaseMapper<Stock> {
     );
 
     /**
+     * 盘盈：直接增加库存
+     * @param id
+     * @param qty
+     * @return
+     */
+    int increaseQty(@Param("id") String id, @Param("qty") BigDecimal qty);
+
+    /**
+     * 盘亏：直接扣减库存（检查实际库存，不检查锁定）
+     * @param id
+     * @param qty
+     * @return
+     */
+    int decreaseQty(@Param("id") String id, @Param("qty") BigDecimal qty);
+    /**
      * 查询库存占用情况
      */
     Map<String, Object> selectStockOccupancy(

@@ -614,6 +614,14 @@ export const stockInDetailColumns: JVxeColumn[] = [
       defaultValue:'',
     },
     {
+      title: '备注',
+      key: 'remark',
+      type: JVxeTypes.input,
+      width:"200px",
+      placeholder: '请输入${title}',
+      defaultValue:'',
+    },
+    {
       title: '质检状态',
       key: 'qcStatus',
       type: JVxeTypes.select,

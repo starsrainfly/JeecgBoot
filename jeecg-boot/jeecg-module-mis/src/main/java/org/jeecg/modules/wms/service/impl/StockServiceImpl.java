@@ -112,4 +112,9 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
         log.info("盘亏 直接扣减库存：stockId={}, 扣减数量={}", id, qty);
         return true;
     }
+
+    @Override
+    public List<Stock> selectAvailableStockByGoodsMultiWarehouse(List<String> warehouseIds, String goodsId, String batchNo) {
+        return stockMapper.selectAvailableStockByGoodsMultiWarehouse(warehouseIds, goodsId, batchNo);
+    }
 }

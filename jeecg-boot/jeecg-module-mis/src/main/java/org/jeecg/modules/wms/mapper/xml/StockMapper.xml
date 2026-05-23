@@ -333,4 +333,21 @@
           AND del_flag = '0'
     </select>
 
+
+    <!-- 查多个仓库的可用库存，按入库时间FIFO -->
+    <select id="selectAvailableStockByGoodsMultiWarehouse" resultType="org.jeecg.modules.wms.entity.Stock">
+        SELECT * FROM mis_stock
+        WHERE warehouse_id IN
+        <foreach collection="warehouseIds" item="whId" open="(" separator="," close=")">
+            #{whId}
+        </foreach>
+        AND goods_id = #{goodsId}
+        <if test="batchNo != null and batchNo != ''">
+            AND batch_no = #{batchNo}
+        </if>
+        AND (quantity - locked_qty) > 0
+        AND del_flag = '0'
+        ORDER BY stock_in_time ASC
+    </select>
+
 </mapper>

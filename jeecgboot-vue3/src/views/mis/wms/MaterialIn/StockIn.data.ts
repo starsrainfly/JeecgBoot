@@ -20,7 +20,7 @@ export const columns: BasicColumn[] = [
    {
      title: '仓库名称',
      align:"center",
-     dataIndex: 'warehouseName'
+     dataIndex: 'warehouseId_dictText'
    },
    {
     title: '供应商',
@@ -515,6 +515,14 @@ export const stockInDetailColumns: JVxeColumn[] = [
         { required: true, message: '${title}不能为空' },
       ],
     },
+  {
+    title:'备注',
+    key:'remark',
+    type: JVxeTypes.input,
+    width:"200px",
+    placeholder: '请输入${title}',
+    defaultValue:'',
+  },
     {
       title: '序列号',
       key: 'serialNo',

@@ -124,4 +124,16 @@ public interface StockMapper extends BaseMapper<Stock> {
     long selectPendingInAuditCount();
     long selectPendingOutAuditCount();
 
+    /**
+     *
+     * @param warehouseIds
+     * @param goodsId
+     * @param batchNo
+     * @return
+     */
+    List<Stock> selectAvailableStockByGoodsMultiWarehouse(
+            @Param("warehouseIds") List<String> warehouseIds,
+            @Param("goodsId") String goodsId,
+            @Param("batchNo") String batchNo);
+
 }

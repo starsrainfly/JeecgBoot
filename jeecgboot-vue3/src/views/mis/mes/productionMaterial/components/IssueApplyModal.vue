@@ -49,7 +49,7 @@
               <a-input-number
                 v-model:value="formData.quantity"
                 :min="0"
-                :max="remainingQty * 2"
+
                 :precision="6"
                 style="width: 100%"
                 @change="handleSingleQtyChange"
@@ -57,7 +57,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-
+<!--        :max="remainingQty * 2"-->
         <a-row :gutter="24">
           <a-col :span="12">
             <a-form-item label="期望领料日期" required>
@@ -151,7 +151,7 @@
                 <a-input-number
                   :value="row.batchQuantity"
                   :min="0"
-                  :max="row.batchRemainingQty * 2"
+
                   :precision="6"
                   style="width: 100px"
                   @change="(val) => handleQtyChange(index, val)"
@@ -159,7 +159,7 @@
                 <a-tag v-if="row.isOverApply" color="orange" style="margin-left: 8px;">超量</a-tag>
               </div>
             </template>
-
+<!--            :max="row.batchRemainingQty * 2"-->
             <template v-else-if="column.key === 'remark'">
               <a-input
                 :value="row.remark"

@@ -71,4 +71,13 @@ public interface IStockService extends IService<Stock> {
      * @return
      */
     boolean decreaseQty(String id, BigDecimal qty);
+
+    /**
+     * 多仓库的库存明细
+     * @param warehouseIds
+     * @param goodsId
+     * @param batchNo
+     * @return
+     */
+    List<Stock> selectAvailableStockByGoodsMultiWarehouse(List<String> warehouseIds, String goodsId, String batchNo);
 }

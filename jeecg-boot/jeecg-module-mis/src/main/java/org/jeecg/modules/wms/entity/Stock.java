@@ -163,6 +163,10 @@ public class Stock implements Serializable {
 	@Dict(dicCode = "wms_stock_status")
     @Schema(description = "状态")
     private java.lang.String qcStatus;
+    /**备注*/
+    @Excel(name = "备注", width = 15)
+    @Schema(description = "备注")
+    private String remark;
     /**是否删除*/
     @Excel(name = "是否删除", width = 15)
     @Schema(description = "是否删除")

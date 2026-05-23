@@ -349,12 +349,12 @@ export const stockInDetailColumns: BasicColumn[] = [
    {
     title: '币种',
     align:"center",
-    dataIndex: 'currency_dictText'
+    dataIndex: 'currency'
    },
    {
     title: '汇率',
     align:"center",
-    dataIndex: 'exchangeRate_dictText'
+    dataIndex: 'exchangeRate'
    },
    {
     title: '单价',
@@ -404,6 +404,12 @@ export const stockInDetailColumns: BasicColumn[] = [
       return text;
     },
    },
+  {
+    title:'备注',
+    align:'center',
+    dataIndex:'remark'
+  },
+
 ];
 //子表表单数据
 export const stockInDetailFormSchema: FormSchema[] = [
@@ -618,6 +624,11 @@ export const stockInDetailFormSchema: FormSchema[] = [
           ];
      },
   },
+  {
+    label:'备注',
+    field:'remark',
+    component:'Input',
+  },
 ];
 
 // ========== 纯明细查询专用列（包含主表关联字段）==========
@@ -727,11 +738,11 @@ export const stockInDetailQueryColumns: BasicColumn[] = [
     align: "center",
     dataIndex: 'batchNo'
   },
-  // {
-  //   title: '序列号',
-  //   align: "center",
-  //   dataIndex: 'serialNo'
-  // },
+  {
+    title: '备注',
+    align: "center",
+    dataIndex: 'remark'
+  },
   {
     title: '质检状态',
     align: "center",

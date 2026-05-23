@@ -81,6 +81,18 @@ public class InventoryCheckDetail implements Serializable {
     @DateTimeFormat(pattern="yyyy-MM-dd")
     @Schema(description = "有效期至")
     private Date expiryDate;
+    /**质保天数*/
+    @Excel(name = "质保天数", width = 15)
+    @Schema(description = "质保天数")
+    private java.lang.Integer shelfLife;
+    /**供应商id*/
+    @Excel(name = "供应商id", width = 15)
+    @Schema(description = "供应商id")
+    private java.lang.String supplierId;
+    /**供应商名称*/
+    @Excel(name = "供应商名称", width = 15)
+    @Schema(description = "供应商名称")
+    private java.lang.String supplierName;
 	/**仓库*/
 	@Excel(name = "仓库", width = 15)
     @Dict(dicCode = "id",dicText = "name",dictTable = "mis_warehouse where del_flag='0' and status='1'")

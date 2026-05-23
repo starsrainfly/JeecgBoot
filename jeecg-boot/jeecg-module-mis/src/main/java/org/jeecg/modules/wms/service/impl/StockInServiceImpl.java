@@ -200,7 +200,7 @@ public class StockInServiceImpl extends ServiceImpl<StockInMapper, StockIn> impl
 			stock.setCreateBy(loginUser.getRealname());
 			stock.setCreateTime(new DateTime());
 			//stock.setAreaId("STAGING"); //默认的暂存区域
-			WarehouseArea area = warehouseAreaService.getAreaByCode("STAGING");
+			WarehouseArea area = warehouseAreaService.getAreaByCode(stockIn.getWarehouseId(),"STAGING");
 			if(area != null) {
 				stock.setAreaId(area.getId());
 			}
@@ -214,7 +214,6 @@ public class StockInServiceImpl extends ServiceImpl<StockInMapper, StockIn> impl
 			stock.setQcStatus(stockInDetail.getQcStatus());
 			stock.setCostPrice(stockInDetail.getUnitPrice());
 			stock.setCostTotal(stockInDetail.getTotalAmount());
-
 
 			stockList.add(stock);
 		}

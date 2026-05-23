@@ -251,6 +251,7 @@ public class InventoryCheckServiceImpl extends ServiceImpl<InventoryCheckMapper,
 				inDetail.setBatchNo(detail.getBatchNo());
 				inDetail.setProductionDate(detail.getProductionDate());
 				inDetail.setExpiryDate(detail.getExpiryDate());
+				inDetail.setShelfLife(detail.getShelfLife());//添加质保期
 				inDetails.add(inDetail);
 
 				// 调整明细
@@ -373,6 +374,9 @@ public class InventoryCheckServiceImpl extends ServiceImpl<InventoryCheckMapper,
 			detail.setBatchNo(stock.getBatchNo());
 			detail.setProductionDate(stock.getProductionDate());
 			detail.setExpiryDate(stock.getExpiryDate());
+			detail.setShelfLife(stock.getShelfLife());
+			detail.setSupplierId(stock.getSupplierId());
+			detail.setSupplierName(stock.getSupplierName());
 			detail.setWarehouseId(stock.getWarehouseId());
 			detail.setAreaId(stock.getAreaId());
 			detail.setShelfId(stock.getShelfId());

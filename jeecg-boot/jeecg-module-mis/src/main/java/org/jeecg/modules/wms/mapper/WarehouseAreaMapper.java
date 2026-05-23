@@ -13,5 +13,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @Version: V1.0
  */
 public interface WarehouseAreaMapper extends BaseMapper<WarehouseArea> {
-    public WarehouseArea getAreaByCode(@Param("areaCode") String areaCode);
+    public WarehouseArea getAreaByCode(@Param("warehouseId") String warehouseId,@Param("areaCode") String areaCode);
 }

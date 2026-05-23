@@ -20,7 +20,7 @@ public class WarehouseAreaServiceImpl extends ServiceImpl<WarehouseAreaMapper, W
     @Autowired
     private WarehouseAreaMapper warehouseAreaMapper;
     @Override
-    public WarehouseArea getAreaByCode(String areaCode) {
-        return warehouseAreaMapper.getAreaByCode(areaCode);
+    public WarehouseArea getAreaByCode(String warehouseId,String areaCode) {
+        return warehouseAreaMapper.getAreaByCode(warehouseId,areaCode);
     }
 }

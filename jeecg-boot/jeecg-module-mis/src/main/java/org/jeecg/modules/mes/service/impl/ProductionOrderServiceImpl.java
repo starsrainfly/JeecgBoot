@@ -434,6 +434,9 @@ public class ProductionOrderServiceImpl extends ServiceImpl<ProductionOrderMappe
 			material.setMaterialSpec(bom.getMaterialSpec());
 			material.setRequiredQty(bom.getPlannedQty());
 			material.setRemainingQty(bom.getPlannedQty());
+			material.setIssuedQty(BigDecimal.ZERO);   // ✅ 显式设置
+			material.setLockedQty(BigDecimal.ZERO);   // ✅ 显式设置
+			material.setOverQty(BigDecimal.ZERO);     // ✅ 显式设置
 			material.setUnit(bom.getUnit());
 			material.setMaterialType("0");
 			material.setStatus("0");

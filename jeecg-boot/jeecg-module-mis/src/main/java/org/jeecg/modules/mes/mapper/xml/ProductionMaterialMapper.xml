@@ -5,17 +5,18 @@
     <!-- 增加已发数量，减少剩余待发及锁定数量 -->
     <update id="increaseIssuedQty">
         UPDATE mis_production_material
-        SET issued_qty = issued_qty + #{qty},
-            remaining_qty = remaining_qty - #{qty},
-            locked_qty = locked_qty - #{qty},
+        SET issued_qty = COALESCE(issued_qty, 0) + #{qty},
+            remaining_qty = GREATEST(COALESCE(remaining_qty, 0) - #{qty}, 0),
+            locked_qty = GREATEST(COALESCE(locked_qty, 0) - #{qty}, 0),
             update_time = NOW()
         WHERE id = #{id}
     </update>
     <!-- 减少剩余待发及锁定数量 -->
     <update id="decreaseLockAndRemainingQty">
         UPDATE mis_production_material
-        SET remaining_qty = remaining_qty - #{qty},
-            locked_qty = locked_qty - #{qty},
+        SET issued_qty = COALESCE(issued_qty, 0) + #{qty},
+            locked_qty = GREATEST(COALESCE(locked_qty, 0) - #{qty}, 0),
+            remaining_qty = GREATEST(COALESCE(remaining_qty, 0) - #{qty}, 0),
             update_time = NOW()
         WHERE id = #{id}
     </update>
@@ -23,8 +24,8 @@
     <!-- 更新锁定数量 -->
     <update id="updateLockQty">
         UPDATE mis_production_material
-        SET locked_qty = locked_qty + #{lockQty},
-            over_qty = over_qty + #{overQty},
+        SET locked_qty = COALESCE(locked_qty, 0) + #{lockQty},
+            over_qty = COALESCE(over_qty, 0) + #{overQty},
             status = #{status},
             update_time = NOW(),
             update_by = #{updateBy}
@@ -34,8 +35,8 @@
     <!-- 释放锁定数量 -->
     <update id="unlockQty">
         UPDATE mis_production_material
-        SET locked_qty = locked_qty - #{unlockQty},
-            over_qty = over_qty - #{unOverQty},
+        SET locked_qty = GREATEST(COALESCE(locked_qty, 0) - #{unlockQty}, 0),
+            over_qty = GREATEST(COALESCE(over_qty, 0) - #{unOverQty}, 0),
             status = #{status},
             update_time = NOW(),
             update_by = #{updateBy}

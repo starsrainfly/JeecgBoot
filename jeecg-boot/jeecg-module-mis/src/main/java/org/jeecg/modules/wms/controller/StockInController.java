@@ -273,7 +273,7 @@ public class StockInController {
 	@GetMapping(value = "/queryStockInDetailByMainId")
 	public Result<List<StockInDetail>> queryStockInDetailListByMainId(@RequestParam(name="id",required=true) String id) {
 		List<StockInDetail> stockInDetailList = stockInDetailService.selectByMainId(id);
-		return Result.OK(stockInDetailList);
+		return Result.ok(stockInDetailList);
 	}
 
     /**

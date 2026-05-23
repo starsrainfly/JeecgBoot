@@ -102,6 +102,7 @@ public class StockInDetail implements Serializable {
     private String serialNo;
 	/**质检状态*/
 	@Excel(name = "质检状态", width = 15, dicCode = "mes_qc_status")
+    @Dict(dicCode = "mes_qc_status")
     @Schema(description = "质检状态")
     private String qcStatus;
     /**生产日期*/
@@ -128,6 +129,10 @@ public class StockInDetail implements Serializable {
 	@Excel(name = "原销售/采购订单id", width = 15)
     @Schema(description = "原销售/采购订单id")
     private String sourceDetailId;
+    /**备注*/
+    @Excel(name = "备注", width = 15)
+    @Schema(description = "备注")
+    private String remark;
 	/**是否删除*/
 	@Excel(name = "是否删除", width = 15)
     @Schema(description = "是否删除")

@@ -177,6 +177,7 @@ public class StockInDetailVo {
     /**质检状态*/
     @Excel(name = "质检状态", width = 15, dicCode = "mes_qc_status")
     @Schema(description = "质检状态")
+    @Dict(dicCode = "mes_qc_status")
     private String qcStatus;
     /**生产日期*/
     @Excel(name = "生产日期", width = 15, format = "yyyy-MM-dd")

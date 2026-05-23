@@ -14,6 +14,7 @@ public class StockEnum {
         TRANSFER("TRANSFER", "调拨入库"),
         RETURN("RETURN", "销售退货"),
         INVENTORY("ADJUST_PROFIT", "盘盈入库"),
+        RESIDUAL("RESIDUAL","余料入库"),
         RECYCLE("RECYCLE","退废/回收"),
         OTHER("OTHER", "其他入库");
 

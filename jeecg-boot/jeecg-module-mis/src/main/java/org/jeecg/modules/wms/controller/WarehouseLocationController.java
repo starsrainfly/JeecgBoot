@@ -14,7 +14,9 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
 import org.jeecg.common.util.oConvertUtils;
+import org.jeecg.modules.wms.entity.Stock;
 import org.jeecg.modules.wms.entity.WarehouseLocation;
+import org.jeecg.modules.wms.service.IStockService;
 import org.jeecg.modules.wms.service.IWarehouseLocationService;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -52,7 +54,8 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 public class WarehouseLocationController extends JeecgController<WarehouseLocation, IWarehouseLocationService> {
 	@Autowired
 	private IWarehouseLocationService warehouseLocationService;
-	
+	@Autowired
+	private IStockService stockService;
 	/**
 	 * 分页列表查询
 	 *
@@ -92,6 +95,12 @@ public class WarehouseLocationController extends JeecgController<WarehouseLocati
 	@RequiresPermissions("wms:mis_warehouse_location:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody WarehouseLocation warehouseLocation) {
+		// 校验货位编码唯一性
+		Result<String> checkResult = checkLocationCodeUnique(warehouseLocation);
+		if (!checkResult.isSuccess()) {
+			return checkResult;
+		}
+
 		warehouseLocationService.save(warehouseLocation);
 		return Result.OK("添加成功！");
 	}
@@ -107,6 +116,14 @@ public class WarehouseLocationController extends JeecgController<WarehouseLocati
 	@RequiresPermissions("wms:mis_warehouse_location:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody WarehouseLocation warehouseLocation) {
+		if (oConvertUtils.isEmpty(warehouseLocation.getId())) {
+			return Result.error("编辑失败：缺少主键ID");
+		}
+		// 校验货位编码唯一性（排除自身）
+		Result<String> checkResult = checkLocationCodeUnique(warehouseLocation);
+		if (!checkResult.isSuccess()) {
+			return checkResult;
+		}
 		warehouseLocationService.updateById(warehouseLocation);
 		return Result.OK("编辑成功!");
 	}
@@ -122,6 +139,15 @@ public class WarehouseLocationController extends JeecgController<WarehouseLocati
 	@RequiresPermissions("wms:mis_warehouse_location:delete")
 	@DeleteMapping(value = "/delete")
 	public Result<String> delete(@RequestParam(name="id",required=true) String id) {
+		// 检查是否有库存（可选，根据业务需要）
+		 long stockCount = stockService.count(
+		     new QueryWrapper<Stock>()
+					 .eq("location_id", id)
+					 .eq("del_flag", "0")
+		 );
+		 if (stockCount > 0) {
+		     return Result.error("删除失败：该货位下存在库存，请先处理库存");
+		 }
 		warehouseLocationService.removeById(id);
 		return Result.OK("删除成功!");
 	}
@@ -137,6 +163,18 @@ public class WarehouseLocationController extends JeecgController<WarehouseLocati
 	@RequiresPermissions("wms:mis_warehouse_location:deleteBatch")
 	@DeleteMapping(value = "/deleteBatch")
 	public Result<String> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
+		List<String> idList = Arrays.asList(ids.split(","));
+
+		// 检查是否有库存（可选，根据业务需要）
+		long stockCount = stockService.count(
+				new QueryWrapper<Stock>()
+						.eq("location_id", idList)
+						.eq("del_flag", "0")
+		);
+		if (stockCount > 0) {
+			return Result.error("删除失败：该货位下存在库存，请先处理库存");
+		}
+
 		this.warehouseLocationService.removeByIds(Arrays.asList(ids.split(",")));
 		return Result.OK("批量删除成功!");
 	}
@@ -182,5 +220,42 @@ public class WarehouseLocationController extends JeecgController<WarehouseLocati
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, WarehouseLocation.class);
     }
+
+	 /**
+	  * 校验货位编码唯一性（同一仓库+同一区域+同一货架下不允许重复）
+	  * 添加时：全库校验；编辑时：排除当前记录
+	  */
+	 private Result<String> checkLocationCodeUnique(WarehouseLocation warehouseLocation) {
+		 if (oConvertUtils.isEmpty(warehouseLocation.getWarehouseId())) {
+			 return Result.error("所属仓库不能为空");
+		 }
+		 if (oConvertUtils.isEmpty(warehouseLocation.getAreaId())) {
+			 return Result.error("所属区域不能为空");
+		 }
+		 if (oConvertUtils.isEmpty(warehouseLocation.getShelfId())) {
+			 return Result.error("所属货架不能为空");
+		 }
+		 if (oConvertUtils.isEmpty(warehouseLocation.getLocationCode())) {
+			 return Result.error("货位编码不能为空");
+		 }
+
+		 QueryWrapper<WarehouseLocation> queryWrapper = new QueryWrapper<>();
+		 queryWrapper.eq("warehouse_id", warehouseLocation.getWarehouseId());
+		 queryWrapper.eq("area_id", warehouseLocation.getAreaId());
+		 queryWrapper.eq("shelf_id", warehouseLocation.getShelfId());
+		 queryWrapper.eq("location_code", warehouseLocation.getLocationCode());
+
+		 // 编辑时排除当前记录
+		 if (oConvertUtils.isNotEmpty(warehouseLocation.getId())) {
+			 queryWrapper.ne("id", warehouseLocation.getId());
+		 }
+
+		 long count = warehouseLocationService.count(queryWrapper);
+		 if (count > 0) {
+			 return Result.error("该货架下已存在货位编码【" + warehouseLocation.getLocationCode() + "】");
+		 }
+
+		 return Result.OK();
+	 }
 
 }

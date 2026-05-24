@@ -15,6 +15,8 @@ import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.system.query.QueryRuleEnum;
 import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.wms.entity.Warehouse;
+import org.jeecg.modules.wms.entity.WarehouseArea;
+import org.jeecg.modules.wms.service.IWarehouseAreaService;
 import org.jeecg.modules.wms.service.IWarehouseService;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -52,7 +54,8 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 public class WarehouseController extends JeecgController<Warehouse, IWarehouseService> {
 	@Autowired
 	private IWarehouseService warehouseService;
-	
+	@Autowired
+	private IWarehouseAreaService warehouseAreaService;
 	/**
 	 * 分页列表查询
 	 *
@@ -91,6 +94,10 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
 	//@RequiresPermissions("wms:mis_warehouse:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody Warehouse warehouse) {
+		// 校验仓库编码全局唯一
+		if (checkCodeExists(warehouse.getWarehouseCode(), null)) {
+			return Result.error("仓库编码【" + warehouse.getWarehouseCode() + "】已存在");
+		}
 		warehouseService.save(warehouse);
 		return Result.OK("添加成功！");
 	}
@@ -106,6 +113,13 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
 	//@RequiresPermissions("wms:mis_warehouse:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody Warehouse warehouse) {
+		if (oConvertUtils.isEmpty(warehouse.getId())) {
+			return Result.error("编辑失败：缺少主键ID");
+		}
+		// 校验仓库编码全局唯一（排除自身）
+		if (checkCodeExists(warehouse.getWarehouseCode(), warehouse.getId())) {
+			return Result.error("仓库编码【" + warehouse.getWarehouseCode() + "】已存在");
+		}
 		warehouseService.updateById(warehouse);
 		return Result.OK("编辑成功!");
 	}
@@ -121,6 +135,20 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
 	//@RequiresPermissions("wms:mis_warehouse:delete")
 	@DeleteMapping(value = "/delete")
 	public Result<String> delete(@RequestParam(name="id",required=true) String id) {
+		Warehouse warehouse = warehouseService.getById(id);
+		if (warehouse == null) {
+			return Result.error("未找到对应数据");
+		}
+
+		// 检查是否有下级区域
+		long areaCount = warehouseAreaService.count(
+				new QueryWrapper<WarehouseArea>()
+						.eq("warehouse_id", id)
+						.eq("del_flag","0")
+		);
+		if (areaCount > 0) {
+			return Result.error("删除失败：该仓库下存在" + areaCount + "个区域，请先删除区域");
+		}
 		warehouseService.removeById(id);
 		return Result.OK("删除成功!");
 	}
@@ -136,6 +164,17 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
 	//@RequiresPermissions("wms:mis_warehouse:deleteBatch")
 	@DeleteMapping(value = "/deleteBatch")
 	public Result<String> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
+		List<String> idList = Arrays.asList(ids.split(","));
+
+		// 检查是否有下级区域
+		long areaCount = warehouseAreaService.count(
+				new QueryWrapper<WarehouseArea>().in("warehouse_id", idList)
+						.eq("del_flag","0")
+		);
+		if (areaCount > 0) {
+			return Result.error("删除失败：选中的仓库下存在区域，请先删除区域");
+		}
+
 		this.warehouseService.removeByIds(Arrays.asList(ids.split(",")));
 		return Result.OK("批量删除成功!");
 	}
@@ -181,5 +220,16 @@ public class WarehouseController extends JeecgController<Warehouse, IWarehouseSe
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, Warehouse.class);
     }
+
+	 // 辅助方法：检查编码是否已存在
+	 private boolean checkCodeExists(String code, String excludeId) {
+		 if (oConvertUtils.isEmpty(code)) return false;
+		 QueryWrapper<Warehouse> qw = new QueryWrapper<>();
+		 qw.eq("warehouse_code", code);
+		 if (oConvertUtils.isNotEmpty(excludeId)) {
+			 qw.ne("id", excludeId);
+		 }
+		 return warehouseService.count(qw) > 0;
+	 }
 
 }

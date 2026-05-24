@@ -65,10 +65,10 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 		}
 		baseMapper.insert(product);
 
-        if(product.getProductCode().length()>5){
-            Item item = buildItemFromMaterial(product);
-            itemService.save(item);
-        }
+//        if(product.getProductCode().length()>5){
+//            Item item = buildItemFromMaterial(product);
+//            itemService.save(item);
+//        }
 //        Item item = buildItemFromMaterial(product);
 //        itemService.save(item);
 	}
@@ -91,12 +91,12 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 			}
 		}
 		baseMapper.updateById(product);
-        String itemId = itemService.GetIdByMaterialId(product.getId());
-        if(!itemId.isEmpty()){
-            Item item = buildItemFromMaterial(product);
-            item.setId(itemId);
-            itemService.updateById(item);
-        }
+//        String itemId = itemService.GetIdByMaterialId(product.getId());
+//        if(!itemId.isEmpty()){
+//            Item item = buildItemFromMaterial(product);
+//            item.setId(itemId);
+//            itemService.updateById(item);
+//        }
 	}
 	
 	@Override

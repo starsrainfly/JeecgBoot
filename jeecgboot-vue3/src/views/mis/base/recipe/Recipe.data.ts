@@ -303,24 +303,35 @@ export const recipeDetailColumns: JVxeColumn[] = [
         { required: true, message: '${title}不能为空' },
       ],
     },
+    // {
+    //   title: '物料编码',
+    //   key: 'materialCode',
+    //   type: JVxeTypes.popup,
+    //   popupCode:"mdm_material_select",
+    //   fieldConfig: [
+    //     { source: 'id', target: 'materialId' },
+    //     { source: 'material_code', target: 'materialCode' },
+    //     { source: 'material_name', target: 'materialName' },
+    //     { source: 'material_spec', target: 'materialSpec' },
+    //   ],
+    //
+    //   width:"150px",
+    //   placeholder: '请输入${title}',
+    //   defaultValue:'',
+    //     validateRules: [
+    //       { required: true, message: '${title}不能为空' },
+    //     ],
+    // },
     {
       title: '物料编码',
       key: 'materialCode',
-      type: JVxeTypes.popup,
-      popupCode:"mdm_material_select",
-      fieldConfig: [
-        { source: 'id', target: 'materialId' },
-        { source: 'material_code', target: 'materialCode' },
-        { source: 'material_name', target: 'materialName' },
-        { source: 'material_spec', target: 'materialSpec' },
-      ],
-
+      type: JVxeTypes.slot,        // 👈 由原来的 popup 改为自定义插槽
+      slotName: 'materialCode',
       width:"150px",
-      placeholder: '请输入${title}',
       defaultValue:'',
-        validateRules: [
-          { required: true, message: '${title}不能为空' },
-        ],
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
     },
     {
       title: '物料名称',

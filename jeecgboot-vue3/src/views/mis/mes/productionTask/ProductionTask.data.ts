@@ -87,7 +87,7 @@ export const columns: BasicColumn[] = [
     dataIndex: 'planEquipmentType_dictText'
    },
    {
-    title: '计划耗时（单位分钟））',
+    title: '计划耗时（分钟））',
     align:"center",
     dataIndex: 'planDuration'
    },
@@ -127,7 +127,7 @@ export const columns: BasicColumn[] = [
     dataIndex: 'actualEquipmentSettings'
    },
    {
-    title: '指派操作员id',
+    title: '指派操作员',
     align:"center",
     dataIndex: 'assignedOperatorId_dictText'
    },
@@ -382,7 +382,7 @@ export const formSchema: FormSchema[] = [
      },
   },
   {
-    label: '计划耗时（单位分钟））',
+    label: '计划耗时（分钟））',
     field: 'planDuration',
     component: 'InputNumber',
   },
@@ -451,7 +451,7 @@ export const formSchema: FormSchema[] = [
     },
   },
   {
-    label: '实际耗时（单位分钟））',
+    label: '实际耗时（分钟））',
     field: 'actualDuration',
     component: 'InputNumber',
   },

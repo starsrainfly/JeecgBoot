@@ -24,15 +24,35 @@
           :toolbar="true"
           @edit-closed="handleEditClosed"
           @removed="handleDetailDeleted"
-        />
+        >
+          <!-- 物料编码：自定义选择插槽 -->
+          <template #materialCode="{ row }">
+            <a-input
+              :value="row.materialCode"
+              readonly
+              :disabled="formDisabled"
+              :placeholder="formDisabled ? '' : '点击选择物料'"
+              :style="{ cursor: formDisabled ? 'default' : 'pointer' }"
+              @click="openMaterialSelect(row)"
+            >
+              <template #suffix>
+                <SearchOutlined v-if="!formDisabled" style="color: #1890ff" />
+              </template>
+            </a-input>
+          </template>
+        </JVxeTable>
       </a-tab-pane>
     </a-tabs>
+
+    <!-- 物料选择弹窗 -->
+    <MaterialSelectModal @register="registerMaterialModal" @select="handleMaterialSelect" />
+
   </BasicModal>
 </template>
 
 <script lang="ts" setup>
   import {ref, computed, unref, reactive, nextTick} from 'vue';
-  import {BasicModal, useModalInner} from '/@/components/Modal';
+  import {BasicModal, useModal,  useModalInner} from '/@/components/Modal';
   import {BasicForm, useForm} from '/@/components/Form/index';
   import { JVxeTable } from '/@/components/jeecg/JVxeTable'
   import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods.ts'
@@ -40,6 +60,8 @@
   import {saveOrUpdate,recipeDetailList} from '../Recipe.api';
   import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
   import { useMessage } from '/@/hooks/web/useMessage';
+  import { SearchOutlined } from '@ant-design/icons-vue';
+  import MaterialSelectModal from './MaterialSelectModal.vue';
 
   const { createMessage } = useMessage();
   const emit = defineEmits(['register', 'success']);
@@ -70,6 +92,34 @@
     showActionButtonGroup: false,
     baseColProps: {span: 6},
   });
+
+  // ===== 物料选择弹窗 =====
+  const [registerMaterialModal, { openModal: openMaterialModal }] = useModal();
+  let currentEditRow: any = null;
+
+  // 点击物料编码输入框，打开物料选择弹窗
+  function openMaterialSelect(row: any) {
+    if (formDisabled.value) return;
+    currentEditRow = row;
+    openMaterialModal(true, {});
+  }
+
+  // 物料选择回调：回填到对应行
+  function handleMaterialSelect(record: any) {
+    if (!currentEditRow) return;
+    const rowKey = currentEditRow.id ?? currentEditRow._X_ROW_KEY;
+    const values = {
+      materialId: record.id,
+      materialCode: record.materialCode,
+      materialName: record.materialName,
+      materialSpec: record.materialSpec,
+    };
+    // 方式一：JVxeTable 实例方法回填（会触发 value-change）
+    recipeDetail.value?.setValues([{ rowKey, values }]);
+    // 方式二：直接同步行对象，保证插槽输入框立即刷新
+    Object.assign(currentEditRow, values);
+    currentEditRow = null;
+  }
 
   const [registerModal, {setModalProps, closeModal}] = useModalInner(async (data) => {
     await reset();

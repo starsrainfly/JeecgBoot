@@ -22,7 +22,7 @@ export const columns: BasicColumn[] = [
     title: '颜色',
     align: 'left',
     sorter: true,
-    dataIndex: 'color'
+    dataIndex: 'productColor'
    },
    {
     title: '型号规格',

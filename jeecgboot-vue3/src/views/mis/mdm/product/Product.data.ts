@@ -20,13 +20,13 @@ export const columns: BasicColumn[] = [
     dataIndex: 'productName',
     width: 200
   },
-  {
-    title: '颜色',
-    align: 'left',
-    sorter: true,
-    dataIndex: 'color',
-    width: 100
-  },
+  // {
+  //   title: '颜色',
+  //   align: 'left',
+  //   sorter: true,
+  //   dataIndex: 'color',
+  //   width: 100
+  // },
   {
     title: '型号规格',
     align: 'center',
@@ -36,12 +36,14 @@ export const columns: BasicColumn[] = [
   {
     title: '配方编码',
     align: 'center',
+    sorter: true,
     dataIndex: 'recipeCode',
     width: 120
   },
   {
     title: '产品颜色',
     align: 'center',
+    sorter: true,
     dataIndex: 'productColor',
     width: 100
   },

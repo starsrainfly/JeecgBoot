@@ -136,6 +136,24 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'status_dictText'
    },
+  {
+    title: '质检状态',
+    align: "center",
+    dataIndex: 'qcStatus_dictText',
+    width: 100
+  },
+  {
+    title: '派工人',
+    align: "center",
+    dataIndex: 'assignBy',
+    width: 90
+  },
+  {
+    title: '派工时间',
+    align: "center",
+    dataIndex: 'assignTime',
+    width: 150
+  },
    {
     title: '实际开始时间',
     align:"center",
@@ -337,11 +355,11 @@ export const formSchema: FormSchema[] = [
             setFieldsValue:setFieldsValue,
             code:"mdm_equipment_select",
             fieldConfig: [
-                { source: 'id', target: 'equipmentId' },
-                { source: 'equipment_code', target: 'equipmentCode' },
-                { source: 'equipment_name', target: 'equipmentName' },
-                { source: 'model', target: 'model' },
-                { source: 'equipment_type', target: 'equipmentType' },
+                { source: 'id', target: 'planEquipmentId' },
+                { source: 'equipment_code', target: 'planEquipmentCode' },
+                { source: 'equipment_name', target: 'planEquipmentName' },
+                { source: 'model', target: 'planModel' },
+                { source: 'equipment_type', target: 'planEquipmentType' },
             ],
             multi:false
         }
@@ -411,7 +429,7 @@ export const formSchema: FormSchema[] = [
           {source: 'equipment_code', target: 'actualEquipmentCode'},
           {source: 'equipment_name', target: 'actualEquipmentName'},
           {source: 'model', target: 'actualModel'},
-          {source: 'equipment_type', target: 'equipmentType'},
+          {source: 'equipment_type', target: 'actualEquipmentType'},
         ],
         multi: false
       }
@@ -478,9 +496,11 @@ export const formSchema: FormSchema[] = [
     field: 'status',
     component:'JDictSelectTag',
     componentProps:{
-      dictCode:"mes_step_status"
+      dictCode:"mes_step_status",
+      disabled: true,   // 状态只能通过派工/开工/完工等动作流转
     },
   },
+
 
   ]
 // // 高级查询数据

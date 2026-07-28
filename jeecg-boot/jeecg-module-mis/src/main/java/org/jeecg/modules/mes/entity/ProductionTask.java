@@ -230,4 +230,22 @@ public class ProductionTask implements Serializable {
 	/**所属部门*/
     @Schema(description = "所属部门")
     private String sysOrgCode;
+    /**工单备注*/
+    @Schema(description = "工单备注")
+    private String productRemark;
+    /**质检备注*/
+    @Schema(description = "质检备注")
+    private String QcRemark;
+    /**派工时间*/
+    @Excel(name = "派工时间", width = 20, format = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @ApiModelProperty(value = "派工时间")
+    private Date assignTime;
+
+    /**派工人*/
+    @Excel(name = "派工人", width = 15)
+    @ApiModelProperty(value = "派工人")
+    private String assignBy;
+
 }

@@ -25,6 +25,9 @@ enum Api {
 
   // 新增：获取配料工单打印数据
   getBatchingPrintData = '/mes/productionTask/getBatchingPrintData',
+
+  // 派工
+  dispatch = '/mes/productionTask/dispatch',
 }
 /**
  * 导出api
@@ -127,3 +130,9 @@ export const deleteMaterialActual = (params, handleSuccess) => {
  */
 export const getBatchingPrintData = (params) =>
   defHttp.get({url: Api.getBatchingPrintData, params});
+
+/**
+ * 派工/重新派工
+ */
+export const dispatchTask = (params) =>
+  defHttp.post({url: Api.dispatch, params});

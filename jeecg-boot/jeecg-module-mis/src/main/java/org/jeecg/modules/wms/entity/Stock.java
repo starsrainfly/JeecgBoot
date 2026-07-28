@@ -191,4 +191,8 @@ public class Stock implements Serializable {
 	/**所属部门*/
     @Schema(description = "所属部门")
     private java.lang.String sysOrgCode;
+
+    /**COA文件*/
+    @Schema(description = "COA文件")
+    private String coaFile;
 }

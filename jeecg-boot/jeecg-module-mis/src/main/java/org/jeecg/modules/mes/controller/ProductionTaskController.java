@@ -103,7 +103,7 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 	/**
 	 * 分页列表查询
 	 *
-	 * @param productionTask
+	 * @param productionTaskVo
 	 * @param pageNo
 	 * @param pageSize
 	 * @param req
@@ -137,6 +137,12 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 	@RequiresPermissions("mes:mis_production_task:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody ProductionTask productionTask) {
+
+		// 需要报检的工单初始化质检状态；不需要的保持空
+		if ("1".equals(productionTask.getQcRequired())) {
+			productionTask.setQcStatus("WAIT_CHECK");
+		}
+
 		productionTaskService.save(productionTask);
 		return Result.OK("添加成功！");
 	}
@@ -152,13 +158,27 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 	@RequiresPermissions("mes:mis_production_task:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody ProductionTask productionTask) {
+//		if(!oConvertUtils.isEmpty(productionTask.getAssignedOperatorId())){
+//			SysUser user = sysUserService.getById(productionTask.getAssignedOperatorId());
+//			if(user!=null ){
+//				productionTask.setAssignedOperatorName(user.getRealname());
+//			}
+//		}
+//
+//		productionTaskService.updateById(productionTask);
+//		return Result.OK("编辑成功!");
 		if(!oConvertUtils.isEmpty(productionTask.getAssignedOperatorId())){
 			SysUser user = sysUserService.getById(productionTask.getAssignedOperatorId());
 			if(user!=null ){
 				productionTask.setAssignedOperatorName(user.getRealname());
 			}
 		}
-
+		// 加固：状态、质检状态只能走派工/开工/完工/报检/质检等动作流转，编辑不允许改
+		ProductionTask dbTask = productionTaskService.getById(productionTask.getId());
+		if (dbTask != null) {
+			productionTask.setStatus(dbTask.getStatus());
+			productionTask.setQcStatus(dbTask.getQcStatus());
+		}
 		productionTaskService.updateById(productionTask);
 		return Result.OK("编辑成功!");
 	}
@@ -210,6 +230,65 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 		return Result.OK(productionTask);
 	}
 
+	 /**
+	  * 派工/重新派工
+	  */
+	 @AutoLog(value = "工单表-派工")
+	 @Operation(summary = "工单表-派工")
+	 @RequiresPermissions("mes:mis_production_task:edit")
+	 @PostMapping(value = "/dispatch")
+	 public Result<String> dispatch(@RequestBody ProductionTask param) {
+		 if (StrUtil.isBlank(param.getId())) {
+			 return Result.error("工单id不能为空");
+		 }
+		 ProductionTask task = productionTaskService.getById(param.getId());
+		 if (task == null) {
+			 return Result.error("工单不存在");
+		 }
+
+		 // 状态机校验：进行中/已完成不允许派工
+		 if ("PROCESSING".equals(task.getStatus()) || "COMPLETED".equals(task.getStatus())) {
+			 return Result.error("工单进行中或已完成，不允许派工");
+		 }
+		 // 必须指派操作员
+		 if (StrUtil.isBlank(param.getAssignedOperatorId())) {
+			 return Result.error("请先指派操作员");
+		 }
+		 SysUser user = sysUserService.getById(param.getAssignedOperatorId());
+		 if (user == null) {
+			 return Result.error("指派的操作员不存在");
+		 }
+
+		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
+
+		 boolean reDispatch = "ASSIGNED".equals(task.getStatus());
+
+		 task.setAssignedOperatorId(user.getId());
+		 task.setAssignedOperatorName(user.getRealname());
+		 task.setProductRemark(param.getProductRemark());
+		 // 质检工单才更新质检备注
+		 if ("qc".equals(task.getTaskType())) {
+			 task.setQcStatus("CHECKING");   // 质检工单派工即进入检测中
+			 // 同步来源工单状态
+			 if (StrUtil.isNotBlank(task.getSourceTaskId())) {
+				 ProductionTask sourceTask = productionTaskService.getById(task.getSourceTaskId());
+				 if (sourceTask != null && "REPORTED".equals(sourceTask.getQcStatus())) {
+					 sourceTask.setQcStatus("CHECKING");
+					 productionTaskService.updateById(sourceTask);
+				 }
+			 }
+			 task.setQcRemark(param.getQcRemark());
+		 }
+		 task.setAssignTime(new Date());
+		 task.setAssignBy(loginUser.getRealname());
+		 if (!reDispatch) {
+			 task.setStatus("ASSIGNED");
+		 }
+
+		 productionTaskService.updateById(task);
+		 return Result.OK(reDispatch ? "重新派工成功！" : "派工成功！");
+	 }
+
     /**
     * 导出excel
     *
@@ -242,6 +321,8 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 	 @Operation(summary="我的工单-列表查询")
 	 @GetMapping(value = "/myTaskList")
 	 public Result<IPage<ProductionTask>> myTaskList(
+			 @RequestParam(name="taskNo", required=false) String taskNo,
+			 @RequestParam(name="batchNo", required=false) String batchNo,
 			 @RequestParam(name="taskType", required=false) String taskType,
 			 @RequestParam(name="status", required=false) String status,
 			 @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
@@ -255,6 +336,16 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 		 LambdaQueryWrapper<ProductionTask> queryWrapper = new LambdaQueryWrapper<>();
 		 queryWrapper.eq(ProductionTask::getAssignedOperatorId, operatorId);
 
+		 // 按工单编号模糊查询
+		 if (StrUtil.isNotEmpty(taskNo)) {
+			 queryWrapper.like(ProductionTask::getTaskNo, taskNo);
+		 }
+
+		 // 按批次号模糊查询
+		 if (StrUtil.isNotEmpty(batchNo)) {
+			 queryWrapper.like(ProductionTask::getBatchNo, batchNo);
+		 }
+
 		 // 按类型筛选
 		 if (StrUtil.isNotEmpty(taskType)) {
 			 queryWrapper.eq(ProductionTask::getTaskType, taskType);
@@ -265,7 +356,7 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 			 queryWrapper.eq(ProductionTask::getStatus, status);
 		 } else {
 			 // 默认排除已完成的
-			 queryWrapper.notIn(ProductionTask::getStatus, Arrays.asList("completed", "cancelled"));
+			 queryWrapper.notIn(ProductionTask::getStatus, Arrays.asList("COMPLETED", "CANCELLED"));
 		 }
 
 		 queryWrapper.orderByAsc(ProductionTask::getSequence)
@@ -477,7 +568,12 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 		 if (sourceTask == null) {
 			 return Result.error("工单不存在");
 		 }
-
+		 // 防重复报检：质检中或已有结论的不允许再次报检
+		 if ("REPORTED".equals(sourceTask.getQcStatus()) || "CHECKING".equals(sourceTask.getQcStatus())
+			 || "PASS".equals(sourceTask.getQcStatus())	 || "FAIL".equals(sourceTask.getQcStatus())
+			 || "REWORK".equals(sourceTask.getQcStatus())) {
+			 return Result.error("该工单已报检，请勿重复操作");
+		 }
 		 // 1. 先完成当前任务
 		 sourceTask.setStatus("COMPLETED");
 		 sourceTask.setActualEndTime(new Date());
@@ -487,7 +583,7 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 			 long duration = (sourceTask.getActualEndTime().getTime() - sourceTask.getActualStartTime().getTime()) / (1000 * 60);
 			 sourceTask.setActualDuration((int) duration);
 		 }
-		 sourceTask.setQcStatus("1");  // 已报检
+		 sourceTask.setQcStatus("REPORTED");  // 已报检
 		 productionTaskService.updateById(sourceTask);
 
 		 // 2. 生成质检工单
@@ -499,19 +595,20 @@ List<ProductionMaterial> packageMaterials = productionMaterialService.list(
 		 qcTask.setProductId(sourceTask.getProductId());
 		 qcTask.setProductCode(sourceTask.getProductCode());
 		 qcTask.setProductName(sourceTask.getProductName());
+		 qcTask.setProductColor(sourceTask.getProductColor());      // 补：颜色
+		 qcTask.setCompanyId(sourceTask.getCompanyId());            // 补：公司
+		 qcTask.setCompanyName(sourceTask.getCompanyName());        // 补：公司名称
 		 qcTask.setSequence(sourceTask.getSequence());
 		 String taskNo =serialNoService.generateSerialNo(SerialNoPrefixEnum.PRODUCTION_WORK_ORDER.getPrefix());
 		 qcTask.setTaskNo(taskNo);
 		 qcTask.setTaskName(sourceTask.getProductName() + "-质检");
 		 qcTask.setSourceTaskId(sourceTask.getId());  // 关联来源工单
 		 qcTask.setStatus("PENDING");
-
+         qcTask.setQcStatus("REPORTED");// 质检工单生成即"已报检"，派工后转 CHECKING
 		 // 质检员从质检组分配（这里简化处理，实际可配置）
 		 // qcTask.setAssignedOperatorId(...);
 
 		 productionTaskService.save(qcTask);
-
-
 
 		 return Result.OK("报检成功，质检工单已生成");
 	 }

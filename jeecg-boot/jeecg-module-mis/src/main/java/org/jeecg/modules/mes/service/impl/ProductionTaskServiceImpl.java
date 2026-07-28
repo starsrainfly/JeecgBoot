@@ -76,6 +76,8 @@ public class ProductionTaskServiceImpl extends ServiceImpl<ProductionTaskMapper,
             task.setCompanyId(batch.getCompanyId());
             task.setCompanyName(batch.getCompanyName());
             task.setQcRequired(step.getQcRequired());
+            // 需要质检的工单初始化质检状态为未报检；不需要的保持空
+            task.setQcStatus("1".equals(step.getQcRequired()) ? "WAIT_CHECK" : null);
             task.setStatus("PENDING");
             if("1".equals(step.getIsMaterialStep())){
                 task.setTaskType("weighing");

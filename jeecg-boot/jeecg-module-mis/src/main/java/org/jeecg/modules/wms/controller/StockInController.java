@@ -17,6 +17,7 @@ import org.jeecg.modules.common.enums.ApproveStatusEnum;
 import org.jeecg.modules.common.enums.SerialNoPrefixEnum;
 import org.jeecg.modules.common.enums.StockEnum;
 import org.jeecg.modules.common.service.ISerialNoService;
+import org.jeecg.modules.scm.service.IPurchaseOrderService;
 import org.jeecg.modules.system.entity.SysUser;
 import org.jeecg.modules.system.service.ISysUserService;
 import org.jeecg.modules.wms.entity.Warehouse;
@@ -78,6 +79,9 @@ public class StockInController {
 	 private ISysUserService userService;
 	 @Autowired
 	 private IWarehouseService warehouseService;
+
+	 @Autowired
+	 private IPurchaseOrderService purchaseOrderService;
 	/**
 	 * 分页列表查询
 	 *
@@ -176,6 +180,16 @@ public class StockInController {
 	public Result<String> approve(@RequestBody StockInPage stockInPage) {
 		 LoginUser loginUser = (LoginUser) SecurityUtils.getSubject().getPrincipal();
 		stockInService.approveStockIn(stockInPage,loginUser);
+
+		 // ===== 采购到货回写：累加采购明细已入库量，联动采购单状态 =====
+		 if ("PURCHASE_ORDER".equals(stockInPage.getSourceOrderType())) {
+			 for (StockInDetail d : stockInPage.getStockInDetailList()) {
+				 if (oConvertUtils.isNotEmpty(d.getSourceDetailId()) && d.getActualQty() != null) {
+					 purchaseOrderService.addReceivedQty(d.getSourceDetailId(), d.getActualQty());
+				 }
+			 }
+		 }
+
 		return Result.OK("审核成功!");
 	}
 	/**

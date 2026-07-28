@@ -27,6 +27,9 @@ enum Api {
   startWeighing ='/mes/productionBatch/startWeighing',
   completeWeighing ='/mes/productionBatch/completeWeighing',
   setBatchStatus ='/mes/productionBatch/setBatchStatus',
+
+  previewQcItems = '/mes/qcRecord/previewItems',
+  completeQc = '/mes/qcRecord/complete',
 }
 
 /**
@@ -122,7 +125,7 @@ export const completeWeighing = (params) =>
 
 
 export const setBatchStatus = (params) =>
-  defHttp.post({url:Api.completeWeighing,params})
+  defHttp.post({url:Api.setBatchStatus,params})
 
 /**
  * 查询批次BOM清单
@@ -150,3 +153,15 @@ export const deleteMaterialActual = (params, handleSuccess) => {
     handleSuccess();
   });
 };
+
+/**
+ * 预生成检验项目（根据配方技术指标）
+ */
+export const previewQcItems = (params) =>
+  defHttp.get({url: Api.previewQcItems, params});
+
+/**
+ * 提交质检结果
+ */
+export const completeQc = (params) =>
+  defHttp.post({url: Api.completeQc, params});

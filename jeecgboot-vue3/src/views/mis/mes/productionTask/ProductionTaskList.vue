@@ -37,6 +37,9 @@
     <!-- 打印弹窗 -->
     <PrintBatchingModal @register="registerPrintModal" />
 
+    <!--派工弹窗 -->
+    <DispatchModal @register="registerDispatchModal" @success="handleSuccess" />
+
   </div>
 </template>
 
@@ -51,6 +54,13 @@
   import { downloadFile } from '/@/utils/common/renderUtils';
   import { useUserStore } from '/@/store/modules/user';
   import PrintBatchingModal from './components/PrintBatchingModal.vue';
+
+  import DispatchModal from './components/DispatchModal.vue';
+  import { useMessage } from '/@/hooks/web/useMessage';
+
+  const { createConfirm } = useMessage();
+  const [registerDispatchModal, { openModal: openDispatchModal }] = useModal();
+
 
   const queryParam = reactive<any>({});
   const checkedKeys = ref<Array<string | number>>([]);
@@ -78,7 +88,7 @@
               ],
             },
            actionColumn: {
-               width: 180,
+               width: 200,
                fixed:'right'
             },
             beforeFetch: (params) => {
@@ -165,6 +175,21 @@
     });
   }
 
+  function handleDispatch(record) {
+    if (record.status === 'ASSIGNED') {
+      createConfirm({
+        iconType: 'warning',
+        title: '重新派工',
+        content: `工单【${record.taskNo}】已派工，重新派工将更新指派操作员，是否继续？`,
+        okText: '继续',
+        cancelText: '取消',
+        onOk: () => openDispatchModal(true, { record }),
+      });
+    } else {
+      openDispatchModal(true, { record });
+    }
+  }
+
    /**
       * 操作栏
       */
@@ -183,6 +208,16 @@
          label: '打印配料单',
          onClick: handlePrintBatching.bind(null, record),
          color: 'warning'
+       });
+     }
+
+     // 待派工/已派工状态显示派工按钮
+     if (record.status === 'PENDING' || record.status === 'ASSIGNED') {
+       actions.push({
+         label: record.status === 'ASSIGNED' ? '重新派工' : '派工',
+         onClick: handleDispatch.bind(null, record),
+         color: 'success',
+         auth: 'mes:mis_production_task:edit'
        });
      }
 

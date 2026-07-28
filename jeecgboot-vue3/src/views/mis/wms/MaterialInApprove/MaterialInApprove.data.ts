@@ -104,7 +104,7 @@ export const searchFormSchema: FormSchema[] = [
       label: "入库类型",
       field: "stockInType",
       component: 'JSelectMultiple',
-      defaultValue:'PURCHASE',
+      defaultValue:'PURCHASE,MANUAL',
       componentProps:{
           dictCode:"wms_stock_in_type"
       },
@@ -539,6 +539,19 @@ export const stockInDetailColumns: JVxeColumn[] = [
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:'',
+    },
+    {
+      title: 'COA文件',
+      key: 'coaFile',
+      type: JVxeTypes.file,
+      token:true,
+      responseName:"message",
+      width:"200px",
+      placeholder: '请选择文件',
+      defaultValue:'',
+      validateRules: [
+        { required: true, message: '${title}不能为空' },
+      ],
     },
     {
       title: '质检状态',

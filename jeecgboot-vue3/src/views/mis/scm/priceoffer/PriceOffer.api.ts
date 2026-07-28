@@ -12,7 +12,7 @@ enum Api {
   importExcel = '/scm/priceOffer/importExcel',
   exportXls = '/scm/priceOffer/exportXls',
   priceOfferDetailList = '/scm/priceOffer/queryPriceOfferDetailByMainId',
-  exchangeRate ='//currency/currency/getRateByCode',
+  exchangeRate ='/mdm/currency/currency/getRateByCode',
 }
 /**
  * 导出api

@@ -199,6 +199,7 @@ public class StockInServiceImpl extends ServiceImpl<StockInMapper, StockIn> impl
 			stock.setSysOrgCode(loginUser.getOrgCode());
 			stock.setCreateBy(loginUser.getRealname());
 			stock.setCreateTime(new DateTime());
+			stock.setCoaFile(stockInDetail.getCoaFile());
 			//stock.setAreaId("STAGING"); //默认的暂存区域
 			WarehouseArea area = warehouseAreaService.getAreaByCode(stockIn.getWarehouseId(),"STAGING");
 			if(area != null) {

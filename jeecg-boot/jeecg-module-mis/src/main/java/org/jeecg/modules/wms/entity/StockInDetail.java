@@ -157,4 +157,7 @@ public class StockInDetail implements Serializable {
 	/**所属部门*/
     @Schema(description = "所属部门")
     private String sysOrgCode;
+    /**COA文件*/
+    @Schema(description = "COA文件")
+    private String coaFile;
 }

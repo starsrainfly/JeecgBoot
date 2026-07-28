@@ -459,11 +459,11 @@ export const ProductionExecuteformSchema: FormSchema[] =[
         setFieldsValue:setFieldsValue,
         code:"mdm_equipment_select",
         fieldConfig: [
-          { source: 'id', target: 'equipmentId' },
-          { source: 'equipment_code', target: 'equipmentCode' },
-          { source: 'equipment_name', target: 'equipmentName' },
-          { source: 'model', target: 'model' },
-          { source: 'equipment_type', target: 'equipmentType' },
+          { source: 'id', target: 'planEquipmentId' },
+          { source: 'equipment_code', target: 'planEquipmentCode' },
+          { source: 'equipment_name', target: 'planEquipmentName' },
+          { source: 'model', target: 'planModel' },
+          { source: 'equipment_type', target: 'planEquipmentType' },
         ],
         multi:false,
         readonly:true,
@@ -549,7 +549,7 @@ export const ProductionExecuteformSchema: FormSchema[] =[
           {source: 'equipment_code', target: 'actualEquipmentCode'},
           {source: 'equipment_name', target: 'actualEquipmentName'},
           {source: 'model', target: 'actualModel'},
-          {source: 'equipment_type', target: 'equipmentType'},
+          {source: 'equipment_type', target: 'actualEquipmentType'},
         ],
         multi: false
       }

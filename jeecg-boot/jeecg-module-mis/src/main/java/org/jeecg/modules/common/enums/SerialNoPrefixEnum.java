@@ -24,7 +24,8 @@ public enum SerialNoPrefixEnum {
     INVENTORY_CHECK("IC","盘库单"),
     INVENTORY_ADJUST("IA","调整单"),
     MOVE_STOCK("MS","移库"),
-    LABEL_PRINT("LP","标签打印单");
+    LABEL_PRINT("LP","标签打印单"),
+    COST_CALC("CC","成本核算");
 
     private final String prefix;
     private final String description;

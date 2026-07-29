@@ -66,8 +66,8 @@
     columns,
     formConfig: {
       labelWidth: 100,
-      baseColProps: { span: 4 },
-      actionColOptions: { span: 4 },
+      baseColProps: { span: 6 },
+      actionColOptions: { span: 6 },
       schemas: [
         { field: 'calcNo', label: '核算单号', component: 'Input' },
         { field: 'productCode', label: '产品编码', component: 'Input' },

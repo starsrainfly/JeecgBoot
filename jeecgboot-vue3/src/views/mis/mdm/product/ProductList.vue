@@ -1,7 +1,7 @@
 <template>
   <div class="p-2">
     <a-row :gutter="8">
-      <!-- 左侧：产品分类树（pid='0' 的顶级分类 + 有子节点的分类 + 叶子） -->
+      <!-- 左侧：产品分类树 -->
       <a-col :xs="24" :sm="24" :md="7" :lg="6" :xl="5">
         <a-card size="small" :bordered="false" class="product-tree-card" :bodyStyle="{ padding: '8px' }">
           <template #title>产品分类</template>
@@ -32,10 +32,9 @@
         </a-card>
       </a-col>
 
-      <!-- 右侧：选中节点的子节点列表（分类->子节点；叶子->自身） -->
+      <!-- 右侧：表格 -->
       <a-col :xs="24" :sm="24" :md="17" :lg="18" :xl="19">
         <BasicTable @register="registerTable" :rowSelection="rowSelection">
-          <!--插槽:table标题-->
           <template #tableTitle>
             <a-button type="primary" v-auth="'product:mis_product:add'" preIcon="ant-design:plus-outlined" :disabled="!currentNode" @click="handleAddLeaf">新增产品</a-button>
             <a-button v-auth="'product:mis_product:add'" preIcon="ant-design:apartment-outlined" :disabled="!currentNode" @click="handleAddSubCategory">新增子分类</a-button>
@@ -54,25 +53,27 @@
                 <Icon icon="ant-design:down-outlined"></Icon>
               </a-button>
             </a-dropdown>
-            <span v-if="currentNode" class="current-node-tip">当前分类：{{ currentNode.title }}</span>
+
+            <!-- 查询范围提示 -->
+            <span v-if="isGlobalSearch" class="current-node-tip global">全局搜索模式</span>
+            <span v-else-if="currentNode" class="current-node-tip">当前分类：{{ currentNode.title }}</span>
             <span v-else class="current-node-tip empty">请先选择左侧分类</span>
           </template>
-          <!--操作栏-->
+
           <template #action="{ record }">
             <TableAction :actions="getTableAction(record)" :dropDownActions="getDropDownAction(record)" />
           </template>
-          <!--字段回显插槽：分类行加标识-->
+
           <template v-slot:bodyCell="{ column, record }">
             <template v-if="column.dataIndex === 'productCode'">
               <a-tag v-if="record.hasChild === '1'" color="processing" style="margin-right:4px">分类</a-tag>{{ record.productCode }}
             </template>
           </template>
-          <!--空数据提示-->
+
           <template #empty>
-            <a-empty description="该分类下暂无内容" />
+            <a-empty description="暂无数据" />
           </template>
         </BasicTable>
-        <!--表单弹窗-->
         <ProductModal @register="registerModal" @success="handleSuccess" />
       </a-col>
     </a-row>
@@ -99,22 +100,32 @@
   const currentNode = ref<any>(null);
   const treeLoading = ref(false);
   const treeSearchText = ref('');
+  const isGlobalSearch = ref(false);
 
-  // 右侧表格的简单查询条件（选中节点范围内前端过滤）
+  // 右侧表格搜索表单
   const rightSearchSchema = [
     { label: '产品编码', field: 'productCode', component: 'Input' },
     { label: '产品名称', field: 'productName', component: 'Input' },
     { label: '型号规格', field: 'productSpec', component: 'Input' },
+    {
+      label: '查询范围',
+      field: 'globalSearch',
+      component: 'Switch',
+      defaultValue: false,
+      componentProps: {
+        checkedChildren: '全局',
+        unCheckedChildren: '当前分类',
+      },
+    },
   ];
 
-  //注册table数据
+  // 注册table
   const { prefixCls, tableContext, onExportXls, onImportXls } = useListPage({
     tableProps: {
       api: loadChildList,
       title: '产品列表',
       columns,
       canResize: false,
-      // 不立即加载，等选中分类后再加载
       immediate: false,
       formConfig: {
         schemas: rightSearchSchema,
@@ -141,25 +152,47 @@
     },
   });
 
-  const [registerTable, { reload }, { rowSelection, selectedRowKeys }] = tableContext;
+  // ← 关键：从 tableContext 解构出 getForm
+  const [registerTable, { reload, getForm }, { rowSelection, selectedRowKeys }] = tableContext;
 
   /**
-   * 右侧表格数据源：
-   * 选中分类 -> 显示其所有直接子节点；选中叶子 -> 显示该叶子自身
+   * 右侧表格数据源
    */
   async function loadChildList(params) {
     const node = currentNode.value;
+    const global = params.globalSearch === true;
+    isGlobalSearch.value = global;
+
+    // ===== 全局搜索模式 =====
+    if (global) {
+      const res = await list({
+        pageNo: params.pageNo,
+        pageSize: params.pageSize,
+        productCode: params.productCode,
+        productName: params.productName,
+        productSpec: params.productSpec,
+        globalSearch: true,
+      });
+      return {
+        records: res?.records || [],
+        total: res?.total || 0,
+      };
+    }
+
+    // ===== 分类搜索模式 =====
     if (!node) {
       return { records: [], total: 0 };
     }
+
     let records;
     if (node.hasChild === '1') {
       const res = await getChildList({ pid: node.id });
       records = res?.records ? res.records : res || [];
     } else {
-      // 叶子节点：表格显示自身，便于操作
       records = [node];
     }
+
+    // 前端过滤
     const { productCode, productName, productSpec } = params || {};
     if (productCode) {
       records = records.filter((r) => (r.productCode || '').toLowerCase().includes(productCode.toLowerCase()));
@@ -170,6 +203,7 @@
     if (productSpec) {
       records = records.filter((r) => (r.productSpec || '').includes(productSpec));
     }
+
     const pageNo = params.pageNo || 1;
     const pageSize = params.pageSize || 10;
     return {
@@ -180,10 +214,6 @@
 
   // ================= 树相关方法 =================
 
-  /**
-   * 把接口记录转成树节点
-   * 规则：pid='0' 的顶级分类 和 有子节点的分类 可展开；叶子（产品）也显示在树上
-   */
   function buildTreeNodes(records) {
     return (records || [])
       .filter((item) => !item.pid || item.pid === '0' || item.hasChild === '1')
@@ -192,17 +222,8 @@
         title: `${item.productCode || ''} ${item.productName || ''}`.trim(),
         isLeaf: item.hasChild !== '1',
       }));
-    // return (records || []).map((item) => ({
-    //   ...item,
-    //   title: `${item.productCode || ''} ${item.productName || ''}`.trim(),
-    //   isLeaf: item.hasChild !== '1',
-    // }));
   }
 
-  /**
-   * 初始化树（加载顶级分类，并默认选中第一个）
-   * 注意：走 rootList 接口（不带 hasQuery），后端走 pid='0' 分页分支
-   */
   async function initTree() {
     treeLoading.value = true;
     try {
@@ -224,9 +245,6 @@
   }
   initTree();
 
-  /**
-   * 树节点懒加载子分类
-   */
   function onLoadTreeData(treeNode) {
     return new Promise<void>((resolve) => {
       if (treeNode.dataRef.children) {
@@ -247,26 +265,24 @@
   }
 
   /**
-   * 选中树节点 -> 加载右侧子节点表格
+   * 选中树节点 -> 同步表单开关为"当前分类"，再加载
    */
   function onTreeSelect(keys, info) {
-    if (!keys || keys.length === 0) {
-      return;
-    }
+    if (!keys || keys.length === 0) return;
     selectedKeys.value = keys;
     currentNode.value = info.node.dataRef;
     selectedRowKeys.value = [];
+    isGlobalSearch.value = false;
+
+    // ← 关键：把表单里的全局开关切回"当前分类"
+    getForm?.().setFieldsValue({ globalSearch: false });
+
     reload();
   }
 
-  /**
-   * 树搜索：过滤已加载的节点（未展开加载的节点不参与搜索）
-   */
   const displayTreeData = computed(() => {
     const kw = treeSearchText.value.trim().toLowerCase();
-    if (!kw) {
-      return treeData.value;
-    }
+    if (!kw) return treeData.value;
     const filterNodes = (nodes) => {
       const result = [] as any[];
       for (const node of nodes || []) {
@@ -282,9 +298,6 @@
     return filterNodes(treeData.value);
   });
 
-  /**
-   * 搜索时自动展开所有已加载节点
-   */
   const displayExpandedKeys = computed(() => {
     if (treeSearchText.value.trim()) {
       return collectAllKeys(displayTreeData.value);
@@ -305,25 +318,15 @@
     return title.split(kw).join(`<span style="color:#ff5500">${kw}</span>`);
   }
 
-  /**
-   * 在树中查找节点
-   */
   function findTreeNode(nodes, id) {
     for (const n of nodes || []) {
-      if (n.id === id) {
-        return n;
-      }
+      if (n.id === id) return n;
       const found = findTreeNode(n.children, id);
-      if (found) {
-        return found;
-      }
+      if (found) return found;
     }
     return null;
   }
 
-  /**
-   * 整体刷新树并保持展开状态（新增/删除/变更父级后调用）
-   */
   async function reloadTreeKeepExpand() {
     const res = await list({ pageNo: 1, pageSize: 500 });
     const records = res?.records ? res.records : res || [];
@@ -351,19 +354,10 @@
 
   // ================= 新增/编辑/删除 =================
 
-  /**
-   * 新增顶级分类（父节点）
-   */
   function handleAddRoot() {
-    openModal(true, {
-      isUpdate: false,
-      title: '新增分类',
-    });
+    openModal(true, { isUpdate: false, title: '新增分类' });
   }
 
-  /**
-   * 在选中分类下新增产品（叶子）
-   */
   function handleAddLeaf() {
     openModal(true, {
       isUpdate: false,
@@ -373,9 +367,6 @@
     });
   }
 
-  /**
-   * 在选中分类下新增子分类
-   */
   function handleAddSubCategory() {
     openModal(true, {
       isUpdate: false,
@@ -385,30 +376,14 @@
     });
   }
 
-  /**
-   * 编辑
-   */
   function handleEdit(record) {
-    openModal(true, {
-      record,
-      isUpdate: true,
-    });
+    openModal(true, { record, isUpdate: true });
   }
 
-  /**
-   * 详情
-   */
   function handleDetail(record) {
-    openModal(true, {
-      record,
-      isUpdate: true,
-      hideFooter: true,
-    });
+    openModal(true, { record, isUpdate: true, hideFooter: true });
   }
 
-  /**
-   * 添加下级（把当前行作为父级）
-   */
   function handleAddSub(record) {
     openModal(true, {
       isUpdate: false,
@@ -419,11 +394,10 @@
   }
 
   /**
-   * 进入下级：在树中选中该分类，右表显示其子节点
+   * 进入下级：同样切回分类模式
    */
   async function handleEnterCategory(record) {
     const pid = record.pid;
-    // 确保父节点在树中已展开且子分类已加载
     const parentNode = findTreeNode(treeData.value, pid);
     if (parentNode) {
       if (!parentNode.children) {
@@ -441,20 +415,19 @@
       selectedKeys.value = [record.id];
       currentNode.value = node;
       selectedRowKeys.value = [];
+      isGlobalSearch.value = false;
+
+      // ← 同样切回分类模式
+      getForm?.().setFieldsValue({ globalSearch: false });
+
       reload();
     }
   }
 
-  /**
-   * 删除
-   */
   async function handleDelete(record) {
     await deleteProduct({ id: record.id }, afterDelete);
   }
 
-  /**
-   * 批量删除
-   */
   async function batchHandleDelete() {
     await batchDeleteProduct({ id: selectedRowKeys.value }, afterDelete);
   }
@@ -462,25 +435,17 @@
   function afterDelete() {
     selectedRowKeys.value = [];
     reload();
-    // 删除后父节点 has_child 可能变化，整体刷新树保持展开
     reloadTreeKeepExpand();
   }
 
-  /**
-   * 导入成功
-   */
   function importSuccess() {
     selectedRowKeys.value = [];
     reload();
     reloadTreeKeepExpand();
   }
 
-  /**
-   * 表单保存成功回调
-   */
   async function handleSuccess({ isUpdate, values, changeParent }) {
     if (isUpdate && !changeParent) {
-      // 普通编辑：刷新右侧表格；若编辑的是树上的分类节点，同步树标题
       reload();
       const node = findTreeNode(treeData.value, values.id);
       if (node) {
@@ -490,54 +455,28 @@
         treeData.value = [...treeData.value];
       }
     } else {
-      // 新增 或 编辑时变更了父级：刷新表格 + 整体刷新树
       reload();
       await reloadTreeKeepExpand();
     }
   }
 
-  /**
-   * 操作栏
-   */
   function getTableAction(record) {
     const actions: any[] = [
-      {
-        label: '编辑',
-        onClick: handleEdit.bind(null, record),
-        auth: 'product:mis_product:edit',
-      },
-      {
-        label: '添加下级',
-        onClick: handleAddSub.bind(null, record),
-        auth: 'product:mis_product:add',
-      },
+      { label: '编辑', onClick: handleEdit.bind(null, record), auth: 'product:mis_product:edit' },
+      { label: '添加下级', onClick: handleAddSub.bind(null, record), auth: 'product:mis_product:add' },
     ];
-    // 分类行（有子节点）增加"进入下级"
-    if (record.hasChild === '1') {
-      actions.unshift({
-        label: '进入下级',
-        onClick: handleEnterCategory.bind(null, record),
-      });
+    if (record.hasChild === '1' && !isGlobalSearch.value) {
+      actions.unshift({ label: '进入下级', onClick: handleEnterCategory.bind(null, record) });
     }
     return actions;
   }
 
-  /**
-   * 下拉操作栏
-   */
   function getDropDownAction(record) {
     return [
-      {
-        label: '详情',
-        onClick: handleDetail.bind(null, record),
-      },
+      { label: '详情', onClick: handleDetail.bind(null, record) },
       {
         label: '删除',
-        popConfirm: {
-          title: '确定删除吗?',
-          confirm: handleDelete.bind(null, record),
-          placement: 'topLeft',
-        },
+        popConfirm: { title: '确定删除吗?', confirm: handleDelete.bind(null, record), placement: 'topLeft' },
         auth: 'product:mis_product:delete',
       },
     ];
@@ -557,6 +496,11 @@
 
     &.empty {
       color: #999;
+    }
+
+    &.global {
+      color: #52c41a;
+      font-weight: 500;
     }
   }
 

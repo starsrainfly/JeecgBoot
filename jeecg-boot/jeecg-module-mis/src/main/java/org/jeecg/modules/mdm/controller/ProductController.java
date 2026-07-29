@@ -56,25 +56,37 @@ public class ProductController extends JeecgController<Product, IProductService>
 								   @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
 								   HttpServletRequest req) {
 		String hasQuery = req.getParameter("hasQuery");
-        if(hasQuery != null && "true".equals(hasQuery)){
-            QueryWrapper<Product> queryWrapper =  QueryGenerator.initQueryWrapper(product, req.getParameterMap());
-            List<Product> list = productService.queryTreeListNoPage(queryWrapper);
-            IPage<Product> pageList = new Page<>(1, 10, list.size());
-            pageList.setRecords(list);
-            return Result.OK(pageList);
-        }else{
-            String parentId = product.getPid();
-            if (oConvertUtils.isEmpty(parentId)) {
-                parentId = "0";
-            }
-            product.setPid(null);
-            QueryWrapper<Product> queryWrapper = QueryGenerator.initQueryWrapper(product, req.getParameterMap());
-            // 使用 eq 防止模糊查询
-            queryWrapper.eq("pid", parentId);
-            Page<Product> page = new Page<Product>(pageNo, pageSize);
-            IPage<Product> pageList = productService.page(page, queryWrapper);
-            return Result.OK(pageList);
-        }
+		String globalSearch = req.getParameter("globalSearch");
+
+		// ===== 1. 全局搜索（最优先，用户明确意图）=====
+		if ("true".equals(globalSearch)) {
+			product.setPid(null);
+			QueryWrapper<Product> queryWrapper = QueryGenerator.initQueryWrapper(product, req.getParameterMap());
+			Page<Product> page = new Page<Product>(pageNo, pageSize);
+			IPage<Product> pageList = productService.page(page, queryWrapper);
+			return Result.OK(pageList);
+		}
+
+		// ===== 2. 全量树查询（框架内部，树组件初始化用）=====
+		if ("true".equals(hasQuery)) {
+			QueryWrapper<Product> queryWrapper = QueryGenerator.initQueryWrapper(product, req.getParameterMap());
+			List<Product> list = productService.queryTreeListNoPage(queryWrapper);
+			IPage<Product> pageList = new Page<>(1, 10, list.size());
+			pageList.setRecords(list);
+			return Result.OK(pageList);
+		}
+
+		// ===== 3. 分类查询（默认）=====
+		String parentId = product.getPid();
+		if (oConvertUtils.isEmpty(parentId)) {
+			parentId = "0";
+		}
+		product.setPid(null);
+		QueryWrapper<Product> queryWrapper = QueryGenerator.initQueryWrapper(product, req.getParameterMap());
+		queryWrapper.eq("pid", parentId);
+		Page<Product> page = new Page<Product>(pageNo, pageSize);
+		IPage<Product> pageList = productService.page(page, queryWrapper);
+		return Result.OK(pageList);
 	}
 
 	 /**

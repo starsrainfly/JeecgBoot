@@ -10,6 +10,7 @@
     @ok="handleSaveSnapshot"
   >
     <div class="cost-calc-modal">
+      <!-- 产品/配方信息卡片 -->
       <a-descriptions :column="3" size="small" bordered class="info-card">
         <a-descriptions-item label="产品编码">{{ detail.productCode }}</a-descriptions-item>
         <a-descriptions-item label="产品名称">{{ detail.productName }}</a-descriptions-item>
@@ -17,8 +18,18 @@
         <a-descriptions-item label="颜色">{{ detail.productColor || '-' }}</a-descriptions-item>
         <a-descriptions-item label="配方编号">{{ detail.recipeCode }}</a-descriptions-item>
         <a-descriptions-item label="配方版本">{{ detail.recipeVersion }}</a-descriptions-item>
+        <a-descriptions-item label="总配比">{{ detail.proportionTotal || '100' }}</a-descriptions-item>
+        <a-descriptions-item label="比例类型">
+          <a-tag :color="detail.proportionType === '1' ? 'blue' : 'orange'">
+            {{ proportionTypeMap[detail.proportionType] || detail.proportionType || '-' }}
+          </a-tag>
+        </a-descriptions-item>
+        <a-descriptions-item label="单位成本">
+          <span style="color: #1890ff; font-weight: bold;">{{ formatNum(detail.totalCostAvg, 4) }}</span> 元/kg
+        </a-descriptions-item>
       </a-descriptions>
 
+      <!-- 明细表格 -->
       <a-table
         :columns="columns"
         :data-source="detail.materialList"
@@ -26,24 +37,35 @@
         size="small"
         bordered
         class="detail-table"
-        :scroll="{ x: 800 }"
+        :scroll="{ x: 900 }"
       >
         <template #bodyCell="{ column, record }">
+          <!-- 占比列：配比 ÷ 总配比 × 100 -->
+          <template v-if="column.key === 'ratio'">
+            <span v-if="record.proportion != null && detail.proportionTotal > 0">
+              {{ ((Number(record.proportion) / Number(detail.proportionTotal)) * 100).toFixed(2) }}%
+            </span>
+            <span v-else>--</span>
+          </template>
+
           <template v-if="column.key === 'priceSource'">
             <a-tag :color="record.priceSource === 'NONE' ? 'red' : 'green'">
               {{ priceSourceMap[record.priceSource] || record.priceSource }}
             </a-tag>
           </template>
+
           <template v-if="['avgPrice', 'latestPrice', 'calcPrice', 'amount'].includes(column.key)">
             <span v-if="record.priceSource === 'NONE'" style="color: #ff4d4f; font-weight: bold">--</span>
             <span v-else>{{ formatNum(record[column.key], 4) }}</span>
           </template>
+
           <template v-if="column.key === 'proportion'">
             {{ record.proportion ? Number(record.proportion).toFixed(4) : '-' }}
           </template>
         </template>
       </a-table>
 
+      <!-- 未定价警告 -->
       <a-alert
         v-if="detail.hasUnpriced"
         message="含未定价物料，合计非完整成本"
@@ -52,6 +74,7 @@
         style="margin-bottom: 12px"
       />
 
+      <!-- 合计栏 -->
       <div class="summary-bar">
         <a-space size="large">
           <span>
@@ -72,7 +95,6 @@
   import { ref, computed } from 'vue';
   import { BasicModal, useModalInner } from '/@/components/Modal';
   import { useMessage } from '/@/hooks/web/useMessage';
-  // ===== 修正：从父目录引用 API =====
   import { calculateCost, getSnapshotDetail, saveSnapshot } from '../CostCalc.api';
 
   const { createMessage, createConfirm } = useMessage();
@@ -80,24 +102,36 @@
   const mode = ref<'calc' | 'snapshot'>('calc');
   const productId = ref('');
   const calcId = ref('');
-  const detail = ref<any>({ materialList: [] });
+  const detail = ref<any>({ materialList: [], proportionTotal: 100 });
 
   const modalTitle = computed(() => (mode.value === 'calc' ? '材料成本核算' : '快照明细查看'));
 
-  const priceSourceMap: Record<string, string> = { AVG: '库存均价', LATEST: '最新入库', NONE: '未定价' };
+  // 价格来源字典
+  const priceSourceMap: Record<string, string> = {
+    AVG: '库存均价',
+    LATEST: '最新入库',
+    NONE: '未定价',
+  };
+
+  // 配比类型字典：1-标准（强制100%），2-特殊（允许≠100%）
+  const proportionTypeMap: Record<string, string> = {
+    '1': '标准（强制100%）',
+    '2': '特殊（允许≠100%）',
+  };
 
   const columns = [
-    { title: '序号', dataIndex: 'serialNo', width: 60, align: 'center', customRender: ({ index }: any) => index + 1 },
-    { title: '物料编码', dataIndex: 'materialCode', width: 110 },
-    { title: '物料名称', dataIndex: 'materialName', width: 140 },
-    { title: '规格型号', dataIndex: 'materialSpec', width: 120 },
-    { title: '配比(%)', dataIndex: 'proportion', key: 'proportion', width: 90, align: 'right' },
-    { title: '单位', dataIndex: 'unit', width: 70, align: 'center' },
-    { title: '库存均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 120, align: 'right' },
-    { title: '最新入库价', dataIndex: 'latestPrice', key: 'latestPrice', width: 120, align: 'right' },
-    { title: '取价来源', dataIndex: 'priceSource', key: 'priceSource', width: 100, align: 'center' },
-    { title: '计算单价', dataIndex: 'calcPrice', key: 'calcPrice', width: 120, align: 'right' },
-    { title: '金额(元)', dataIndex: 'amount', key: 'amount', width: 120, align: 'right' },
+    { title: '序号', dataIndex: 'serialNo', width: 50, align: 'center', customRender: ({ index }: any) => index + 1 },
+    { title: '物料编码', dataIndex: 'materialCode', width: 100 },
+    { title: '物料名称', dataIndex: 'materialName', width: 130 },
+    { title: '规格型号', dataIndex: 'materialSpec', width: 100 },
+    { title: '配比', dataIndex: 'proportion', key: 'proportion', width: 80, align: 'right' },
+    { title: '占比(%)', key: 'ratio', width: 80, align: 'right' },
+    { title: '单位', dataIndex: 'unit', width: 60, align: 'center' },
+    { title: '库存均价', dataIndex: 'avgPrice', key: 'avgPrice', width: 110, align: 'right' },
+    { title: '最新入库价', dataIndex: 'latestPrice', key: 'latestPrice', width: 110, align: 'right' },
+    { title: '取价来源', dataIndex: 'priceSource', key: 'priceSource', width: 90, align: 'center' },
+    { title: '计算单价', dataIndex: 'calcPrice', key: 'calcPrice', width: 110, align: 'right' },
+    { title: '金额(元)', dataIndex: 'amount', key: 'amount', width: 110, align: 'right' },
   ];
 
   function formatNum(val: any, digits = 4) {

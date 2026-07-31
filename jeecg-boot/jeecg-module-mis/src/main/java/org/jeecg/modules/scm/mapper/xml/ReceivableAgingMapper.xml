@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.scm.mapper.ReceivableAgingMapper">
+
+    <select id="queryList" resultType="org.jeecg.modules.scm.vo.ReceivableAgingVo">
+        SELECT
+        o.customer_name as customerName,
+        SUM(COALESCE(dlv.delivered_amount, 0) - COALESCE(rcv.received_amount, 0)) as totalOutstanding,
+        SUM(IF(DATEDIFF(CURDATE(), o.receivable_date) &gt;= 0 AND DATEDIFF(CURDATE(), o.receivable_date) &lt;= 30,
+        COALESCE(dlv.delivered_amount, 0) - COALESCE(rcv.received_amount, 0), 0)) as agingCurrent,
+        SUM(IF(DATEDIFF(CURDATE(), o.receivable_date) &gt; 30 AND DATEDIFF(CURDATE(), o.receivable_date) &lt;= 90,
+        COALESCE(dlv.delivered_amount, 0) - COALESCE(rcv.received_amount, 0), 0)) as aging1to3,
+        SUM(IF(DATEDIFF(CURDATE(), o.receivable_date) &gt; 90 AND DATEDIFF(CURDATE(), o.receivable_date) &lt;= 180,
+        COALESCE(dlv.delivered_amount, 0) - COALESCE(rcv.received_amount, 0), 0)) as aging3to6,
+        SUM(IF(DATEDIFF(CURDATE(), o.receivable_date) &gt; 180,
+        COALESCE(dlv.delivered_amount, 0) - COALESCE(rcv.received_amount, 0), 0)) as aging6plus
+        FROM mis_sales_order o
+        LEFT JOIN (
+        SELECT source_order_id, SUM(delivery_amount) as delivered_amount
+        FROM mis_delivery
+        WHERE del_flag = '0'
+        GROUP BY source_order_id
+        ) dlv ON o.id = dlv.source_order_id
+        LEFT JOIN (
+        SELECT rd.sales_order_id, SUM(rd.receipt_amount) as received_amount
+        FROM mis_receipt_order_detail rd
+        JOIN mis_receipt_order r ON rd.receipt_id = r.id
+        WHERE rd.del_flag = '0' AND r.del_flag = '0' AND r.status = '1'
+        GROUP BY rd.sales_order_id
+        ) rcv ON o.id = rcv.sales_order_id
+        WHERE o.del_flag = '0'
+        AND o.receivable_date IS NOT NULL
+        AND (COALESCE(dlv.delivered_amount, 0) - COALESCE(rcv.received_amount, 0)) &gt; 0
+        <if test="params != null and params.customerName != null and params.customerName != ''">
+            AND o.customer_name LIKE CONCAT('%', #{params.customerName}, '%')
+        </if>
+        GROUP BY o.customer_name
+        ORDER BY totalOutstanding DESC
+    </select>
+
+</mapper>

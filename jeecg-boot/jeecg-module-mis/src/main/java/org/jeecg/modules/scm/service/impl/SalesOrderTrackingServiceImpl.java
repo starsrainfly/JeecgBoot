@@ -8,6 +8,7 @@ import org.jeecg.modules.scm.vo.SalesOrderTrackingVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -19,6 +20,11 @@ public class SalesOrderTrackingServiceImpl implements ISalesOrderTrackingService
     @Override
     public IPage<SalesOrderTrackingVo> queryPageList(Map<String, String> params, Integer pageNo, Integer pageSize) {
         Page<SalesOrderTrackingVo> page = new Page<>(pageNo, pageSize);
-        return page.setRecords(salesOrderTrackingMapper.queryList(page, params));
+        return page.setRecords(salesOrderTrackingMapper.queryPageList(page, params));
+    }
+
+    @Override
+    public List<SalesOrderTrackingVo> queryList(Map<String, String> params) {
+        return salesOrderTrackingMapper.queryList(params);
     }
 }

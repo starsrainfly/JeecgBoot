@@ -268,7 +268,7 @@ export const formSchema: FormSchema[] = [
     label: '技术要求',
     field: 'technics',
     component: 'InputTextArea',
-    colProps: { span: 12 },          // ← 占 3 列（宽一点）
+   // colProps: { span: 12 },          // ← 占 3 列（宽一点）
     // componentProps: {
     //   rows: 3,                       // ← 固定 2 行
     //   autoSize: { minRows: 2, maxRows: 3 },
@@ -283,7 +283,7 @@ export const formSchema: FormSchema[] = [
     label: '注意事项',
     field: 'notes',
     component: 'InputTextArea',
-    colProps: { span: 12 },          // ← 占 3 列
+   // colProps: { span: 12 },          // ← 占 3 列
     // componentProps: {
     //   rows: 2,
     //   autoSize: { minRows: 2, maxRows: 3 },

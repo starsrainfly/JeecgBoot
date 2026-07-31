@@ -60,7 +60,7 @@ public class SalesPaymentPlanController extends JeecgController<SalesPaymentPlan
 	/**
 	 * 分页列表查询
 	 *
-	 * @param salesPaymentPlanVo
+	 * @param salesPaymentPlan
 	 * @param pageNo
 	 * @param pageSize
 	 * @param req

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.mes.mapper.ProductionOrderTrackingMapper">
+
+    <sql id="baseTrackingSql">
+        SELECT
+        o.id,
+        o.order_no,
+        o.product_code,
+        o.product_name,
+        o.product_color,
+        o.recipe_code,
+        o.recipe_name,
+        o.planned_qty,
+        o.batch_size,
+        o.status,
+        o.planned_start_date,
+        o.planned_end_date,
+        o.actual_start_time,
+        o.actual_end_time,
+        o.batch_count,
+        COALESCE(b.total_batches, 0) as total_batches,
+        COALESCE(b.completed_batches, 0) as completed_batches,
+        COALESCE(b.qc_pass_batches, 0) as qc_pass_batches,
+        COALESCE(b.total_actual_qty, 0) as total_actual_qty,
+        COALESCE(b.total_in_stock_qty, 0) as total_in_stock_qty
+        FROM mis_production_order o
+        LEFT JOIN (
+        SELECT
+        order_id,
+        COUNT(*) as total_batches,
+        SUM(CASE WHEN in_stock_status = '2' THEN 1 ELSE 0 END) as completed_batches,
+        SUM(CASE WHEN qc_status = 'PASS' THEN 1 ELSE 0 END) as qc_pass_batches,
+        SUM(actual_qty) as total_actual_qty,
+        SUM(in_stock_qty) as total_in_stock_qty
+        FROM mis_production_batch
+        WHERE del_flag = '0'
+        GROUP BY order_id
+        ) b ON o.id = b.order_id
+        WHERE o.del_flag = '0'
+        <if test="params.orderNo != null and params.orderNo != ''">
+            AND o.order_no LIKE CONCAT('%', #{params.orderNo}, '%')
+        </if>
+        <if test="params.productCode != null and params.productCode != ''">
+            AND o.product_code LIKE CONCAT('%', #{params.productCode}, '%')
+        </if>
+        <if test="params.productName != null and params.productName != ''">
+            AND o.product_name LIKE CONCAT('%', #{params.productName}, '%')
+        </if>
+        <if test="params.status != null and params.status != ''">
+            AND o.status = #{params.status}
+        </if>
+        <if test="params.beginDate != null and params.beginDate != ''">
+            AND o.planned_start_date &gt;= #{params.beginDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND o.planned_end_date &lt;= #{params.endDate}
+        </if>
+        ORDER BY o.create_time DESC
+    </sql>
+    <select id="queryPageList" resultType="org.jeecg.modules.mes.vo.ProductionOrderTrackingVo">
+        <include refid="baseTrackingSql"/>
+    </select>
+
+    <!-- 不分页：导出用，复用同一段 SQL -->
+    <select id="queryList" resultType="org.jeecg.modules.mes.vo.ProductionOrderTrackingVo">
+        <include refid="baseTrackingSql"/>
+    </select>
+</mapper>

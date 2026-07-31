@@ -2,7 +2,7 @@
   <div class="p-2">
     <BasicTable @register="registerTable">
       <template #tableTitle>
-        <a-button type="primary" preIcon="ant-design:export-outlined" @click="handleExport"> 导出</a-button>
+        <a-button type="primary" preIcon="ant-design:export-outlined" @click="onExportXls"> 导出</a-button>
       </template>
 
       <!-- 交货日期颜色 -->
@@ -23,11 +23,11 @@
   import {BasicTable, useTable} from '/@/components/Table';
   import { useListPage } from '/@/hooks/system/useListPage'
   import {columns, searchFormSchema} from './SalesOrderTracking.data';
-  import {getList} from './SalesOrderTracking.api';
+  import {getList, getExportUrl} from './SalesOrderTracking.api';
 
   const queryParam = reactive<any>({});
 
-  const { prefixCls, tableContext } = useListPage({
+  const { prefixCls, tableContext, onExportXls  } = useListPage({
     tableProps: {
       title: '销售订单执行跟踪',
       api: getList,
@@ -50,6 +50,11 @@
       beforeFetch: (params) => {
         return Object.assign(params, queryParam);
       },
+    },
+    exportConfig: {
+      name: "销售订单执行跟踪",
+      url: getExportUrl,
+      params: queryParam,
     },
   });
 

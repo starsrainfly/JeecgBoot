@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.scm.mapper.CustomerStatementMapper">
+
+    <sql id="baseStatementSql">
+        SELECT
+        o.id,
+        o.customer_name,
+        o.order_no,
+        o.order_date,
+        o.receivable_date,
+        o.order_total,
+        COALESCE(dlv.delivered_amount, 0) as delivered_amount,
+        COALESCE(rcv.received_amount, 0) as received_amount,
+        COALESCE(dlv.delivered_amount, 0) - COALESCE(rcv.received_amount, 0) as outstanding,
+        CASE
+        WHEN o.receivable_date IS NOT NULL
+        AND COALESCE(dlv.delivered_amount, 0) - COALESCE(rcv.received_amount, 0) &gt; 0
+        THEN DATEDIFF(CURDATE(), o.receivable_date)
+        ELSE NULL
+        END as overdue_days
+        FROM mis_sales_order o
+        LEFT JOIN (
+        SELECT source_order_id, SUM(delivery_amount) as delivered_amount
+        FROM mis_delivery
+        WHERE del_flag = '0'
+        GROUP BY source_order_id
+        ) dlv ON o.id = dlv.source_order_id
+        LEFT JOIN (
+        SELECT rd.sales_order_id, SUM(rd.receipt_amount) as received_amount
+        FROM mis_receipt_order_detail rd
+        JOIN mis_receipt_order r ON rd.receipt_id = r.id
+        WHERE rd.del_flag = '0' AND r.del_flag = '0' AND r.status = '1'
+        GROUP BY rd.sales_order_id
+        ) rcv ON o.id = rcv.sales_order_id
+        WHERE o.del_flag = '0'
+        <if test="params != null">
+            <if test="params.customerName != null and params.customerName != ''">
+                AND o.customer_name LIKE CONCAT('%', #{params.customerName}, '%')
+            </if>
+            <if test="params.orderNo != null and params.orderNo != ''">
+                AND o.order_no LIKE CONCAT('%', #{params.orderNo}, '%')
+            </if>
+            <if test="params.beginDate != null and params.beginDate != ''">
+                AND o.order_date &gt;= #{params.beginDate}
+            </if>
+            <if test="params.endDate != null and params.endDate != ''">
+                AND o.order_date &lt;= #{params.endDate}
+            </if>
+        </if>
+    </sql>
+
+    <select id="queryPageList" resultType="org.jeecg.modules.scm.vo.CustomerStatementVo">
+        SELECT * FROM (
+        <include refid="baseStatementSql"/>
+        ) t
+       -- WHERE t.outstanding &gt; 0
+        ORDER BY t.customer_name, t.order_date DESC
+    </select>
+
+    <select id="queryList" resultType="org.jeecg.modules.scm.vo.CustomerStatementVo">
+        SELECT * FROM (
+        <include refid="baseStatementSql"/>
+        ) t
+       -- WHERE t.outstanding &gt; 0
+        ORDER BY t.customer_name, t.order_date DESC
+    </select>
+
+</mapper>

@@ -1,8 +1,8 @@
 import {defHttp} from '/@/utils/http/axios';
 
 enum Api {
-  list = '/scm/salesOrderTracking/list',
-  exportXls = '/scm/salesOrderTracking/exportXls',
+  list = '/mes/productionOrderTracking/list',
+  exportXls = '/mes/productionOrderTracking/exportXls',
 }
 
 export const getList = (params) =>

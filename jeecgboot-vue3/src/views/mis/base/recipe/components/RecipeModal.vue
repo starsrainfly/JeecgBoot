@@ -4,61 +4,71 @@
     @register="registerModal"
     destroyOnClose
     :title="title"
-    :width="1280"
+    :width="1440"
     @ok="handleSubmit"
   >
-    <BasicForm @register="registerForm" ref="formRef" name="RecipeForm"/>
-    <a-tabs v-model:activeKey="activeKey" animated @change="handleChangeTabs">
-      <a-tab-pane tab="配方明细" key="recipeDetail" :forceRender="true">
-        <JVxeTable
-          keep-source
-          resizable
-          ref="recipeDetail"
-          :loading="recipeDetailTable.loading"
-          :columns="recipeDetailTable.columns"
-          :dataSource="recipeDetailTable.dataSource"
-          :height="700"
-          :rowNumber="true"
-          :rowSelection="true"
-          :disabled="formDisabled"
-          :toolbar="true"
-          @edit-closed="handleEditClosed"
-          @removed="handleDetailDeleted"
-        >
-          <!-- 物料编码：自定义选择插槽 -->
-          <template #materialCode="{ row }">
-            <a-input
-              :value="row.materialCode"
-              readonly
+    <!-- 左右分栏 -->
+    <a-row :gutter="20">
+      <!-- 左侧：主表（占 9/24 ≈ 37.5%） -->
+      <a-col :span="9" class="left-panel">
+        <BasicForm
+          @register="registerForm"
+          ref="formRef"
+          name="RecipeForm"
+        />
+      </a-col>
+
+      <!-- 右侧：子表（占 15/24 ≈ 62.5%） -->
+      <a-col :span="15" class="right-panel">
+        <a-tabs v-model:activeKey="activeKey" animated @change="handleChangeTabs">
+          <a-tab-pane tab="配方明细" key="recipeDetail" :forceRender="true">
+            <JVxeTable
+              keep-source
+              resizable
+              ref="recipeDetail"
+              :loading="recipeDetailTable.loading"
+              :columns="recipeDetailTable.columns"
+              :dataSource="recipeDetailTable.dataSource"
+              :height="800"
+              :rowNumber="true"
+              :rowSelection="true"
               :disabled="formDisabled"
-              :placeholder="formDisabled ? '' : '点击选择物料'"
-              :style="{ cursor: formDisabled ? 'default' : 'pointer', height: '24px' }"
-              @click="openMaterialSelect(row)"
+              :toolbar="true"
+              @edit-closed="handleEditClosed"
+              @removed="handleDetailDeleted"
             >
-              <template #suffix>
-                <SearchOutlined v-if="!formDisabled" style="color: #1890ff" />
+              <template #materialCode="{ row }">
+                <a-input
+                  :value="row.materialCode"
+                  readonly
+                  :disabled="formDisabled"
+                  :placeholder="formDisabled ? '' : '点击选择物料'"
+                  :style="{ cursor: formDisabled ? 'default' : 'pointer' }"
+                  @click="openMaterialSelect(row)"
+                >
+                  <template #suffix>
+                    <SearchOutlined v-if="!formDisabled" style="color: #1890ff" />
+                  </template>
+                </a-input>
               </template>
-            </a-input>
-          </template>
-        </JVxeTable>
-      </a-tab-pane>
-    </a-tabs>
+            </JVxeTable>
+          </a-tab-pane>
+        </a-tabs>
+      </a-col>
+    </a-row>
 
-    <!-- 物料选择弹窗 -->
     <MaterialSelectModal @register="registerMaterialModal" @select="handleMaterialSelect" />
-
   </BasicModal>
 </template>
 
 <script lang="ts" setup>
   import {ref, computed, unref, reactive, nextTick} from 'vue';
-  import {BasicModal, useModal,  useModalInner} from '/@/components/Modal';
+  import {BasicModal, useModal, useModalInner} from '/@/components/Modal';
   import {BasicForm, useForm} from '/@/components/Form/index';
   import { JVxeTable } from '/@/components/jeecg/JVxeTable'
   import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods.ts'
   import {formSchema,recipeDetailColumns} from '../Recipe.data';
   import {saveOrUpdate,recipeDetailList} from '../Recipe.api';
-  import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
   import { useMessage } from '/@/hooks/web/useMessage';
   import { SearchOutlined } from '@ant-design/icons-vue';
   import MaterialSelectModal from './MaterialSelectModal.vue';
@@ -90,12 +100,11 @@
   }] = useForm({
     schemas: formSchema,
     showActionButtonGroup: false,
-    baseColProps: {span: 4},   // ← 一行6列
-    labelCol: { span: 8 },     // 标签更窄
-    wrapperCol: { span: 16 },  // 输入框更宽
+    baseColProps: {span: 24},      // ← 左侧单列，每行一个字段
+    labelCol: { span: 6 },        // 标签窄一点
+    wrapperCol: { span: 18 },
   });
 
-  // ===== 物料选择弹窗 =====
   const [registerMaterialModal, { openModal: openMaterialModal }] = useModal();
   let currentEditRow: any = null;
 
@@ -313,78 +322,57 @@
   :deep(.ant-form-item-label) {
     padding-bottom: 2px;
   }
-
-  /*!* 弹窗内容区 padding 压缩 *!*/
+  /*!* 弹窗 body 压缩 *!*/
   /*:deep(.ant-modal-body) {*/
-  /*  padding: 10px 16px !important;*/
+  /*  padding: 12px 16px !important;*/
   /*}*/
 
-  /*!* 主表单全面压缩 *!*/
-  /*:deep(.ant-form-item) {*/
-  /*  margin-bottom: 6px !important;*/
-  /*}*/
-  /*:deep(.ant-form-item-label) {*/
-  /*  padding-bottom: 0 !important;*/
-  /*  line-height: 26px !important;*/
-  /*  height: 26px !important;*/
-  /*}*/
-  /*:deep(.ant-form-item-control) {*/
-  /*  line-height: 26px !important;*/
-  /*}*/
-  /*:deep(.ant-input),*/
-  /*:deep(.ant-input-number),*/
-  /*:deep(.ant-select .ant-select-selector) {*/
-  /*  min-height: 26px !important;*/
-  /*  height: 26px !important;*/
-  /*}*/
-  /*:deep(.ant-input-number) {*/
-  /*  width: 100%;*/
-  /*}*/
-  /*:deep(.ant-calendar-picker) {*/
-  /*  width: 100%;*/
-  /*}*/
-  /*!* 文本域在表单里也要压缩 *!*/
-  /*:deep(.ant-input-textarea) textarea {*/
-  /*  min-height: unset !important;*/
-  /*}*/
+  /*!* 左侧主表面板：固定高度 + 内部滚动 *!*/
+  /*.left-panel {*/
+  /*  max-height: 660px;*/
+  /*  overflow-y: auto;*/
+  /*  padding-right: 4px;*/
 
-  /* 子表行高强制压缩 */
-  /*:deep(.vxe-table) {*/
-  /*  font-size: 13px !important;*/
-
-  /*  .vxe-header--row {*/
-  /*    height: 30px !important;*/
+  /*  !* 滚动条美化 *!*/
+  /*  &::-webkit-scrollbar {*/
+  /*    width: 4px;*/
   /*  }*/
-  /*  .vxe-header--column {*/
-  /*    padding: 2px 0 !important;*/
+  /*  &::-webkit-scrollbar-thumb {*/
+  /*    background: #d9d9d9;*/
+  /*    border-radius: 2px;*/
   /*  }*/
 
-  /*  .vxe-body--row {*/
-  /*    height: 30px !important;*/
+  /*  !* 主表单压缩 *!*/
+  /*  :deep(.ant-form-item) {*/
+  /*    margin-bottom: 8px !important;*/
   /*  }*/
-  /*  .vxe-cell {*/
-  /*    padding: 1px 4px !important;*/
-  /*    line-height: 1.3 !important;*/
-  /*    height: 30px !important;*/
+  /*  :deep(.ant-form-item-label) {*/
+  /*    line-height: 28px !important;*/
+  /*    height: 28px !important;*/
+  /*    padding-bottom: 0 !important;*/
   /*  }*/
+  /*  :deep(.ant-input),*/
+  /*  :deep(.ant-input-number),*/
+  /*  :deep(.ant-select .ant-select-selector) {*/
+  /*    min-height: 28px !important;*/
+  /*    height: 28px !important;*/
+  /*  }*/
+  /*  :deep(.ant-input-number) {*/
+  /*    width: 100%;*/
+  /*  }*/
+  /*  !* 文本域高度限制 *!*/
+  /*  :deep(.ant-input-textarea) textarea {*/
+  /*    min-height: unset !important;*/
+  /*  }*/
+  /*}*/
 
-  /*  !* 行内所有 ant 输入组件强制 24px *!*/
-  /*  .ant-input,*/
-  /*  .ant-input-number,*/
-  /*  .ant-input-number-input,*/
-  /*  .ant-input-affix-wrapper,*/
-  /*  .ant-select .ant-select-selector,*/
-  /*  .ant-select-selection-item,*/
-  /*  .ant-select-selection-search-input {*/
-  /*    min-height: 24px !important;*/
-  /*    height: 24px !important;*/
-  /*    line-height: 24px !important;*/
-  /*    font-size: 13px !important;*/
+  /*!* 右侧子表面板 *!*/
+  /*.right-panel {*/
+  /*  :deep(.ant-tabs) {*/
+  /*    margin-top: -8px;   !* 抵消 tabs 顶部空白 *!*/
   /*  }*/
-
-  /*  !* 数字输入框内部 input *!*/
-  /*  .ant-input-number-input-wrap {*/
-  /*    height: 24px !important;*/
+  /*  :deep(.ant-tabs-content) {*/
+  /*    padding-top: 4px;*/
   /*  }*/
   /*}*/
 </style>

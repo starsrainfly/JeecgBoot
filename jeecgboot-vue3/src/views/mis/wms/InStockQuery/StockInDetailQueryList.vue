@@ -60,8 +60,8 @@
         console.log("params:",params)
         if(params.stockInTime){
           const stockInTimeArr = params.stockInTime.split(',');
-          params.stockInTime_begin = stockInTimeArr[0] + "00:00:00";
-          params.stockInTime_end = stockInTimeArr[1] + "23:59:59";
+          params.stockInTime_begin = stockInTimeArr[0] + " 00:00:00";
+          params.stockInTime_end = stockInTimeArr[1] + " 23:59:59";
           params.stockInTime = null;
         }
         return Object.assign(params, queryParam);

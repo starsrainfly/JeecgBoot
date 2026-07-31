@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.scm.mapper.SalesOrderTrackingMapper">
+
+    <select id="queryList" resultType="org.jeecg.modules.scm.vo.SalesOrderTrackingVo">
+        SELECT
+        o.id,
+        o.order_no,
+        o.order_date,
+        o.customer_id,
+        o.customer_name,
+        o.salesman_id,
+        o.salesman_name,
+        o.currency_code,
+        o.exchange_rate,
+        o.order_total,
+        o.order_net,
+        o.order_tax,
+        o.delivery_date,
+        o.receivable_date,
+        o.payment_days,
+        o.order_status,
+        o.delivery_status,
+        o.settle_status,
+        o.sales_approve_status,
+        o.create_time,
+        COALESCE(dtl.total_qty, 0) as total_qty,
+        COALESCE(dlv.delivered_qty, 0) as delivered_qty,
+        COALESCE(dtl.total_qty, 0) - COALESCE(dlv.delivered_qty, 0) as undelivered_qty,
+        COALESCE(rcv.received_amount, 0) as received_amount,
+        o.order_total - COALESCE(rcv.received_amount, 0) as unreceived_amount
+        FROM mis_sales_order o
+        LEFT JOIN (
+        SELECT order_id, SUM(order_qty) as total_qty
+        FROM mis_sales_order_detail
+        WHERE del_flag = '0'
+        GROUP BY order_id
+        ) dtl ON o.id = dtl.order_id
+        LEFT JOIN (
+        SELECT m.source_order_id, SUM(dd.actual_qty) as delivered_qty
+        FROM mis_delivery m
+        JOIN mis_delivery_detail dd ON m.id = dd.delivery_id
+        WHERE m.del_flag = '0' AND dd.del_flag = '0'
+        GROUP BY m.source_order_id
+        ) dlv ON o.id = dlv.source_order_id
+        LEFT JOIN (
+        SELECT rd.sales_order_id, SUM(rd.receipt_amount) as received_amount
+        FROM mis_receipt_order_detail rd
+        JOIN mis_receipt_order r ON rd.receipt_id = r.id
+        WHERE rd.del_flag = '0' AND r.del_flag = '0' AND r.status = '1'
+        GROUP BY rd.sales_order_id
+        ) rcv ON o.id = rcv.sales_order_id
+        WHERE o.del_flag = '0'
+        <if test="params.orderNo != null and params.orderNo != ''">
+            AND o.order_no LIKE CONCAT('%', #{params.orderNo}, '%')
+        </if>
+        <if test="params.customerName != null and params.customerName != ''">
+            AND o.customer_name LIKE CONCAT('%', #{params.customerName}, '%')
+        </if>
+        <if test="params.salesmanId != null and params.salesmanId != ''">
+            AND o.salesman_id = #{params.salesmanId}
+        </if>
+        <if test="params.status != null and params.status != ''">
+            AND o.status = #{params.status}
+        </if>
+        <if test="params.deliveryStatus != null and params.deliveryStatus != ''">
+            AND o.delivery_status = #{params.deliveryStatus}
+        </if>
+        <if test="params.settleStatus != null and params.settleStatus != ''">
+            AND o.settle_status = #{params.settleStatus}
+        </if>
+        <if test="params.salesApproveStatus != null and params.salesApproveStatus != ''">
+            AND o.sales_approve_status = #{params.salesApproveStatus}
+        </if>
+        <if test="params.beginDate != null and params.beginDate != ''">
+            AND o.order_date &gt;= #{params.beginDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND o.order_date &lt;= #{params.endDate}
+        </if>
+        ORDER BY o.create_time DESC
+    </select>
+
+</mapper>

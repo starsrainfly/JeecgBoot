@@ -156,16 +156,7 @@ export const formSchema: FormSchema[] = [
       ];
     },
   },
-  {
-    label: '技术要求',
-    field: 'technics',
-    component: 'InputTextArea',
-    dynamicRules: ({model,schema}) => {
-          return [
-                 { required: true, message: '请输入技术要求!'},
-          ];
-     },
-  },
+
   {
     label: '工艺id',
     field: 'routingId',
@@ -257,20 +248,12 @@ export const formSchema: FormSchema[] = [
           ];
      },
   },
+
+
   {
     label: '备注',
     field: 'remark',
-    component: 'InputTextArea',
-  },
-  {
-    label: '注意事项',
-    field: 'notes',
-    component: 'InputTextArea',
-    dynamicRules: ({model,schema}) => {
-          return [
-                 { required: true, message: '请输入注意事项!'},
-          ];
-     },
+    component: 'Input',
   },
   {
     label: '状态',
@@ -280,6 +263,36 @@ export const formSchema: FormSchema[] = [
     componentProps:{
         dictCode:"mdm_recipe_status"
      },
+  },
+  {
+    label: '技术要求',
+    field: 'technics',
+    component: 'InputTextArea',
+    colProps: { span: 12 },          // ← 占 3 列（宽一点）
+    // componentProps: {
+    //   rows: 3,                       // ← 固定 2 行
+    //   autoSize: { minRows: 2, maxRows: 3 },
+    // },
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入技术要求!'},
+      ];
+    },
+  },
+  {
+    label: '注意事项',
+    field: 'notes',
+    component: 'InputTextArea',
+    colProps: { span: 12 },          // ← 占 3 列
+    // componentProps: {
+    //   rows: 2,
+    //   autoSize: { minRows: 2, maxRows: 3 },
+    // },
+    dynamicRules: ({model,schema}) => {
+      return [
+        { required: true, message: '请输入注意事项!'},
+      ];
+    },
   },
 	// TODO 主键隐藏字段，目前写死为ID
 	{

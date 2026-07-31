@@ -17,7 +17,7 @@
           :loading="recipeDetailTable.loading"
           :columns="recipeDetailTable.columns"
           :dataSource="recipeDetailTable.dataSource"
-          :height="340"
+          :height="700"
           :rowNumber="true"
           :rowSelection="true"
           :disabled="formDisabled"
@@ -32,7 +32,7 @@
               readonly
               :disabled="formDisabled"
               :placeholder="formDisabled ? '' : '点击选择物料'"
-              :style="{ cursor: formDisabled ? 'default' : 'pointer' }"
+              :style="{ cursor: formDisabled ? 'default' : 'pointer', height: '24px' }"
               @click="openMaterialSelect(row)"
             >
               <template #suffix>
@@ -90,21 +90,21 @@
   }] = useForm({
     schemas: formSchema,
     showActionButtonGroup: false,
-    baseColProps: {span: 6},
+    baseColProps: {span: 4},   // ← 一行6列
+    labelCol: { span: 8 },     // 标签更窄
+    wrapperCol: { span: 16 },  // 输入框更宽
   });
 
   // ===== 物料选择弹窗 =====
   const [registerMaterialModal, { openModal: openMaterialModal }] = useModal();
   let currentEditRow: any = null;
 
-  // 点击物料编码输入框，打开物料选择弹窗
   function openMaterialSelect(row: any) {
     if (formDisabled.value) return;
     currentEditRow = row;
     openMaterialModal(true, {});
   }
 
-  // 物料选择回调：回填到对应行
   function handleMaterialSelect(record: any) {
     if (!currentEditRow) return;
     const rowKey = currentEditRow.id ?? currentEditRow._X_ROW_KEY;
@@ -114,9 +114,7 @@
       materialName: record.materialName,
       materialSpec: record.materialSpec,
     };
-    // 方式一：JVxeTable 实例方法回填（会触发 value-change）
     recipeDetail.value?.setValues([{ rowKey, values }]);
-    // 方式二：直接同步行对象，保证插槽输入框立即刷新
     Object.assign(currentEditRow, values);
     currentEditRow = null;
   }
@@ -154,31 +152,11 @@
     refKeys
   );
 
-  // ========== 编辑完成触发计算 ==========
-  // function handleEditClosed(event: any) {
-  //   const { row, column, value } = event || {};
-  //
-  //   if (column?.key === 'proportion' || column?.field === 'proportion') {
-  //     const index = recipeDetailTable.dataSource.findIndex((item: any) =>
-  //       item.id === row.id || (item._X_ROW_KEY && item._X_ROW_KEY === row._X_ROW_KEY)
-  //     );
-  //     if (index !== -1) {
-  //       recipeDetailTable.dataSource[index].proportion = value;
-  //     }
-  //
-  //     calculateProportionTotal();
-  //   }
-  // }
-  // ========== 编辑完成触发计算 ==========
   function handleEditClosed(event: any) {
     const { row, column, value } = event || {};
-
-    // 只处理配比列
     if (column?.key === 'proportion' || column?.field === 'proportion') {
-      // 关键：直接从 JVxeTable 实例获取全部数据
       const jvxeTable = recipeDetail.value;
       if (!jvxeTable) return;
-
       let tableData = [];
       if (jvxeTable.getTableData) {
         tableData = jvxeTable.getTableData();
@@ -189,26 +167,17 @@
       } else if (jvxeTable.getCurrentData) {
         tableData = jvxeTable.getCurrentData();
       }
-
-      console.log('JVxeTable 数据:', tableData);
-
-      // 用实例数据计算，不依赖 dataSource
       let total = 0;
       tableData.forEach((item: any) => {
         total += parseFloat(item.proportion) || 0;
       });
       total = Math.round(total * 100) / 100;
-
-      // 同时同步回 dataSource（保持后续逻辑一致）
       recipeDetailTable.dataSource = tableData;
-
       try {
         setFieldsValue({ proportionTotal: total.toString() });
       } catch (e) {
         console.warn('设置配比总和失败:', e);
       }
-
-      // 校验
       nextTick(() => {
         const currentType = getFieldsValue()?.proportionType;
         if (currentType === '1') {
@@ -220,15 +189,12 @@
     }
   }
 
-  // ========== 删除行触发计算 ==========
   function handleDetailDeleted() {
-    console.log("delete detail row");
     nextTick(() => {
       doCalculate();
     });
   }
 
-  // ========== 计算配比总和 ==========
   function calculateProportionTotal() {
     const tableData = recipeDetailTable.dataSource || [];
     let total = 0;
@@ -236,13 +202,11 @@
       total += parseFloat(row.proportion) || 0;
     });
     total = Math.round(total * 100) / 100;
-
     try {
       setFieldsValue({ proportionTotal: total.toString() });
     } catch (e) {
       console.warn('设置配比总和失败:', e);
     }
-
     nextTick(() => {
       const currentType = getFieldsValue()?.proportionType;
       if (currentType === '1') {
@@ -282,12 +246,10 @@
     try {
       const proportionType = values.proportionType;
       const proportionTotal = parseFloat(values.proportionTotal) || 0;
-
       if (proportionType === '1' && proportionTotal !== 100) {
         createMessage.error('标准类型的配比总和必须等于100，当前总和为：' + proportionTotal);
         return;
       }
-
       setModalProps({ confirmLoading: true });
       await saveOrUpdate(values, isUpdate.value);
       closeModal();
@@ -296,6 +258,7 @@
       setModalProps({ confirmLoading: false });
     }
   }
+
   let calculateTimer = null;
   function handleDetailValueChange(row, value) {
     if (calculateTimer) clearTimeout(calculateTimer);
@@ -306,30 +269,24 @@
 
   function doCalculate() {
     const jvxeTable = recipeDetail.value;
-    console.log("recipeDetail.vlaue",recipeDetail.value)
     if (!jvxeTable) return;
-
     let tableData = [];
     if (jvxeTable.getTableData) {
       tableData = jvxeTable.getTableData();
     } else if (jvxeTable.getData) {
       tableData = jvxeTable.getData();
     }
-
     let total = 0;
     tableData.forEach(item => {
       total += parseFloat(item.proportion) || 0;
     });
     total = Math.round(total * 100) / 100;
-
     recipeDetailTable.dataSource = tableData;
-
     try {
       setFieldsValue({ proportionTotal: total.toString() });
     } catch (e) {
       console.warn('设置配比总和失败:', e);
     }
-
     nextTick(() => {
       const currentType = getFieldsValue()?.proportionType;
       if (currentType === '1') {
@@ -348,4 +305,86 @@
   :deep(.ant-calendar-picker) {
     width: 100%;
   }
+
+  /* 主表单行间距（上次加的） */
+  :deep(.ant-form-item) {
+    margin-bottom: 8px !important;
+  }
+  :deep(.ant-form-item-label) {
+    padding-bottom: 2px;
+  }
+
+  /*!* 弹窗内容区 padding 压缩 *!*/
+  /*:deep(.ant-modal-body) {*/
+  /*  padding: 10px 16px !important;*/
+  /*}*/
+
+  /*!* 主表单全面压缩 *!*/
+  /*:deep(.ant-form-item) {*/
+  /*  margin-bottom: 6px !important;*/
+  /*}*/
+  /*:deep(.ant-form-item-label) {*/
+  /*  padding-bottom: 0 !important;*/
+  /*  line-height: 26px !important;*/
+  /*  height: 26px !important;*/
+  /*}*/
+  /*:deep(.ant-form-item-control) {*/
+  /*  line-height: 26px !important;*/
+  /*}*/
+  /*:deep(.ant-input),*/
+  /*:deep(.ant-input-number),*/
+  /*:deep(.ant-select .ant-select-selector) {*/
+  /*  min-height: 26px !important;*/
+  /*  height: 26px !important;*/
+  /*}*/
+  /*:deep(.ant-input-number) {*/
+  /*  width: 100%;*/
+  /*}*/
+  /*:deep(.ant-calendar-picker) {*/
+  /*  width: 100%;*/
+  /*}*/
+  /*!* 文本域在表单里也要压缩 *!*/
+  /*:deep(.ant-input-textarea) textarea {*/
+  /*  min-height: unset !important;*/
+  /*}*/
+
+  /* 子表行高强制压缩 */
+  /*:deep(.vxe-table) {*/
+  /*  font-size: 13px !important;*/
+
+  /*  .vxe-header--row {*/
+  /*    height: 30px !important;*/
+  /*  }*/
+  /*  .vxe-header--column {*/
+  /*    padding: 2px 0 !important;*/
+  /*  }*/
+
+  /*  .vxe-body--row {*/
+  /*    height: 30px !important;*/
+  /*  }*/
+  /*  .vxe-cell {*/
+  /*    padding: 1px 4px !important;*/
+  /*    line-height: 1.3 !important;*/
+  /*    height: 30px !important;*/
+  /*  }*/
+
+  /*  !* 行内所有 ant 输入组件强制 24px *!*/
+  /*  .ant-input,*/
+  /*  .ant-input-number,*/
+  /*  .ant-input-number-input,*/
+  /*  .ant-input-affix-wrapper,*/
+  /*  .ant-select .ant-select-selector,*/
+  /*  .ant-select-selection-item,*/
+  /*  .ant-select-selection-search-input {*/
+  /*    min-height: 24px !important;*/
+  /*    height: 24px !important;*/
+  /*    line-height: 24px !important;*/
+  /*    font-size: 13px !important;*/
+  /*  }*/
+
+  /*  !* 数字输入框内部 input *!*/
+  /*  .ant-input-number-input-wrap {*/
+  /*    height: 24px !important;*/
+  /*  }*/
+  /*}*/
 </style>

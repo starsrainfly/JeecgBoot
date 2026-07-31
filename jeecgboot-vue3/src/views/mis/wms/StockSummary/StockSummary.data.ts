@@ -63,6 +63,12 @@ export const summaryColumns: BasicColumn[] = [
     slots: { customRender: 'batchCount' },
   },
   {
+    title: '剩余天数',
+    align: "center",
+    dataIndex: 'remainingDays',
+    width: 90,
+  },
+  {
     title: '效期预警',
     align: "center",
     dataIndex: 'nearestExpiryDate',

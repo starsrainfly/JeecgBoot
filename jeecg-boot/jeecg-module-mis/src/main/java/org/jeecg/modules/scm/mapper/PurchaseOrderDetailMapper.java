@@ -31,6 +31,18 @@ public interface PurchaseOrderDetailMapper extends BaseMapper<PurchaseOrderDetai
    */
 	public List<PurchaseOrderDetail> selectByMainId(@Param("mainId") String mainId);
 
-	// 接口
-	public List<Map<String, Object>> selectAppliedQtyByOrderId(@Param("orderId") String orderId);
+	/**
+	 * 根据订单ID查询各明细的在途申请数量
+	 */
+	List<Map<String, Object>> selectAppliedQtyByOrderId(@Param("orderId") String orderId);
+
+	/**
+	 * 批量查询订单的子表汇总（采购数量、已入库数量）
+	 */
+	List<Map<String, Object>> selectSummaryByOrderIds(@Param("orderIds") List<String> orderIds);
+
+	/**
+	 * 批量查询订单的在途申请数量合计
+	 */
+	List<Map<String, Object>> selectAppliedQtyByOrderIds(@Param("orderIds") List<String> orderIds);
 }

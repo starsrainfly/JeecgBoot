@@ -127,6 +127,7 @@ public class ProductionBatch implements Serializable {
     private BigDecimal remainQty;
     /**入库状态 0未入库，1部分入库，2已入库*/
     @Excel(name = "入库状态", width = 15)
+    @Dict(dicCode = "mes_in_stock_status")
     @Schema(description = "入库状态")
     private String inStockStatus;
     @Excel(name = "质检状态", width = 15, dicCode = "mes_qc_status")

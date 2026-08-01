@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.scm.mapper.CostCalcReportMapper">
+
+    <select id="queryPageList" resultType="org.jeecg.modules.scm.vo.CostCalcReportVo">
+        SELECT
+            c.id,
+            c.product_id as productId,
+            c.product_code as productCode,
+            c.product_name as productName,
+            c.product_spec as productSpec,
+            c.product_color as productColor,
+            c.recipe_code as recipeCode,
+            c.recipe_name as recipeName,
+            c.calc_date as calcDate,
+            c.calc_type as calcType,
+            c.total_cost_latest as totalCostLatest,
+            c.total_cost_avg as totalCostAvg,
+            last_c.total_cost_latest as lastPeriodCost,
+            ROUND(c.total_cost_latest - IFNULL(last_c.total_cost_latest, 0), 6) as changeAmount,
+            CASE
+                WHEN IFNULL(last_c.total_cost_latest, 0) = 0 THEN NULL
+                ELSE ROUND((c.total_cost_latest - last_c.total_cost_latest) / last_c.total_cost_latest * 100, 2)
+            END as changeRate
+        FROM mis_cost_calc c
+        LEFT JOIN mis_cost_calc last_c ON last_c.id = (
+            SELECT c2.id
+            FROM mis_cost_calc c2
+            WHERE c2.product_id = c.product_id
+              AND c2.del_flag = '0'
+              AND (c2.calc_date &lt; c.calc_date OR (c2.calc_date = c.calc_date AND c2.create_time &lt; c.create_time))
+            ORDER BY c2.calc_date DESC, c2.create_time DESC
+            LIMIT 1
+        )
+        WHERE c.del_flag = '0'
+        <if test="params.productCode != null and params.productCode != ''">
+            AND c.product_code LIKE CONCAT('%', #{params.productCode}, '%')
+        </if>
+        <if test="params.productName != null and params.productName != ''">
+            AND c.product_name LIKE CONCAT('%', #{params.productName}, '%')
+        </if>
+        <if test="params.calcType != null and params.calcType != ''">
+            AND c.calc_type = #{params.calcType}
+        </if>
+        <if test="params.startDate != null and params.startDate != ''">
+            AND c.calc_date &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND c.calc_date &lt;= #{params.endDate}
+        </if>
+        ORDER BY c.calc_date DESC, c.product_code
+    </select>
+
+    <select id="queryList" resultType="org.jeecg.modules.scm.vo.CostCalcReportVo">
+        SELECT
+            c.id,
+            c.product_id as productId,
+            c.product_code as productCode,
+            c.product_name as productName,
+            c.product_spec as productSpec,
+            c.product_color as productColor,
+            c.recipe_code as recipeCode,
+            c.recipe_name as recipeName,
+            c.calc_date as calcDate,
+            c.calc_type as calcType,
+            c.total_cost_latest as totalCostLatest,
+            c.total_cost_avg as totalCostAvg,
+            last_c.total_cost_latest as lastPeriodCost,
+            ROUND(c.total_cost_latest - IFNULL(last_c.total_cost_latest, 0), 6) as changeAmount,
+            CASE
+                WHEN IFNULL(last_c.total_cost_latest, 0) = 0 THEN NULL
+                ELSE ROUND((c.total_cost_latest - last_c.total_cost_latest) / last_c.total_cost_latest * 100, 2)
+            END as changeRate
+        FROM mis_cost_calc c
+        LEFT JOIN mis_cost_calc last_c ON last_c.id = (
+            SELECT c2.id
+            FROM mis_cost_calc c2
+            WHERE c2.product_id = c.product_id
+              AND c2.del_flag = '0'
+              AND (c2.calc_date &lt; c.calc_date OR (c2.calc_date = c.calc_date AND c2.create_time &lt; c.create_time))
+            ORDER BY c2.calc_date DESC, c2.create_time DESC
+            LIMIT 1
+        )
+        WHERE c.del_flag = '0'
+        <if test="params.productCode != null and params.productCode != ''">
+            AND c.product_code LIKE CONCAT('%', #{params.productCode}, '%')
+        </if>
+        <if test="params.productName != null and params.productName != ''">
+            AND c.product_name LIKE CONCAT('%', #{params.productName}, '%')
+        </if>
+        <if test="params.calcType != null and params.calcType != ''">
+            AND c.calc_type = #{params.calcType}
+        </if>
+        <if test="params.startDate != null and params.startDate != ''">
+            AND c.calc_date &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND c.calc_date &lt;= #{params.endDate}
+        </if>
+        ORDER BY c.calc_date DESC, c.product_code
+    </select>
+</mapper>

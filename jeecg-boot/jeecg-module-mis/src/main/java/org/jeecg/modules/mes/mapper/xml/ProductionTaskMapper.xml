@@ -41,6 +41,9 @@
         <if test="productionTaskVo.companyId != null and productionTaskVo.companyId != ''">
             AND t.company_id = #{productionTaskVo.companyId}
         </if>
+        <if test="productionTaskVo.batchId != null and productionTaskVo.batchId !=''">
+            AND t.batch_id = #{productionTaskVo.batchId}
+        </if>
         ORDER BY t.create_time DESC
 
     </select>

@@ -152,7 +152,7 @@ export const searchFormSchema: FormSchema[] = [
         const {setFieldsValue} = formActionType;
         return{
             setFieldsValue:setFieldsValue,
-            code:"scm_customer",
+            code:"scm_customer_no_param",
             fieldConfig: [
                 { source: 'id', target: 'customerId' },
                 { source: 'customer_name', target: 'customerName' },

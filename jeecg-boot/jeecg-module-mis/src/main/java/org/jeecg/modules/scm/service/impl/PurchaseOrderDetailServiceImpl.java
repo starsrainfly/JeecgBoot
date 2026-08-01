@@ -31,4 +31,14 @@ public class PurchaseOrderDetailServiceImpl extends ServiceImpl<PurchaseOrderDet
 	public List<Map<String, Object>> selectAppliedQtyByOrderId(String orderId) {
 		return baseMapper.selectAppliedQtyByOrderId(orderId);
 	}
+
+	@Override
+	public List<Map<String, Object>> selectSummaryByOrderIds(List<String> orderIds) {
+		return purchaseOrderDetailMapper.selectSummaryByOrderIds(orderIds);
+	}
+
+	@Override
+	public List<Map<String, Object>> selectAppliedQtyByOrderIds(List<String> orderIds) {
+		return purchaseOrderDetailMapper.selectAppliedQtyByOrderIds(orderIds);
+	}
 }

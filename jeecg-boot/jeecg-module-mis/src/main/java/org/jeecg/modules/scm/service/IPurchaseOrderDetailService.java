@@ -25,4 +25,14 @@ public interface IPurchaseOrderDetailService extends IService<PurchaseOrderDetai
 	 * 查询在途申请数量（待审核的入库申请）
 	 */
 	List<Map<String, Object>> selectAppliedQtyByOrderId(String orderId);
+
+	/**
+	 * 批量查询订单的子表汇总（采购数量、已入库数量）
+	 */
+	List<Map<String, Object>> selectSummaryByOrderIds(List<String> orderIds);
+
+	/**
+	 * 批量查询订单的在途申请数量合计
+	 */
+	List<Map<String, Object>> selectAppliedQtyByOrderIds(List<String> orderIds);
 }

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.mes.mapper.MaterialReqActualReportMapper">
+
+    <select id="queryPageList" resultType="org.jeecg.modules.mes.vo.MaterialReqActualReportVo">
+        SELECT * FROM (
+        SELECT
+        po.order_no as orderNo,
+        po.product_code as productCode,
+        po.product_name as productName,
+        bb.material_code as materialCode,
+        bb.material_name as materialName,
+        bb.material_spec as materialSpec,
+        CASE m.material_type
+        WHEN 'RAW' THEN '源材料'
+        WHEN 'package_inner' THEN '内包'
+        WHEN 'package_outer' THEN '外包'
+        ELSE IFNULL(m.material_type, '-')
+        END as materialTypeText,
+        SUM(bb.planned_qty) as plannedQty,
+        IFNULL(SUM(a.actual_qty), 0) as actualQty,
+        ROUND(IFNULL(SUM(a.actual_qty), 0) - SUM(bb.planned_qty), 4) as diffQty,
+        CASE
+        WHEN SUM(bb.planned_qty) = 0 THEN NULL
+        ELSE ROUND((IFNULL(SUM(a.actual_qty), 0) - SUM(bb.planned_qty)) / SUM(bb.planned_qty) * 100, 2)
+        END as diffRate,
+        po.id as orderId,
+        bb.material_id as materialId
+        FROM mis_production_order po
+        INNER JOIN mis_production_batch pb ON pb.order_id = po.id AND pb.del_flag = '0'
+        INNER JOIN mis_production_batch_bom bb ON bb.batch_id = pb.id AND bb.del_flag = '0'
+        LEFT JOIN mis_production_batch_material_actual a
+        ON a.batch_bom_id = bb.id AND a.del_flag = '0'
+        LEFT JOIN mis_material m ON m.id = bb.material_id
+        WHERE po.del_flag = '0'
+        AND po.status IN ('1', '2', '3')
+        <if test="params.orderNo != null and params.orderNo != ''">
+            AND po.order_no LIKE CONCAT('%', #{params.orderNo}, '%')
+        </if>
+        <if test="params.productCode != null and params.productCode != ''">
+            AND po.product_code LIKE CONCAT('%', #{params.productCode}, '%')
+        </if>
+        <if test="params.materialCode != null and params.materialCode != ''">
+            AND bb.material_code LIKE CONCAT('%', #{params.materialCode}, '%')
+        </if>
+        <if test="params.materialType != null and params.materialType != ''">
+            AND m.material_type = #{params.materialType}
+        </if>
+        <if test="params.startDate != null and params.startDate != ''">
+            AND po.planned_start_date &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND po.planned_end_date &lt;= #{params.endDate}
+        </if>
+        GROUP BY po.id, bb.material_id
+        ) t
+        WHERE 1=1
+        <if test="params.diffRateThreshold != null and params.diffRateThreshold != ''">
+            AND ABS(IFNULL(t.diffRate, 0)) &gt;= #{params.diffRateThreshold}
+        </if>
+        ORDER BY t.diffRate DESC
+    </select>
+
+    <select id="getBatchDetail" resultType="java.util.HashMap">
+        SELECT
+            pb.batch_no as batchNo,
+            pb.batch_seq as batchSeq,
+            bb.material_code as materialCode,
+            bb.material_name as materialName,
+            bb.planned_qty as bomPlannedQty,
+            a.actual_qty as actualQty,
+            a.operator_name as operatorName,
+            a.complete_time as completeTime,
+            ROUND(IFNULL(a.actual_qty, 0) - bb.planned_qty, 4) as diffQty
+        FROM mis_production_batch_bom bb
+                 INNER JOIN mis_production_batch pb ON pb.id = bb.batch_id
+                 LEFT JOIN mis_production_batch_material_actual a
+                           ON a.batch_bom_id = bb.id AND a.del_flag = '0'
+        WHERE bb.material_id = #{materialId}
+          AND pb.order_id = #{orderId}
+          AND bb.del_flag = '0'
+        ORDER BY pb.batch_seq, a.complete_time
+    </select>
+</mapper>

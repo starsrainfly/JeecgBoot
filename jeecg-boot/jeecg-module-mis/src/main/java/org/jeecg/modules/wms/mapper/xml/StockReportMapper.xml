@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.wms.mapper.StockReportMapper">
+
+    <!-- ==================== 1. 入库汇总（按供应商） ==================== -->
+    <select id="selectInSummaryBySupplier" resultType="org.jeecg.modules.wms.vo.StockInSummaryVo">
+        SELECT
+        si.supplier_id AS supplierId,
+        si.supplier_name AS supplierName,
+        DATE_FORMAT(si.stock_in_time, '%Y-%m') AS period,
+        COUNT(DISTINCT si.id) AS inCount,
+        SUM(sid.actual_qty) AS totalQty,
+        SUM(sid.total_amount) AS totalAmount
+        FROM mis_stock_in si
+        INNER JOIN mis_stock_in_detail sid ON si.id = sid.stock_in_id AND sid.del_flag = '0'
+        WHERE si.status = 'FINISHED'
+        AND si.del_flag = '0'
+        AND si.stock_in_time IS NOT NULL
+        <if test="startPeriod != null and startPeriod != ''">
+            AND DATE_FORMAT(si.stock_in_time, '%Y-%m') &gt;= #{startPeriod}
+        </if>
+        <if test="endPeriod != null and endPeriod != ''">
+            AND DATE_FORMAT(si.stock_in_time, '%Y-%m') &lt;= #{endPeriod}
+        </if>
+        <if test="supplierId != null and supplierId != ''">
+            AND si.supplier_id = #{supplierId}
+        </if>
+        GROUP BY si.supplier_id, DATE_FORMAT(si.stock_in_time, '%Y-%m')
+        ORDER BY period DESC, totalAmount DESC
+    </select>
+
+    <select id="selectInSummaryBySupplierForExport" resultType="org.jeecg.modules.wms.vo.StockInSummaryVo">
+        SELECT
+        si.supplier_id AS supplierId,
+        si.supplier_name AS supplierName,
+        DATE_FORMAT(si.stock_in_time, '%Y-%m') AS period,
+        COUNT(DISTINCT si.id) AS inCount,
+        SUM(sid.actual_qty) AS totalQty,
+        SUM(sid.total_amount) AS totalAmount
+        FROM mis_stock_in si
+        INNER JOIN mis_stock_in_detail sid ON si.id = sid.stock_in_id AND sid.del_flag = '0'
+        WHERE si.status = 'FINISHED'
+        AND si.del_flag = '0'
+        AND si.stock_in_time IS NOT NULL
+        <if test="startPeriod != null and startPeriod != ''">
+            AND DATE_FORMAT(si.stock_in_time, '%Y-%m') &gt;= #{startPeriod}
+        </if>
+        <if test="endPeriod != null and endPeriod != ''">
+            AND DATE_FORMAT(si.stock_in_time, '%Y-%m') &lt;= #{endPeriod}
+        </if>
+        <if test="supplierId != null and supplierId != ''">
+            AND si.supplier_id = #{supplierId}
+        </if>
+        GROUP BY si.supplier_id, DATE_FORMAT(si.stock_in_time, '%Y-%m')
+        ORDER BY period DESC, totalAmount DESC
+    </select>
+
+    <!-- ==================== 2. 出库汇总（按客户） ==================== -->
+    <select id="selectOutSummaryByCustomer" resultType="org.jeecg.modules.wms.vo.StockOutSummaryVo">
+        SELECT
+        so.customer_id AS customerId,
+        so.customer_name AS customerName,
+        DATE_FORMAT(so.stock_out_time, '%Y-%m') AS period,
+        COUNT(DISTINCT so.id) AS outCount,
+        SUM(sod.actual_qty) AS totalQty,
+        SUM(sod.sales_total) AS totalSalesAmount,
+        SUM(sod.cost_total) AS totalCostAmount
+        FROM mis_stock_out so
+        INNER JOIN mis_stock_out_detail sod ON so.id = sod.stock_out_id AND sod.del_flag = '0'
+        WHERE so.status = 'FINISHED'
+        AND so.del_flag = '0'
+        AND so.stock_out_time IS NOT NULL
+        <if test="startPeriod != null and startPeriod != ''">
+            AND DATE_FORMAT(so.stock_out_time, '%Y-%m') &gt;= #{startPeriod}
+        </if>
+        <if test="endPeriod != null and endPeriod != ''">
+            AND DATE_FORMAT(so.stock_out_time, '%Y-%m') &lt;= #{endPeriod}
+        </if>
+        <if test="customerId != null and customerId != ''">
+            AND so.customer_id = #{customerId}
+        </if>
+        GROUP BY so.customer_id, DATE_FORMAT(so.stock_out_time, '%Y-%m')
+        ORDER BY period DESC, totalSalesAmount DESC
+    </select>
+
+    <select id="selectOutSummaryByCustomerForExport" resultType="org.jeecg.modules.wms.vo.StockOutSummaryVo">
+        SELECT
+        so.customer_id AS customerId,
+        so.customer_name AS customerName,
+        DATE_FORMAT(so.stock_out_time, '%Y-%m') AS period,
+        COUNT(DISTINCT so.id) AS outCount,
+        SUM(sod.actual_qty) AS totalQty,
+        SUM(sod.sales_total) AS totalSalesAmount,
+        SUM(sod.cost_total) AS totalCostAmount
+        FROM mis_stock_out so
+        INNER JOIN mis_stock_out_detail sod ON so.id = sod.stock_out_id AND sod.del_flag = '0'
+        WHERE so.status = 'FINISHED'
+        AND so.del_flag = '0'
+        AND so.stock_out_time IS NOT NULL
+        <if test="startPeriod != null and startPeriod != ''">
+            AND DATE_FORMAT(so.stock_out_time, '%Y-%m') &gt;= #{startPeriod}
+        </if>
+        <if test="endPeriod != null and endPeriod != ''">
+            AND DATE_FORMAT(so.stock_out_time, '%Y-%m') &lt;= #{endPeriod}
+        </if>
+        <if test="customerId != null and customerId != ''">
+            AND so.customer_id = #{customerId}
+        </if>
+        GROUP BY so.customer_id, DATE_FORMAT(so.stock_out_time, '%Y-%m')
+        ORDER BY period DESC, totalSalesAmount DESC
+    </select>
+
+    <!-- ==================== 3. 收发存月报：物料基础+当前库存 ==================== -->
+    <select id="selectGoodsBaseList" resultType="org.jeecg.modules.wms.vo.StockMonthlyReportVo">
+        SELECT
+        g.id AS goodsId,
+        g.goods_code AS goodsCode,
+        g.goods_name AS goodsName,
+        g.unit AS unit,
+        COALESCE(SUM(s.quantity), 0) AS openingQty,
+        COALESCE(SUM(s.cost_total), 0) AS openingAmount
+        FROM (
+        SELECT DISTINCT goods_id AS id, goods_code, goods_name, unit
+        FROM mis_stock WHERE del_flag = '0'
+        UNION
+        SELECT DISTINCT goods_id, goods_code, goods_name, unit
+        FROM mis_stock_in_detail WHERE del_flag = '0'
+        UNION
+        SELECT DISTINCT goods_id, goods_code, goods_name, unit
+        FROM mis_stock_out_detail WHERE del_flag = '0'
+        ) g
+        LEFT JOIN mis_stock s ON g.id = s.goods_id AND s.del_flag = '0'
+        <if test="warehouseId != null and warehouseId != ''">
+            AND s.warehouse_id = #{warehouseId}
+        </if>
+        <where>
+            <if test="goodsCode != null and goodsCode != ''">
+                g.goods_code LIKE CONCAT('%', #{goodsCode}, '%')
+            </if>
+        </where>
+        GROUP BY g.id, g.goods_code, g.goods_name, g.unit
+    </select>
+
+    <select id="selectGoodsBaseListForExport" resultType="org.jeecg.modules.wms.vo.StockMonthlyReportVo">
+        SELECT
+        g.id AS goodsId,
+        g.goods_code AS goodsCode,
+        g.goods_name AS goodsName,
+        g.unit AS unit,
+        COALESCE(SUM(s.quantity), 0) AS openingQty,
+        COALESCE(SUM(s.cost_total), 0) AS openingAmount
+        FROM (
+        SELECT DISTINCT goods_id AS id, goods_code, goods_name, unit
+        FROM mis_stock WHERE del_flag = '0'
+        UNION
+        SELECT DISTINCT goods_id, goods_code, goods_name, unit
+        FROM mis_stock_in_detail WHERE del_flag = '0'
+        UNION
+        SELECT DISTINCT goods_id, goods_code, goods_name, unit
+        FROM mis_stock_out_detail WHERE del_flag = '0'
+        ) g
+        LEFT JOIN mis_stock s ON g.id = s.goods_id AND s.del_flag = '0'
+        <if test="warehouseId != null and warehouseId != ''">
+            AND s.warehouse_id = #{warehouseId}
+        </if>
+        <where>
+            <if test="goodsCode != null and goodsCode != ''">
+                g.goods_code LIKE CONCAT('%', #{goodsCode}, '%')
+            </if>
+        </where>
+        GROUP BY g.id, g.goods_code, g.goods_name, g.unit
+    </select>
+
+    <!-- 收发存月报：指定月份入库 -->
+    <select id="selectInByPeriod" resultType="java.util.HashMap">
+        SELECT
+        sid.goods_id AS goods_id,
+        SUM(sid.actual_qty) AS qty,
+        SUM(sid.total_amount) AS amount
+        FROM mis_stock_in_detail sid
+        INNER JOIN mis_stock_in si ON sid.stock_in_id = si.id
+        AND si.status = 'FINISHED'
+        AND si.del_flag = '0'
+        AND DATE_FORMAT(si.stock_in_time, '%Y-%m') = #{period}
+        WHERE sid.del_flag = '0'
+        <if test="warehouseId != null and warehouseId != ''">
+            AND si.warehouse_id = #{warehouseId}
+        </if>
+        <if test="goodsCode != null and goodsCode != ''">
+            AND sid.goods_code LIKE CONCAT('%', #{goodsCode}, '%')
+        </if>
+        GROUP BY sid.goods_id
+    </select>
+
+    <!-- 收发存月报：指定月份出库 -->
+    <select id="selectOutByPeriod" resultType="java.util.HashMap">
+        SELECT
+        sod.goods_id AS goods_id,
+        SUM(sod.actual_qty) AS qty,
+        SUM(sod.cost_total) AS amount
+        FROM mis_stock_out_detail sod
+        INNER JOIN mis_stock_out so ON sod.stock_out_id = so.id
+        AND so.status = 'FINISHED'
+        AND so.del_flag = '0'
+        AND DATE_FORMAT(so.stock_out_time, '%Y-%m') = #{period}
+        WHERE sod.del_flag = '0'
+        <if test="warehouseId != null and warehouseId != ''">
+            AND so.warehouse_id = #{warehouseId}
+        </if>
+        <if test="goodsCode != null and goodsCode != ''">
+            AND sod.goods_code LIKE CONCAT('%', #{goodsCode}, '%')
+        </if>
+        GROUP BY sod.goods_id
+    </select>
+
+    <!-- 收发存月报：月份之后入库（反推期初用） -->
+    <select id="selectInAfterPeriod" resultType="java.util.HashMap">
+        SELECT
+        sid.goods_id AS goods_id,
+        SUM(sid.actual_qty) AS qty,
+        SUM(sid.total_amount) AS amount
+        FROM mis_stock_in_detail sid
+        INNER JOIN mis_stock_in si ON sid.stock_in_id = si.id
+        AND si.status = 'FINISHED'
+        AND si.del_flag = '0'
+        AND si.stock_in_time &gt;= DATE_ADD(CONCAT(#{period}, '-01'), INTERVAL 1 MONTH)
+        WHERE sid.del_flag = '0'
+        <if test="warehouseId != null and warehouseId != ''">
+            AND si.warehouse_id = #{warehouseId}
+        </if>
+        <if test="goodsCode != null and goodsCode != ''">
+            AND sid.goods_code LIKE CONCAT('%', #{goodsCode}, '%')
+        </if>
+        GROUP BY sid.goods_id
+    </select>
+
+    <!-- 收发存月报：月份之后出库（反推期初用） -->
+    <select id="selectOutAfterPeriod" resultType="java.util.HashMap">
+        SELECT
+        sod.goods_id AS goods_id,
+        SUM(sod.actual_qty) AS qty,
+        SUM(sod.cost_total) AS amount
+        FROM mis_stock_out_detail sod
+        INNER JOIN mis_stock_out so ON sod.stock_out_id = so.id
+        AND so.status = 'FINISHED'
+        AND so.del_flag = '0'
+        AND so.stock_out_time &gt;= DATE_ADD(CONCAT(#{period}, '-01'), INTERVAL 1 MONTH)
+        WHERE sod.del_flag = '0'
+        <if test="warehouseId != null and warehouseId != ''">
+            AND so.warehouse_id = #{warehouseId}
+        </if>
+        <if test="goodsCode != null and goodsCode != ''">
+            AND sod.goods_code LIKE CONCAT('%', #{goodsCode}, '%')
+        </if>
+        GROUP BY sod.goods_id
+    </select>
+
+    <!-- ==================== 4. 仓库收发存汇总：仓库基础+当前库存 ==================== -->
+    <select id="selectWarehouseBaseList" resultType="org.jeecg.modules.wms.vo.StockWarehouseSummaryVo">
+        SELECT
+            w.id AS warehouseId,
+            w.name AS warehouseName,
+            COALESCE(SUM(s.quantity), 0) AS openingQty,
+            COALESCE(SUM(s.cost_total), 0) AS openingAmount
+        FROM mis_warehouse w
+                 LEFT JOIN mis_stock s ON w.id = s.warehouse_id AND s.del_flag = '0'
+        WHERE w.del_flag = '0'
+        GROUP BY w.id, w.name
+    </select>
+
+    <select id="selectWarehouseBaseListForExport" resultType="org.jeecg.modules.wms.vo.StockWarehouseSummaryVo">
+        SELECT
+            w.id AS warehouseId,
+            w.name AS warehouseName,
+            COALESCE(SUM(s.quantity), 0) AS openingQty,
+            COALESCE(SUM(s.cost_total), 0) AS openingAmount
+        FROM mis_warehouse w
+                 LEFT JOIN mis_stock s ON w.id = s.warehouse_id AND s.del_flag = '0'
+        WHERE w.del_flag = '0'
+        GROUP BY w.id, w.name
+    </select>
+
+    <!-- 仓库汇总：月份入库按仓库 -->
+    <select id="selectInByPeriodGroupByWarehouse" resultType="java.util.HashMap">
+        SELECT
+            si.warehouse_id AS warehouse_id,
+            SUM(sid.actual_qty) AS qty,
+            SUM(sid.total_amount) AS amount
+        FROM mis_stock_in_detail sid
+                 INNER JOIN mis_stock_in si ON sid.stock_in_id = si.id
+            AND si.status = 'FINISHED'
+            AND si.del_flag = '0'
+            AND DATE_FORMAT(si.stock_in_time, '%Y-%m') = #{period}
+        WHERE sid.del_flag = '0'
+        GROUP BY si.warehouse_id
+    </select>
+
+    <!-- 仓库汇总：月份出库按仓库 -->
+    <select id="selectOutByPeriodGroupByWarehouse" resultType="java.util.HashMap">
+        SELECT
+            so.warehouse_id AS warehouse_id,
+            SUM(sod.actual_qty) AS qty,
+            SUM(sod.cost_total) AS amount
+        FROM mis_stock_out_detail sod
+                 INNER JOIN mis_stock_out so ON sod.stock_out_id = so.id
+            AND so.status = 'FINISHED'
+            AND so.del_flag = '0'
+            AND DATE_FORMAT(so.stock_out_time, '%Y-%m') = #{period}
+        WHERE sod.del_flag = '0'
+        GROUP BY so.warehouse_id
+    </select>
+
+    <!-- 仓库汇总：月份之后入库按仓库 -->
+    <select id="selectInAfterPeriodGroupByWarehouse" resultType="java.util.HashMap">
+        SELECT
+            si.warehouse_id AS warehouse_id,
+            SUM(sid.actual_qty) AS qty,
+            SUM(sid.total_amount) AS amount
+        FROM mis_stock_in_detail sid
+                 INNER JOIN mis_stock_in si ON sid.stock_in_id = si.id
+            AND si.status = 'FINISHED'
+            AND si.del_flag = '0'
+            AND si.stock_in_time &gt;= DATE_ADD(CONCAT(#{period}, '-01'), INTERVAL 1 MONTH)
+        WHERE sid.del_flag = '0'
+        GROUP BY si.warehouse_id
+    </select>
+
+    <!-- 仓库汇总：月份之后出库按仓库 -->
+    <select id="selectOutAfterPeriodGroupByWarehouse" resultType="java.util.HashMap">
+        SELECT
+            so.warehouse_id AS warehouse_id,
+            SUM(sod.actual_qty) AS qty,
+            SUM(sod.cost_total) AS amount
+        FROM mis_stock_out_detail sod
+                 INNER JOIN mis_stock_out so ON sod.stock_out_id = so.id
+            AND so.status = 'FINISHED'
+            AND so.del_flag = '0'
+            AND so.stock_out_time &gt;= DATE_ADD(CONCAT(#{period}, '-01'), INTERVAL 1 MONTH)
+        WHERE sod.del_flag = '0'
+        GROUP BY so.warehouse_id
+    </select>
+
+</mapper>

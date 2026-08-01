@@ -90,7 +90,35 @@ public class PurchaseOrderController {
 		IPage<PurchaseOrder> pageList = purchaseOrderService.page(page, queryWrapper);
 		return Result.OK(pageList);
 	}
-	
+
+	 /**
+	  * 采购执行跟踪-分页列表查询
+	  * 复用主表查询条件，内存组装子表聚合数据（到货率、超期等）
+	  */
+	 @Operation(summary="采购执行跟踪-分页列表查询")
+	 @GetMapping(value = "/trackingList")
+	 public Result<IPage<PurchaseOrder>> trackingList(
+			 @RequestParam(name="pageNo", defaultValue="1") Integer pageNo,
+			 @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
+			 HttpServletRequest req) {
+		 Page<PurchaseOrder> page = new Page<>(pageNo, pageSize);
+		 IPage<PurchaseOrder> pageList = purchaseOrderService.trackingPage(page, req);
+		 return Result.OK(pageList);
+	 }
+
+	 /**
+	  * 采购执行跟踪-详情查询（含子表执行进度）
+	  */
+	 @Operation(summary="采购执行跟踪-详情查询")
+	 @GetMapping(value = "/trackingDetail")
+	 public Result<PurchaseOrderPage> trackingDetail(@RequestParam(name="id",required=true) String id) {
+		 PurchaseOrderPage page = purchaseOrderService.getTrackingDetail(id);
+		 if(page == null) {
+			 return Result.error("未找到对应数据");
+		 }
+		 return Result.OK(page);
+	 }
+
 	/**
 	 *   添加
 	 *

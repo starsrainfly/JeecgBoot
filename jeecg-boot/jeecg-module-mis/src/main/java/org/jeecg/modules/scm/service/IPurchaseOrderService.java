@@ -1,8 +1,13 @@
 package org.jeecg.modules.scm.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.jeecg.modules.scm.entity.PurchaseOrderDetail;
 import org.jeecg.modules.scm.entity.PurchaseOrder;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.scm.vo.PurchaseOrderPage;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -50,5 +55,11 @@ public interface IPurchaseOrderService extends IService<PurchaseOrder> {
 
 	/** 入库审核通过后的到货回写：累加receivedQty并联动状态 */
 	void addReceivedQty(String orderDetailId, java.math.BigDecimal actualQty);
+
+	/**采购执行跟踪分页查询*/
+	IPage<PurchaseOrder> trackingPage(Page<PurchaseOrder> page, HttpServletRequest req);
+
+	/**采购执行跟踪详情*/
+	PurchaseOrderPage getTrackingDetail(String id);
 	
 }

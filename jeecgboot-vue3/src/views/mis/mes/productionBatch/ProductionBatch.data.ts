@@ -39,6 +39,25 @@ export const columns: BasicColumn[] = [
 ];
 //查询数据
 export const searchFormSchema: FormSchema[] = [
+  {
+    label: '订单编号',
+    field: 'orderNo',
+    component: 'Input',
+  },
+  {
+    label: '批次号',
+    component: 'Input',
+    field: 'batchNo'
+  },
+
+  {
+    label: '状态',
+    field: 'status',
+    component: 'JDictSelectTag',
+    componentProps: {
+      dictCode: 'mes_batch_status', // 请根据实际字典Code修改
+    },
+  },
 ];
 //表单数据
 export const formSchema: FormSchema[] = [

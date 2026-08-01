@@ -3,10 +3,8 @@ package org.jeecg.modules.scm.entity;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.annotation.TableLogic;
+
+import com.baomidou.mybatisplus.annotation.*;
 import org.jeecg.common.constant.ProvinceCityArea;
 import org.jeecg.common.util.SpringContextUtils;
 import lombok.Data;
@@ -156,4 +154,36 @@ public class PurchaseOrder implements Serializable {
 	/**所属部门*/
     @Schema(description = "所属部门")
     private String sysOrgCode;
+
+    /* ==================== 采购执行跟踪扩展字段（不存库） ==================== */
+
+    /** 采购数量合计 */
+    @TableField(exist = false)
+    @Schema(description = "采购数量合计")
+    private java.math.BigDecimal totalOrderQty;
+
+    /** 已入库数量合计 */
+    @TableField(exist = false)
+    @Schema(description = "已入库数量合计")
+    private java.math.BigDecimal totalReceivedQty;
+
+    /** 在途申请数量合计 */
+    @TableField(exist = false)
+    @Schema(description = "在途申请数量合计")
+    private java.math.BigDecimal totalAppliedQty;
+
+    /** 到货率(%) */
+    @TableField(exist = false)
+    @Schema(description = "到货率(%)")
+    private java.math.BigDecimal arrivalRate;
+
+    /** 是否超期 0-否 1-是 */
+    @TableField(exist = false)
+    @Schema(description = "是否超期")
+    private String isOverdue;
+
+    /** 超期天数 */
+    @TableField(exist = false)
+    @Schema(description = "超期天数")
+    private Integer overdueDays;
 }

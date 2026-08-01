@@ -15,6 +15,10 @@ enum Api {
 
   approve = '/scm/purchaseOrder/approve',
   exchangeRate ='/mdm/currency/currency/getRateByCode',
+
+  // ===== 采购执行跟踪新增接口 =====
+  trackingList = '/scm/purchaseOrder/trackingList',
+  trackingDetail = '/scm/purchaseOrder/trackingDetail',
 }
 /**
  * 导出api
@@ -80,3 +84,16 @@ export const approve = (params) => defHttp.post({url: Api.approve, params});
 /** 查询币种最新汇率 TODO: 按你们汇率表实际接口路径调整
  * exchangeRate ='/mdm/currency/currency/getRateByCode', */
 export const getLatestRate = (params) => defHttp.get({url: Api.exchangeRate, params});
+
+
+/* ==================== 采购执行跟踪新增接口 ==================== */
+
+/**
+ * 采购执行跟踪-分页列表
+ */
+export const trackingList = (params) => defHttp.get({ url: Api.trackingList, params });
+
+/**
+ * 采购执行跟踪-详情
+ */
+export const trackingDetail = (id) => defHttp.get({ url: Api.trackingDetail, params: { id } });

@@ -156,4 +156,30 @@ public class PurchaseOrderPage {
 	@Schema(description = "采购明细")
 	private List<PurchaseOrderDetail> purchaseOrderDetailList;
 
+	/* ==================== 采购执行跟踪扩展字段 ==================== */
+
+	/** 采购数量合计 */
+	@Schema(description = "采购数量合计")
+	private java.math.BigDecimal totalOrderQty;
+
+	/** 已入库数量合计 */
+	@Schema(description = "已入库数量合计")
+	private java.math.BigDecimal totalReceivedQty;
+
+	/** 在途申请数量合计 */
+	@Schema(description = "在途申请数量合计")
+	private java.math.BigDecimal totalAppliedQty;
+
+	/** 到货率(%) */
+	@Schema(description = "到货率(%)")
+	private java.math.BigDecimal arrivalRate;
+
+	/** 是否超期 0-否 1-是 */
+	@Schema(description = "是否超期")
+	private String isOverdue;
+
+	/** 超期天数 */
+	@Schema(description = "超期天数")
+	private Integer overdueDays;
+
 }

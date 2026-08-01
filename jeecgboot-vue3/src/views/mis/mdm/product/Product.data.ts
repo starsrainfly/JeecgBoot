@@ -41,6 +41,11 @@ export const columns: BasicColumn[] = [
     width: 120
   },
   {
+    title:'配方版本',
+    align:'center',
+    dataIndex:'recipeVersion'
+  },
+  {
     title: '产品颜色',
     align: 'center',
     sorter: true,

@@ -13,6 +13,7 @@ enum Api {
   loadTreeData = '/product/product/loadTreeRoot',
   getChildList = '/product/product/childList',
   getChildListBatch = '/product/product/getChildListBatch',
+  getRecipeById = '/Recipe/recipe/queryById',   // ← 新增
 }
 
 /**
@@ -83,3 +84,10 @@ export const getChildList = (params) =>
  */
 export const getChildListBatch = (params) =>
   defHttp.get({url: Api.getChildListBatch, params},{isTransformResponse:false});
+
+/**
+ * 根据ID查询配方主表
+ * @param params
+ */
+export const getRecipeById = (params) =>
+  defHttp.get({url: Api.getRecipeById, params});

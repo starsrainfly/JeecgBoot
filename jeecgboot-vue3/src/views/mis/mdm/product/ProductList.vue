@@ -75,6 +75,7 @@
           </template>
         </BasicTable>
         <ProductModal @register="registerModal" @success="handleSuccess" />
+        <RecipeModal @register="registerRecipeModal" />
       </a-col>
     </a-row>
   </div>
@@ -88,7 +89,15 @@
   import { Icon } from '/@/components/Icon';
   import ProductModal from './components/ProductModal.vue';
   import { columns } from './Product.data';
-  import { list, deleteProduct, batchDeleteProduct, getExportUrl, getImportUrl, getChildList } from './Product.api';
+  import { list, deleteProduct, batchDeleteProduct, getExportUrl, getImportUrl, getChildList, getRecipeById } from './Product.api';
+  import { useMessage } from '/@/hooks/web/useMessage';
+  import RecipeModal from '@/views/mis/base/recipe/components/RecipeModal.vue';
+
+  const { createMessage } = useMessage();
+
+  // 注册配方查看弹窗（复用 RecipeModal）
+  const [registerRecipeModal, { openModal: openRecipeModal }] = useModal();
+
 
   const queryParam = reactive<any>({});
   const [registerModal, { openModal }] = useModal();
@@ -463,7 +472,14 @@
   function getTableAction(record) {
     const actions: any[] = [
       { label: '编辑', onClick: handleEdit.bind(null, record), auth: 'product:mis_product:edit' },
+
       { label: '添加下级', onClick: handleAddSub.bind(null, record), auth: 'product:mis_product:add' },
+      {
+        label: '查看配方',
+        onClick: handleViewRecipe.bind(null, record),
+        ifShow: () => !!record.recipeId,   // 没有配方时不显示
+        auth: 'product:mis_product:queryRecipe',
+      },
     ];
     if (record.hasChild === '1' && !isGlobalSearch.value) {
       actions.unshift({ label: '进入下级', onClick: handleEnterCategory.bind(null, record) });
@@ -474,12 +490,40 @@
   function getDropDownAction(record) {
     return [
       { label: '详情', onClick: handleDetail.bind(null, record) },
+
       {
         label: '删除',
         popConfirm: { title: '确定删除吗?', confirm: handleDelete.bind(null, record), placement: 'topLeft' },
         auth: 'product:mis_product:delete',
       },
     ];
+  }
+
+  /**
+   * 查看配方明细（复用 RecipeModal，只读模式）
+   */
+  async function handleViewRecipe(record) {
+    if (!record.recipeId) {
+      createMessage.warning('该产品未关联配方');
+      return;
+    }
+    try {
+      const res = await getRecipeById({ id: record.recipeId });
+      const recipeData = res?.result || res;
+      if (!recipeData || !recipeData.id) {
+        createMessage.warning('未找到该配方信息');
+        return;
+      }
+      // 打开配方弹窗：只读模式（showFooter: false 会自动禁用表单）
+      openRecipeModal(true, {
+        record: recipeData,
+        isUpdate: true,
+        showFooter: false,
+      });
+    } catch (error) {
+      console.error('加载配方信息失败', error);
+      createMessage.error('加载配方信息失败');
+    }
   }
 </script>
 

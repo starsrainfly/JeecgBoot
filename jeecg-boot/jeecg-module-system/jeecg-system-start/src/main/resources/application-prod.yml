@@ -141,7 +141,7 @@ spring:
           slow-sql-millis: 5000
       datasource:
         master:
-          #118.89.34.102
+          #118.89.34.102   127.0.0.1
           url: jdbc:mysql://127.0.0.1:3306/jeecg-boot?characterEncoding=UTF-8&useUnicode=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
           username: root
           password: QiFu@Mzh

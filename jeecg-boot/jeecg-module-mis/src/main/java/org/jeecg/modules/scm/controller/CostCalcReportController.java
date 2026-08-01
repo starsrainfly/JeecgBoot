@@ -38,6 +38,13 @@ public class CostCalcReportController {
         return Result.OK(costCalcReportService.queryPageList(params, pageNo, pageSize));
     }
 
+    @Operation(summary = "成本核算看板")
+    @GetMapping(value = "/dashboard")
+    public Result<?> dashboard(@RequestParam Map<String, String> params) {
+        return Result.OK(costCalcReportService.getDashboard(params));
+    }
+
+
     @Operation(summary = "导出")
     @GetMapping(value = "/exportXls")
     public ModelAndView exportXls(HttpServletRequest request, @RequestParam Map<String, String> params) {

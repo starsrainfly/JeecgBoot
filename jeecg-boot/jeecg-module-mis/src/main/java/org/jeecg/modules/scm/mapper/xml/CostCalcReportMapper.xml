@@ -99,4 +99,140 @@
         </if>
         ORDER BY c.calc_date DESC, c.product_code
     </select>
+
+    <!-- ========== 看板统计 ========== -->
+
+    <select id="selectCalcProductCount" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT product_id)
+        FROM mis_cost_calc
+        WHERE del_flag = '0'
+        <if test="params.startDate != null and params.startDate != ''">
+            AND calc_date &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND calc_date &lt;= #{params.endDate}
+        </if>
+    </select>
+
+    <select id="selectTotalProductCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM mis_product WHERE del_flag = '0'
+    </select>
+
+    <select id="selectTotalCostAmount" resultType="java.math.BigDecimal">
+        SELECT SUM(total_cost_latest)
+        FROM mis_cost_calc
+        WHERE del_flag = '0'
+        <if test="params.startDate != null and params.startDate != ''">
+            AND calc_date &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND calc_date &lt;= #{params.endDate}
+        </if>
+    </select>
+
+    <select id="selectRiseCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM (
+        SELECT c.id
+        FROM mis_cost_calc c
+        LEFT JOIN mis_cost_calc last_c ON last_c.id = (
+        SELECT c2.id FROM mis_cost_calc c2
+        WHERE c2.product_id = c.product_id AND c2.del_flag = '0'
+        AND (c2.calc_date &lt; c.calc_date OR (c2.calc_date = c.calc_date AND c2.create_time &lt; c.create_time))
+        ORDER BY c2.calc_date DESC, c2.create_time DESC LIMIT 1
+        )
+        WHERE c.del_flag = '0'
+        <if test="params.startDate != null and params.startDate != ''">
+            AND c.calc_date &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND c.calc_date &lt;= #{params.endDate}
+        </if>
+        AND c.total_cost_latest &gt; IFNULL(last_c.total_cost_latest, 0)
+        ) t
+    </select>
+
+    <select id="selectAbnormalCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM (
+        SELECT c.id,
+        CASE
+        WHEN IFNULL(last_c.total_cost_latest, 0) = 0 THEN NULL
+        ELSE ROUND((c.total_cost_latest - last_c.total_cost_latest) / last_c.total_cost_latest * 100, 2)
+        END as changeRate
+        FROM mis_cost_calc c
+        LEFT JOIN mis_cost_calc last_c ON last_c.id = (
+        SELECT c2.id FROM mis_cost_calc c2
+        WHERE c2.product_id = c.product_id AND c2.del_flag = '0'
+        AND (c2.calc_date &lt; c.calc_date OR (c2.calc_date = c.calc_date AND c2.create_time &lt; c.create_time))
+        ORDER BY c2.calc_date DESC, c2.create_time DESC LIMIT 1
+        )
+        WHERE c.del_flag = '0'
+        <if test="params.startDate != null and params.startDate != ''">
+            AND c.calc_date &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND c.calc_date &lt;= #{params.endDate}
+        </if>
+        HAVING ABS(IFNULL(changeRate, 0)) &gt; 5
+        ) t
+    </select>
+
+    <select id="selectTrendData" resultType="java.util.HashMap">
+        SELECT
+            DATE_FORMAT(calc_date, '%Y-%m') as month,
+            ROUND(SUM(total_cost_latest), 4) as totalCost
+        FROM mis_cost_calc
+        WHERE del_flag = '0'
+          AND calc_date &gt;= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+        GROUP BY DATE_FORMAT(calc_date, '%Y-%m')
+        ORDER BY month
+    </select>
+
+    <select id="selectTop10HighCost" resultType="org.jeecg.modules.scm.vo.CostCalcReportVo">
+        SELECT
+        c.id, c.product_id as productId, c.product_code as productCode,
+        c.product_name as productName, c.product_spec as productSpec,
+        c.product_color as productColor, c.calc_date as calcDate,
+        c.total_cost_latest as totalCostLatest, c.total_cost_avg as totalCostAvg
+        FROM mis_cost_calc c
+        WHERE c.del_flag = '0'
+        <if test="params.startDate != null and params.startDate != ''">
+            AND c.calc_date &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND c.calc_date &lt;= #{params.endDate}
+        </if>
+        ORDER BY c.total_cost_latest DESC
+        LIMIT 10
+    </select>
+
+    <select id="selectTop10Rise" resultType="org.jeecg.modules.scm.vo.CostCalcReportVo">
+        SELECT
+        c.id, c.product_id as productId, c.product_code as productCode,
+        c.product_name as productName, c.product_spec as productSpec,
+        c.product_color as productColor, c.calc_date as calcDate,
+        c.total_cost_latest as totalCostLatest, c.total_cost_avg as totalCostAvg,
+        last_c.total_cost_latest as lastPeriodCost,
+        ROUND(c.total_cost_latest - IFNULL(last_c.total_cost_latest, 0), 4) as changeAmount,
+        CASE
+        WHEN IFNULL(last_c.total_cost_latest, 0) = 0 THEN NULL
+        ELSE ROUND((c.total_cost_latest - last_c.total_cost_latest) / last_c.total_cost_latest * 100, 2)
+        END as changeRate
+        FROM mis_cost_calc c
+        LEFT JOIN mis_cost_calc last_c ON last_c.id = (
+        SELECT c2.id FROM mis_cost_calc c2
+        WHERE c2.product_id = c.product_id AND c2.del_flag = '0'
+        AND (c2.calc_date &lt; c.calc_date OR (c2.calc_date = c.calc_date AND c2.create_time &lt; c.create_time))
+        ORDER BY c2.calc_date DESC, c2.create_time DESC LIMIT 1
+        )
+        WHERE c.del_flag = '0'
+        <if test="params.startDate != null and params.startDate != ''">
+            AND c.calc_date &gt;= #{params.startDate}
+        </if>
+        <if test="params.endDate != null and params.endDate != ''">
+            AND c.calc_date &lt;= #{params.endDate}
+        </if>
+        HAVING changeRate IS NOT NULL
+        ORDER BY changeRate DESC
+        LIMIT 10
+    </select>
 </mapper>

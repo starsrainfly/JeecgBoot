@@ -422,7 +422,7 @@ export const stockInDetailColumns: JVxeColumn[] = [
       key: 'unit',
       type: JVxeTypes.select,
       options:[],
-      dictCode:"mis_unit where del_flag='0',unit,unit",
+      dictCode:"mis_unit where del_flag='0' and status='1',unit,unit",
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:"kg",

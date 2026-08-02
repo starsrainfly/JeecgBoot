@@ -491,7 +491,7 @@ export const stockInDetailFormSchema: FormSchema[] = [
     defaultValue: "kg",
     component: 'JDictSelectTag',
     componentProps:{
-        dictCode:"mis_unit where del_flag='0',unit,unit"
+        dictCode:"mis_unit where del_flag='0' and status='1',unit,unit"
      },
     dynamicRules: ({model,schema}) => {
           return [

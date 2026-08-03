@@ -190,24 +190,14 @@
 
   // ===== 右侧物料列表 =====
   async function loadTable(pageNo = 1) {
+
+    if (isSearchMode.value) {
+      return searchMaterial(pageNo);   // ← 搜索直接调 searchMaterial
+    }
+
     loading.value = true;
     try {
-      if (isSearchMode.value || !currentNode.value) {
-        // 全局查询（未选分类时默认列出全部叶子物料）：rootList 的 hasQuery 分支
-        const params: any = {
-          pageNo,
-          pageSize: pagination.pageSize,
-          hasQuery: 'true',
-          hasChild: '0', // 只查叶子物料
-          status: '1', // 与原 online 报表口径一致
-        };
-        if (queryParam.materialCode) params.materialCode = queryParam.materialCode;
-        if (queryParam.materialName) params.materialName = queryParam.materialName;
-        const res = await list(params);
-        dataSource.value = res?.records || [];
-        pagination.total = res?.total || 0;
-        pagination.current = pageNo;
-      } else {
+
         // 选中树节点：叶子显示自身；分类显示其直接子级中的叶子物料（childList 不分页，前端分页）
         const node = currentNode.value;
         let records: any[];
@@ -222,7 +212,34 @@
         pagination.total = records.length;
         pagination.current = pageNo;
         dataSource.value = records.slice((pageNo - 1) * pagination.pageSize, pageNo * pagination.pageSize);
-      }
+
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // ===== 新增：搜索专用方法（调用 childList 全表查询） =====
+  async function searchMaterial(pageNo = 1) {
+    loading.value = true;
+    try {
+      const params: any = {
+        hasChild: '0',   // 只查叶子
+        status: '1',     // 启用的
+      };
+      if (queryParam.materialCode) params.materialCode = queryParam.materialCode;
+      if (queryParam.materialName) params.materialName = queryParam.materialName;
+
+      // childList 是全表 QueryWrapper 查询，不限 pid='0'
+      const res = await getChildList(params);
+      let records = res?.records ? res.records : res || [];
+
+      // 兜底过滤：确保只显示叶子 + 状态正常
+      records = records.filter((r) => r.hasChild !== '1' && (!r.status || r.status === '1'));
+
+      // 前端分页（childList 后端返回的是全量，这里自己做分页）
+      pagination.total = records.length;
+      pagination.current = pageNo;
+      dataSource.value = records.slice((pageNo - 1) * pagination.pageSize, pageNo * pagination.pageSize);
     } finally {
       loading.value = false;
     }
@@ -245,7 +262,7 @@
 
   function handleTableChange(pag: any) {
     pagination.pageSize = pag.pageSize;
-    loadTable(pag.current);
+   loadTable(pag.current);
   }
 
   function onSelectChange(keys: any[]) {

@@ -71,7 +71,8 @@
   import {saveOrUpdate,recipeDetailList} from '../Recipe.api';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { SearchOutlined } from '@ant-design/icons-vue';
-  import MaterialSelectModal from './MaterialSelectModal.vue';
+  //import MaterialSelectModal from './MaterialSelectModal.vue';
+  import MaterialSelectModal from '/@/components/MaterialSelect';
 
   const { createMessage } = useMessage();
   const emit = defineEmits(['register', 'success']);
@@ -238,16 +239,48 @@
   }
 
   function classifyIntoFormData(allValues: any) {
+    // let main = Object.assign({}, allValues.formValue);
+    // const tableData = allValues.tablesValue[0].tableData || [];
+    // let total = 0;
+    // tableData.forEach((row: any) => {
+    //   total += parseFloat(row.proportion) || 0;
+    // });
+    // main.proportionTotal = (Math.round(total * 100) / 100).toString();
+    // return {
+    //   ...main,
+    //   recipeDetailList: tableData,
+    // };
+
     let main = Object.assign({}, allValues.formValue);
     const tableData = allValues.tablesValue[0].tableData || [];
+
+    // 处理子表 ID：新增时全部清空；编辑时只保留真实数据库 ID
+    const cleanTableData = tableData.map((row: any) => {
+      const newRow = { ...row };
+      const rowId = newRow.id;
+
+      if (!unref(isUpdate)) {
+        // 新增模式：所有子表 ID 都清空，由后端生成雪花 ID
+        delete newRow.id;
+      } else {
+        // 编辑模式：只保留真实数据库 ID，清空前端临时 ID（row_xxx）和空值
+        if (!rowId || String(rowId).trim() === '' || String(rowId).startsWith('row_')) {
+          delete newRow.id;
+        }
+      }
+      return newRow;
+    });
+
+    // 计算配比总和
     let total = 0;
-    tableData.forEach((row: any) => {
+    cleanTableData.forEach((row: any) => {
       total += parseFloat(row.proportion) || 0;
     });
     main.proportionTotal = (Math.round(total * 100) / 100).toString();
+
     return {
       ...main,
-      recipeDetailList: tableData,
+      recipeDetailList: cleanTableData,
     };
   }
 

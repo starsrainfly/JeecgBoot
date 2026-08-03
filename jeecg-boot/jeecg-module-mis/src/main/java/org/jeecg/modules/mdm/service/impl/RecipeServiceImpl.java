@@ -38,6 +38,9 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
 			for(RecipeDetail entity:recipeDetailList) {
 				//外键设置
 				entity.setRecipeId(recipe.getId());
+				// 兜底：清理前端临时 ID，防止 DuplicateKeyException
+				entity.setId(null);
+
 				recipeDetailMapper.insert(entity);
 			}
 		}
@@ -56,6 +59,7 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
 			for(RecipeDetail entity:recipeDetailList) {
 				//外键设置
 				entity.setRecipeId(recipe.getId());
+				entity.setId(null); // ← 同样清空，重新插入
 				recipeDetailMapper.insert(entity);
 			}
 		}

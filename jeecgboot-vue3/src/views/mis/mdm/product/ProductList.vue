@@ -169,22 +169,29 @@
    */
   async function loadChildList(params) {
     const node = currentNode.value;
-    const global = params.globalSearch === true;
+    const global = params.globalSearch === true || params.globalSearch === 'true';
     isGlobalSearch.value = global;
 
     // ===== 全局搜索模式 =====
     if (global) {
-      const res = await list({
-        pageNo: params.pageNo,
-        pageSize: params.pageSize,
-        productCode: params.productCode,
-        productName: params.productName,
-        productSpec: params.productSpec,
-        globalSearch: true,
-      });
+      // 用 getChildList 全表查询，避免 list 只查 pid='0'
+      const searchParams: any = {
+        hasChild: '0',   // 只查产品（叶子节点）
+      };
+      if (params.productCode) searchParams.productCode = params.productCode;
+      if (params.productName) searchParams.productName = params.productName;
+      if (params.productSpec) searchParams.productSpec = params.productSpec;
+
+      const res = await getChildList(searchParams);
+      let records = res?.records ? res.records : res || [];
+      // 兜底过滤：确保只显示叶子
+      records = records.filter((r) => r.hasChild !== '1');
+
+      const pageNo = params.pageNo || 1;
+      const pageSize = params.pageSize || 10;
       return {
-        records: res?.records || [],
-        total: res?.total || 0,
+        records: records.slice((pageNo - 1) * pageSize, pageNo * pageSize),
+        total: records.length,
       };
     }
 

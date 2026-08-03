@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.system.query.QueryGenerator;
 import org.jeecg.common.util.oConvertUtils;
@@ -160,7 +162,23 @@ public class ProductController extends JeecgController<Product, IProductService>
 	@Operation(summary="产品信息-获取子数据")
 	@GetMapping(value = "/childList")
 	public Result<IPage<Product>> queryPageList(Product product,HttpServletRequest req) {
+		// 1. 暂存查询值，并从对象中清空，避免 initQueryWrapper 生成 EQ 条件
+		String productName = product.getProductName();
+		String productSpec = product.getProductSpec();
+		product.setProductName(null);
+		product.setProductSpec(null);
+
 		QueryWrapper<Product> queryWrapper = QueryGenerator.initQueryWrapper(product, req.getParameterMap());
+
+		// 3. 手动补充模糊查询
+		if (StringUtils.isNotBlank(productName)) {
+			queryWrapper.like("product_name", productName);
+		}
+		if (StringUtils.isNotBlank(productSpec)) {
+			queryWrapper.like("product_spec", productSpec);
+		}
+
+
 		List<Product> list = productService.list(queryWrapper);
 		IPage<Product> pageList = new Page<>(1, 10, list.size());
         pageList.setRecords(list);

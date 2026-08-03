@@ -258,7 +258,7 @@ export const formSchema: FormSchema[] = [
     field: 'purchaserId',
     component: 'JDictSelectTag',
     componentProps:{
-        dictCode:"sys_user,realname,id",
+        dictCode:"sys_user where del_flag='0' and status='1',realname,id",
      },
     dynamicRules: ({model,schema}) => {
           return [
@@ -358,18 +358,20 @@ export const stockInDetailColumns: JVxeColumn[] = [
     {
       title: '编码',
       key: 'goodsCode',
-      type: JVxeTypes.popup,
-      popupCode:"mdm_material_select",
-      fieldConfig: [
-        { source: 'id', target: 'goodsId' },
-        { source: 'material_code', target: 'goodsCode' },
-        { source: 'material_name', target: 'goodsName' },
-        { source: 'material_spec', target: 'goodsSpec' },
-        { source: 'material_type', target: 'goodsType' },
-      ],
+      type: JVxeTypes.slot,
+      slotName: 'goodsCode',
+      // type: JVxeTypes.popup,
+      // popupCode:"mdm_material_select",
+      // fieldConfig: [
+      //   { source: 'id', target: 'goodsId' },
+      //   { source: 'material_code', target: 'goodsCode' },
+      //   { source: 'material_name', target: 'goodsName' },
+      //   { source: 'material_spec', target: 'goodsSpec' },
+      //   { source: 'material_type', target: 'goodsType' },
+      // ],
 
       width:"200px",
-      placeholder: '请输入${title}',
+      placeholder: '请选择${title}',
       defaultValue:'',
         validateRules: [
           { required: true, message: '${title}不能为空' },
@@ -396,7 +398,7 @@ export const stockInDetailColumns: JVxeColumn[] = [
       key: 'unit',
       type: JVxeTypes.select,
       options:[],
-      dictCode:"mis_unit where del_flag='0',unit,unit",
+      dictCode:"mis_unit where status='1' and del_flag='0',unit,unit",
       width:"200px",
       placeholder: '请输入${title}',
       defaultValue:"kg",

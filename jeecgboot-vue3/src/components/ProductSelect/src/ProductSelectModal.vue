@@ -2,25 +2,32 @@
   <BasicModal
     v-bind="$attrs"
     @register="registerModal"
-    title="选择物料"
+    title="选择产品"
     :width="1000"
     destroyOnClose
     okText="确定"
     @ok="handleOk"
   >
-    <div class="material-select">
+    <div class="product-select">
       <!-- 顶部查询条件 -->
       <div class="search-bar">
         <a-input
-          v-model:value="queryParam.materialCode"
-          placeholder="物料编码"
+          v-model:value="queryParam.productCode"
+          placeholder="产品编码"
           allowClear
           class="search-input"
           @pressEnter="handleSearch"
         />
         <a-input
-          v-model:value="queryParam.materialName"
-          placeholder="物料名称"
+          v-model:value="queryParam.productName"
+          placeholder="产品名称"
+          allowClear
+          class="search-input"
+          @pressEnter="handleSearch"
+        />
+        <a-input
+          v-model:value="queryParam.productSpec"
+          placeholder="型号规格"
           allowClear
           class="search-input"
           @pressEnter="handleSearch"
@@ -31,7 +38,7 @@
       </div>
 
       <div class="select-body">
-        <!-- 左侧：物料分类树 -->
+        <!-- 左侧：产品分类树 -->
         <div class="left-tree">
           <a-spin :spinning="treeLoading">
             <a-tree
@@ -55,7 +62,7 @@
           </a-spin>
         </div>
 
-        <!-- 右侧：物料列表（叶子） -->
+        <!-- 右侧：产品列表（叶子） -->
         <div class="right-list">
           <a-table
             rowKey="id"
@@ -80,15 +87,29 @@
   import { BasicModal, useModalInner } from '/@/components/Modal';
   import { Icon } from '/@/components/Icon';
   import { useMessage } from '/@/hooks/web/useMessage';
-  import { list, getChildList } from '/@/views/mis/mdm/material/Material.api';
+  import { defHttp } from '/@/utils/http/axios';
 
   const { createMessage } = useMessage();
   const emit = defineEmits(['register', 'select']);
 
+  // ===== 直接定义接口（避免外部 API 文件路径问题） =====
+  const API = {
+    rootList: '/product/product/rootList',
+    childList: '/product/product/childList',
+  };
+
+  async function fetchRootList(params: any) {
+    return defHttp.get({ url: API.rootList, params });
+  }
+  async function fetchChildList(params: any) {
+    return defHttp.get({ url: API.childList, params });
+  }
+
   // ===== 顶部查询 =====
   const queryParam = reactive({
-    materialCode: '',
-    materialName: '',
+    productCode: '',
+    productName: '',
+    productSpec: '',
   });
 
   // ===== 左侧树 =====
@@ -105,9 +126,12 @@
   const selectedRow = ref<any>(null);
 
   const tableColumns = [
-    { title: '物料编码', dataIndex: 'materialCode', width: 140 },
-    { title: '物料名称', dataIndex: 'materialName', width: 180 },
-    { title: '型号规格', dataIndex: 'materialSpec', width: 150 },
+    { title: '产品编码', dataIndex: 'productCode', width: 140 },
+    { title: '产品名称', dataIndex: 'productName', width: 180 },
+    { title: '型号规格', dataIndex: 'productSpec', width: 150 },
+    { title: '颜色', dataIndex: 'productColor', width: 100 },
+    { title: '配方编码', dataIndex: 'recipeCode', width: 120 },
+    { title: '配方版本', dataIndex: 'recipeVersion', width: 120 },
     { title: '描述', dataIndex: 'description', ellipsis: true },
   ];
 
@@ -118,25 +142,23 @@
     showTotal: (total: number) => `共 ${total} 条`,
   });
 
-  const isSearchMode = computed(() => !!(queryParam.materialCode || queryParam.materialName));
+  const isSearchMode = computed(() => !!(queryParam.productCode || queryParam.productName || queryParam.productSpec));
 
-  // ===== 弹窗打开时初始化（串行执行，避免竞态） =====
+  // ===== 弹窗打开时初始化 =====
   const [registerModal, { closeModal }] = useModalInner(async () => {
-    console.log('[MaterialSelectModal] useModalInner callback triggered');
     resetState();
-    // 先加载树，再加载表格，避免 loadTable 在 currentNode=null 时与 loadTree 竞态
     await loadTree();
     await loadTable(1);
   });
 
   function resetState() {
-    queryParam.materialCode = '';
-    queryParam.materialName = '';
+    queryParam.productCode = '';
+    queryParam.productName = '';
+    queryParam.productSpec = '';
     selectedTreeKeys.value = [];
     expandedKeys.value = [];
     currentNode.value = null;
     clearSelection();
-    // 注意：treeData 不清空，保留上次数据直到 loadTree 重新赋值
   }
 
   function clearSelection() {
@@ -146,41 +168,33 @@
 
   // ===== 左侧树 =====
   function buildTreeNodes(records: any[]) {
-    return (records || []).map((item) => ({
-      ...item,
-      title: `${item.materialCode || ''} ${item.materialName || ''}`.trim(),
-      isLeaf: item.hasChild !== '1',
-    }));
+    return (records || [])
+      .filter((item) => !item.pid || item.pid === '0' || item.hasChild === '1')
+      .map((item) => ({
+        ...item,
+        title: `${item.productCode || ''} ${item.productName || ''}`.trim(),
+        isLeaf: item.hasChild !== '1',
+      }));
   }
 
   async function loadTree() {
     treeLoading.value = true;
     try {
-      console.log('[MaterialSelectModal] loadTree start');
-      const res = await list({ pageNo: 1, pageSize: 500 });
+      const res = await fetchRootList({ pageNo: 1, pageSize: 500 });
       let records = res?.records ? res.records : res || [];
-      console.log('[MaterialSelectModal] loadTree list records count:', records.length);
-
-      // 兜底：如果 rootList 返回空，尝试用 childList 加载 pid='0' 的数据
       if (!records || records.length === 0) {
-        console.log('[MaterialSelectModal] rootList empty, trying childList with pid=0');
         try {
-          const res2 = await getChildList({ pid: '0', pageNo: 1, pageSize: 500 });
+          const res2 = await fetchChildList({ pid: '0', pageNo: 1, pageSize: 500 });
           records = res2?.records ? res2.records : res2 || [];
-          console.log('[MaterialSelectModal] loadTree childList records count:', records.length);
         } catch (e2) {
-          console.warn('[MaterialSelectModal] childList fallback failed:', e2);
+          console.warn('[ProductSelectModal] childList fallback failed:', e2);
         }
       }
-
       treeData.value = buildTreeNodes(records);
-      console.log('[MaterialSelectModal] treeData assigned, count:', treeData.value.length);
-
-      // 强制 DOM 刷新
       await nextTick();
     } catch (error) {
-      console.error('[MaterialSelectModal] loadTree error:', error);
-      createMessage.error('加载物料分类失败：' + (error.message || '未知错误'));
+      console.error('[ProductSelectModal] loadTree error:', error);
+      createMessage.error('加载产品分类失败：' + (error.message || '未知错误'));
     } finally {
       treeLoading.value = false;
     }
@@ -192,13 +206,13 @@
         resolve();
         return;
       }
-      getChildList({ pid: treeNode.dataRef.id }).then((res) => {
+      fetchChildList({ pid: treeNode.dataRef.id }).then((res) => {
         const records = res?.records ? res.records : res || [];
         treeNode.dataRef.children = buildTreeNodes(records);
         treeData.value = [...treeData.value];
         resolve();
       }).catch((err) => {
-        console.error('[MaterialSelectModal] onLoadTreeData error:', err);
+        console.error('[ProductSelectModal] onLoadTreeData error:', err);
         resolve();
       });
     });
@@ -215,10 +229,30 @@
     loadTable(1);
   }
 
-  // ===== 右侧物料列表 =====
+  // ===== 关键修复：递归加载分类下的所有后代叶子产品 =====
+  async function loadAllLeafProducts(pid: string): Promise<any[]> {
+    const res = await fetchChildList({ pid });
+    const records = (res?.records ? res.records : res || []) as any[];
+
+    const leaves = records.filter((r) => r.hasChild !== '1');
+    const categories = records.filter((r) => r.hasChild === '1');
+
+    if (categories.length === 0) {
+      return leaves;
+    }
+
+    // 并行递归加载所有子分类下的叶子（同级分类并行，提升效率）
+    const childResults = await Promise.all(
+      categories.map((c) => loadAllLeafProducts(c.id))
+    );
+
+    return leaves.concat(...childResults);
+  }
+
+  // ===== 右侧产品列表 =====
   async function loadTable(pageNo = 1) {
     if (isSearchMode.value) {
-      return searchMaterial(pageNo);
+      return searchProduct(pageNo);
     }
 
     loading.value = true;
@@ -227,14 +261,12 @@
       let records: any[] = [];
 
       if (!node) {
-        // 未选中节点时，加载所有叶子物料（全局浏览模式）
-        console.log('[MaterialSelectModal] loadTable: no node selected, loading all leaf materials');
-        const res = await getChildList({ hasChild: '0' });
+        // 未选中节点：加载所有叶子产品（全局浏览）
+        const res = await fetchChildList({ hasChild: '0' });
         records = (res?.records ? res.records : res || []).filter((r: any) => r.hasChild !== '1');
       } else if (node.hasChild === '1') {
-        // 分类节点：加载其直接子级中的叶子物料
-        const res = await getChildList({ pid: node.id });
-        records = (res?.records ? res.records : res || []).filter((r: any) => r.hasChild !== '1');
+        // 关键修复：分类节点递归加载所有后代叶子，而非仅直接子级
+        records = await loadAllLeafProducts(node.id);
       } else {
         // 叶子节点：仅显示自身
         records = [node];
@@ -245,26 +277,26 @@
       pagination.total = records.length;
       pagination.current = pageNo;
       dataSource.value = records.slice((pageNo - 1) * pagination.pageSize, pageNo * pagination.pageSize);
-      console.log('[MaterialSelectModal] loadTable records count:', records.length);
     } catch (error) {
-      console.error('[MaterialSelectModal] loadTable error:', error);
-      createMessage.error('加载物料列表失败：' + (error.message || '未知错误'));
+      console.error('[ProductSelectModal] loadTable error:', error);
+      createMessage.error('加载产品列表失败：' + (error.message || '未知错误'));
     } finally {
       loading.value = false;
     }
   }
 
-  async function searchMaterial(pageNo = 1) {
+  async function searchProduct(pageNo = 1) {
     loading.value = true;
     try {
       const params: any = {
         hasChild: '0',
         status: '1',
       };
-      if (queryParam.materialCode) params.materialCode = queryParam.materialCode;
-      if (queryParam.materialName) params.materialName = queryParam.materialName;
+      if (queryParam.productCode) params.productCode = queryParam.productCode;
+      if (queryParam.productName) params.productName = queryParam.productName;
+      if (queryParam.productSpec) params.productSpec = queryParam.productSpec;
 
-      const res = await getChildList(params);
+      const res = await fetchChildList(params);
       let records = res?.records ? res.records : res || [];
       records = records.filter((r: any) => r.hasChild !== '1' && (!r.status || r.status === '1'));
 
@@ -283,8 +315,9 @@
   }
 
   function handleReset() {
-    queryParam.materialCode = '';
-    queryParam.materialName = '';
+    queryParam.productCode = '';
+    queryParam.productName = '';
+    queryParam.productSpec = '';
     selectedTreeKeys.value = [];
     currentNode.value = null;
     clearSelection();
@@ -313,28 +346,33 @@
 
   function handleOk() {
     if (!selectedRow.value) {
-      createMessage.warning('请先选择一条物料（双击行可直接选择）');
+      createMessage.warning('请先选择一条产品（双击行可直接选择）');
       return;
     }
     doSelect(selectedRow.value);
   }
 
   function doSelect(record: any) {
-    console.log('[MaterialSelectModal] doSelect record:', record);
+    console.log('[ProductSelectModal] doSelect record:', record);
     emit('select', record);
     closeModal();
   }
 </script>
 
 <style lang="less" scoped>
-  .material-select {
+  .product-select {
     .search-bar {
       display: flex;
       align-items: center;
       gap: 8px;
       margin-bottom: 12px;
-      .search-input { width: 200px; }
-      .search-tip { color: #999; font-size: 12px; }
+      .search-input {
+        width: 180px;
+      }
+      .search-tip {
+        color: #999;
+        font-size: 12px;
+      }
     }
     .select-body {
       display: flex;

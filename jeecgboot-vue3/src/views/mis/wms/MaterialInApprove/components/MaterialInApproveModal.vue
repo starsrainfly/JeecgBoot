@@ -18,21 +18,47 @@
           :disabled="formDisabled"
           :toolbar="true"
           @edit-closed="handleValueChange"
-          />
+          >
+          <!-- 物料选择：输入框 + 搜索图标触发弹窗 -->
+          <template #goodsCode="{ row }">
+            <a-input
+              :value="row.goodsCode"
+              readonly
+              :disabled="formDisabled"
+              :placeholder="formDisabled ? '' : '点击选择物料'"
+              :style="{ cursor: formDisabled ? 'default' : 'pointer' }"
+              @click="openMaterialSelect(row)"
+            >
+              <template #suffix>
+                <Icon
+                  v-if="!formDisabled"
+                  icon="ant-design:search-outlined"
+                  style="color: #1890ff; font-size: 14px;"
+                />
+              </template>
+            </a-input>
+          </template>
+        </JVxeTable>
       </a-tab-pane>
     </a-tabs>
+    <!-- 物料选择弹窗（与入库/配料/采购模块共用） -->
+    <MaterialSelectModal @register="registerMaterialModal" @select="handleMaterialSelect" />
   </BasicModal>
 </template>
 
 <script lang="ts" setup>
     import {ref, computed, unref,reactive,nextTick} from 'vue';
-    import {BasicModal, useModalInner} from '/@/components/Modal';
+    import {BasicModal, useModal, useModalInner} from '/@/components/Modal';
     import {BasicForm, useForm} from '/@/components/Form/index';
     import { JVxeTable } from '/@/components/jeecg/JVxeTable'
     import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods.ts'
     import {formSchema,stockInDetailColumns} from '../MaterialInApprove.data';
     import {saveOrUpdate,stockInDetailList,approve} from '../MaterialInApprove.api';
     import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
+
+    import MaterialSelectModal from '/@/components/MaterialSelect';
+    import { Icon } from '/@/components/Icon';
+
     // Emits声明
     const emit = defineEmits(['register','success']);
     const isUpdate = ref(true);
@@ -47,6 +73,11 @@
           dataSource: [],
           columns:stockInDetailColumns
     })
+
+    // ===== 物料选择弹窗注册 =====
+    const [registerMaterialModal, { openModal: openMaterialModal }] = useModal();
+    const currentSelectRow = ref<any>(null);
+    const currentSelectRowIndex = ref<number>(-1);
 
     // ==================== 新增：审核模式下的列配置 ====================
     /**
@@ -376,6 +407,61 @@
             setModalProps({confirmLoading: false});
         }
     }
+
+    // ==================== 物料选择逻辑（与配方/采购保持一致） ====================
+
+    /** 打开物料选择弹窗 */
+    function openMaterialSelect(row: any) {
+      if (formDisabled.value) return;  // ← 详情模式禁用
+      currentSelectRow.value = row;
+      // 获取行索引，用于 setValues 的 rowKey（新增行 id 为空时最可靠）
+      const tableInstance = stockInDetail.value;
+      if (tableInstance) {
+        const allData = tableInstance.getTableData ? tableInstance.getTableData() :
+          (tableInstance.getData ? tableInstance.getData() : stockInDetailTable.dataSource);
+        currentSelectRowIndex.value = allData.indexOf(row);
+      }
+      // ← 关键修复：与配方/采购保持一致，传入 {} 作为弹窗数据
+      openMaterialModal(true, {});
+    }
+
+    /** 物料选择回调 — 回填当前行 */
+    function handleMaterialSelect(record: any) {
+      const row = currentSelectRow.value;
+      if (!row) return;
+      console.log('[StockInModal] handleMaterialSelect record:', record);
+
+      // 1. 直接更新行对象（确保隐藏字段 goodsId 被赋值）
+      row.goodsId   = record.id;
+      row.goodsCode = record.material_code || record.code || record.materialCode;
+      row.goodsName = record.material_name || record.name || record.materialName;
+      row.goodsSpec = record.material_spec || record.spec || record.materialSpec;
+      row.goodsType = record.material_type || record.type || record.materialType;
+
+      // 2. 通过 setValues 刷新可见列（使用索引作为 rowKey）
+      const tableInstance = stockInDetail.value;
+      if (tableInstance && currentSelectRowIndex.value >= 0) {
+        tableInstance.setValues([{
+          rowKey: currentSelectRowIndex.value,
+          values: {
+            goodsCode: row.goodsCode,
+            goodsName: row.goodsName,
+            goodsSpec: row.goodsSpec,
+            goodsType: row.goodsType,
+          }
+        }]);
+      }
+
+      // 3. 兜底：强制刷新 dataSource，确保 JVxeTable 内部状态同步
+      if (currentSelectRowIndex.value >= 0) {
+        stockInDetailTable.dataSource[currentSelectRowIndex.value] = { ...row };
+        stockInDetailTable.dataSource = [...stockInDetailTable.dataSource];
+      }
+
+      currentSelectRow.value = null;
+      currentSelectRowIndex.value = -1;
+    }
+
 </script>
 
 <style lang="less" scoped>

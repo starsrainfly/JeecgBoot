@@ -17,15 +17,31 @@
           :disabled="formDisabled"
           :toolbar="true"
           @edit-closed="handleValueChange"
-          />
+          >
+          <template #goodsCode="{ row }">
+            <a-input
+              :value="row.goodsCode"
+              readonly
+              :disabled="formDisabled"
+              placeholder="点击选择产品"
+              style="cursor: pointer"
+              @click="openProductSelect(row)"
+            >
+              <template #suffix>
+                <Icon v-if="!formDisabled" icon="ant-design:search-outlined" style="color: #1890ff" />
+              </template>
+            </a-input>
+          </template>
+        </JVxeTable>
       </a-tab-pane>
     </a-tabs>
+    <ProductSelectModal @register="registerProductModal" @select="handleProductSelect" />
   </BasicModal>
 </template>
 
 <script lang="ts" setup>
     import {ref, computed, unref,reactive, watch} from 'vue';
-    import {BasicModal, useModalInner} from '/@/components/Modal';
+    import {BasicModal, useModalInner, useModal } from '/@/components/Modal';
     import {BasicForm, useForm} from '/@/components/Form/index';
     import { JVxeTable } from '/@/components/jeecg/JVxeTable'
     import { useJvxeMethod } from '/@/hooks/system/useJvxeMethods.ts'
@@ -34,6 +50,8 @@
     import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
     import {useMessage} from "@/hooks/web/useMessage";
 
+    import ProductSelectModal from '/@/components/ProductSelect'
+    import { Icon } from '/@/components/Icon';
 
     const { createMessage } = useMessage();
     // Emits声明
@@ -49,6 +67,12 @@
           dataSource: [],
           columns:stockInDetailColumns
     })
+
+    // ===== 产品选择弹窗 =====
+    const [registerProductModal, { openModal: openProductModal }] = useModal();
+    const currentSelectRow = ref<any>(null);
+    const currentSelectRowIndex = ref<number>(-1);
+
 
     // 存储批次信息用于子表填充
     const batchInfo = reactive({
@@ -279,6 +303,47 @@
       await resetFields();
       activeKey.value = 'stockInDetail';
       stockInDetailTable.dataSource = [];
+    }
+
+    // ==================== 产品选择逻辑 ====================
+
+    function openProductSelect(row: any) {
+      if (formDisabled.value) return;
+      currentSelectRow.value = row;
+      const tableInstance = stockInDetail.value;
+      if (tableInstance) {
+        const allData = tableInstance.getTableData ? tableInstance.getTableData() :
+          (tableInstance.getData ? tableInstance.getData() : stockInDetailTable.dataSource);
+        currentSelectRowIndex.value = allData.indexOf(row);
+      }
+      openProductModal(true, {});
+    }
+
+    function handleProductSelect(record: any) {
+      const row = currentSelectRow.value;
+      if (!row) return;
+      row.goodsId = record.id;
+      row.goodsCode = record.productCode;
+      row.goodsName = record.productName;
+      row.goodsSpec = record.productSpec;
+      row.goodsColor = record.productColor;
+      const tableInstance = stockInDetail.value;
+      if (tableInstance && currentSelectRowIndex.value >= 0) {
+        tableInstance.setValues([{
+          rowKey: currentSelectRowIndex.value,
+          values: {
+            goodsCode: row.goodsCode,
+            goodsName: row.goodsName,
+            goodsSpec: row.goodsSpec,
+          }
+        }]);
+      }
+      if (currentSelectRowIndex.value >= 0) {
+        stockInDetailTable.dataSource[currentSelectRowIndex.value] = { ...row };
+        stockInDetailTable.dataSource = [...stockInDetailTable.dataSource];
+      }
+      currentSelectRow.value = null;
+      currentSelectRowIndex.value = -1;
     }
 
     // ==================== 核心：实时计算逻辑 ====================

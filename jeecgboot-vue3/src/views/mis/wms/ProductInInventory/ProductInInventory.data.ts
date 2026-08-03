@@ -431,16 +431,18 @@ export const stockInDetailColumns: JVxeColumn[] = [
     {
       title: '编码',
       key: 'goodsCode',
-      type: JVxeTypes.popup,
-      popupCode:"mdm_product_select",
-      fieldConfig: [
-        { source: 'id', target: 'goodsId' },
-        { source: 'product_code', target: 'goodsCode' },
-        { source: 'product_name', target: 'goodsName' },
-        { source: 'product_spec', target: 'goodsSpec' },
-        { source: 'product_color', target: 'goodsColor'},
-       // { source: 'material_type', target: 'goodsType' },
-      ],
+      type: JVxeTypes.slot,
+      slotName: 'goodsCode',
+      // type: JVxeTypes.popup,
+      // popupCode:"mdm_product_select",
+      // fieldConfig: [
+      //   { source: 'id', target: 'goodsId' },
+      //   { source: 'product_code', target: 'goodsCode' },
+      //   { source: 'product_name', target: 'goodsName' },
+      //   { source: 'product_spec', target: 'goodsSpec' },
+      //   { source: 'product_color', target: 'goodsColor'},
+      //  // { source: 'material_type', target: 'goodsType' },
+      // ],
 
       width:"200px",
       placeholder: '请输入${title}',

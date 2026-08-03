@@ -18,9 +18,27 @@
           :disabled="formDisabled"
           :toolbar="true"
           @edit-closed="handleValueChange"
-          />
+          >
+          <template #goodsCode="{ row }">
+            <a-input
+              :value="row.goodsCode"
+              readonly
+              :disabled="formDisabled"
+              placeholder="点击选择产品"
+              style="cursor: pointer"
+              @click="openProductSelect(row)"
+            >
+              <template #suffix>
+                <Icon v-if="!formDisabled" icon="ant-design:search-outlined" style="color: #1890ff" />
+              </template>
+            </a-input>
+          </template>
+        </JVxeTable>
       </a-tab-pane>
     </a-tabs>
+
+    <ProductSelectModal @register="registerProductModal" @select="handleProductSelect" />
+
   </BasicModal>
 </template>
 
@@ -33,6 +51,10 @@
     import {formSchema,stockInDetailColumns} from '../ProductInApprove.data';
     import {saveOrUpdate,stockInDetailList,approve} from '../ProductInApprove.api';
     import { VALIDATE_FAILED } from '/@/utils/common/vxeUtils'
+
+    import ProductSelectModal from '/@/components/ProductSelect'
+    import { Icon } from '/@/components/Icon';
+
     // Emits声明
     const emit = defineEmits(['register','success']);
     const isUpdate = ref(true);
@@ -47,6 +69,11 @@
           dataSource: [],
           columns:stockInDetailColumns
     })
+
+    // ===== 产品选择弹窗 =====
+    const [registerProductModal, { openModal: openProductModal }] = useModal();
+    const currentSelectRow = ref<any>(null);
+    const currentSelectRowIndex = ref<number>(-1);
 
     // ==================== 新增：审核模式下的列配置 ====================
     /**
@@ -204,6 +231,47 @@
 
     // ==================== 核心：实时计算逻辑 ====================
 
+
+    // ==================== 产品选择逻辑 ====================
+
+    function openProductSelect(row: any) {
+      if (formDisabled.value) return;
+      currentSelectRow.value = row;
+      const tableInstance = stockInDetail.value;
+      if (tableInstance) {
+        const allData = tableInstance.getTableData ? tableInstance.getTableData() :
+          (tableInstance.getData ? tableInstance.getData() : stockInDetailTable.dataSource);
+        currentSelectRowIndex.value = allData.indexOf(row);
+      }
+      openProductModal(true, {});
+    }
+
+    function handleProductSelect(record: any) {
+      const row = currentSelectRow.value;
+      if (!row) return;
+      row.goodsId = record.id;
+      row.goodsCode = record.productCode;
+      row.goodsName = record.productName;
+      row.goodsSpec = record.productSpec;
+      row.goodsColor = record.productColor;
+      const tableInstance = stockInDetail.value;
+      if (tableInstance && currentSelectRowIndex.value >= 0) {
+        tableInstance.setValues([{
+          rowKey: currentSelectRowIndex.value,
+          values: {
+            goodsCode: row.goodsCode,
+            goodsName: row.goodsName,
+            goodsSpec: row.goodsSpec,
+          }
+        }]);
+      }
+      if (currentSelectRowIndex.value >= 0) {
+        stockInDetailTable.dataSource[currentSelectRowIndex.value] = { ...row };
+        stockInDetailTable.dataSource = [...stockInDetailTable.dataSource];
+      }
+      currentSelectRow.value = null;
+      currentSelectRowIndex.value = -1;
+    }
 
     /**
      * 处理编辑完成事件
